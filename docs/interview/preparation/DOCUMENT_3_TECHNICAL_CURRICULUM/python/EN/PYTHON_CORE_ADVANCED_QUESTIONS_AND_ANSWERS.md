@@ -6,11 +6,13 @@
 **Question map:** [English Question Map](./PYTHON_CORE_ADVANCED.md)  
 **Navigation:** [Python curriculum index](../README.md)
 
-English study material for PY-001–PY-009 and FU-001–FU-036. Each topic explains the concept and provides an interview-ready answer. The Russian version uses the same question IDs.
+English study material for PY-001–PY-019. Each Main Question has four locally numbered Follow-ups (FU-1 to FU-4). The Russian version uses the same question IDs.
+
+**Numbering rule:** Every Main Question has exactly four Follow-ups, numbered locally as FU-1, FU-2, FU-3, and FU-4. The parent PY ID keeps each GitHub heading unique (for example, PY-018 / FU-1).
 
 **Review status:** Authored; independent technical and editorial review pending. Do not treat this material as finally approved until both reviews are complete.
 
-# PY-001 — Main Question
+# PY-001 — Main Question ![TYPE](https://img.shields.io/badge/TYPE-MAIN_QUESTION-2563eb) ![LEVEL](https://img.shields.io/badge/LEVEL-L3-7c3aed) ![PRIORITY](https://img.shields.io/badge/PRIORITY-P0-d97706)
 
 **Question (EN):** What is the Global Interpreter Lock (GIL) in CPython, and how does it affect concurrency and parallelism?
 
@@ -47,6 +49,8 @@ CPython also has an optional **free-threaded build**, introduced experimentally 
 
 It is not the default build. Some C extensions are not compatible and may cause the GIL to be enabled again. Free-threading does not guarantee that every application becomes faster: compatibility, synchronization, memory use, and real workload performance must be checked.
 
+For runtime verification, `sysconfig.get_config_var("Py_GIL_DISABLED")` indicates whether the interpreter was built with free-threading support, while `sys._is_gil_enabled()` reports whether the GIL is currently enabled. A free-threaded build can run with the GIL enabled through `PYTHON_GIL` or `-X gil`; importing an extension that does not declare free-threading support can also enable it.
+
 ## Interview-ready answer (EN)
 
 “The Global Interpreter Lock, or GIL, is an interpreter-level mutual-exclusion mechanism in the conventional CPython build. It allows only one thread at a time to hold the GIL and execute Python bytecode. This simplifies coordination around interpreter state and object management, but limits multi-core parallelism for CPU-bound pure-Python threads.
@@ -57,7 +61,7 @@ Python additionally supports optional free-threaded builds, which can execute th
 
 ---
 
-## FU-001 — What does the GIL protect?
+## PY-001 / FU-1 — What does the GIL protect? ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
 
 **Question (EN):** What does the GIL protect, and why does CPython use it?
 
@@ -71,7 +75,7 @@ The GIL coordinates access to parts of CPython's internal state and Python objec
 
 ---
 
-## FU-002 — How does the GIL affect CPU-bound and I/O-bound work?
+## PY-001 / FU-2 — How does the GIL affect CPU-bound and I/O-bound work? ![TYPE](https://img.shields.io/badge/TYPE-Application-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
 
 **Question (EN):** How does the GIL affect CPU-bound and I/O-bound multithreaded workloads?
 
@@ -85,7 +89,7 @@ CPU-bound work spends most of its time calculating. I/O-bound work spends much o
 
 ---
 
-## FU-003 — How do you choose between threading, multiprocessing, and asyncio?
+## PY-001 / FU-3 — How do you choose between threading, multiprocessing, and asyncio? ![TYPE](https://img.shields.io/badge/TYPE-Design_trade-offs-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
 
 **Question (EN):** How would you choose between threading, multiprocessing, and asyncio for a Python backend workload?
 
@@ -101,7 +105,7 @@ CPU-bound work spends most of its time calculating. I/O-bound work spends much o
 
 ---
 
-## FU-004 — What changes in free-threaded CPython?
+## PY-001 / FU-4 — What changes in free-threaded CPython? ![TYPE](https://img.shields.io/badge/TYPE-Senior_judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
 
 **Question (EN):** What changes in free-threaded CPython, and what should a team check before adopting it?
 
@@ -121,7 +125,7 @@ A free-threaded build can execute Python threads in parallel without the traditi
 
 ---
 
-# PY-002 — Main Question
+# PY-002 — Main Question ![TYPE](https://img.shields.io/badge/TYPE-MAIN_QUESTION-2563eb) ![LEVEL](https://img.shields.io/badge/LEVEL-L2-L3-7c3aed) ![PRIORITY](https://img.shields.io/badge/PRIORITY-P0-d97706)
 
 **Question (EN):** What is the difference between concurrency and parallelism, and why is the distinction important in Python?
 
@@ -138,7 +142,9 @@ Concurrency is about coordinating multiple tasks. Parallelism is about simultane
 - **Multiprocessing:** separate processes that can execute on different CPU cores; often useful for CPU-bound Python workloads.
 - **Asyncio:** cooperative concurrency managed by an event loop. When one coroutine awaits I/O, the event loop can run another. Asyncio does not make CPU-heavy code parallel by itself.
 
-In a conventional GIL-enabled CPython build, multiple threads do not execute Python bytecode in parallel. They can still provide concurrency, especially while waiting for I/O.
+In a conventional GIL-enabled CPython build, multiple threads do not execute Python bytecode in parallel. They can still provide concurrency, especially while waiting for I/O. A free-threaded CPython build can execute Python code in parallel when the GIL is disabled; this is optional and not the default build.
+
+Python 3.15.2 also documents asyncio's use in free-threaded environments. A single event loop still runs its Python task code serially on its thread, but separate event loops in separate threads can run in parallel when the GIL is disabled. Asyncio synchronization primitives remain scoped to their event loop and should not be used as cross-thread synchronization tools.
 
 ## Practical example
 
@@ -154,7 +160,7 @@ In Python, threading and asyncio are commonly used for concurrency, while multip
 
 ---
 
-## FU-005 — Can concurrency exist without parallelism?
+## PY-002 / FU-1 — Can concurrency exist without parallelism? ![TYPE](https://img.shields.io/badge/TYPE-Fundamentals-7c3aed) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
 
 **Question (EN):** Can concurrency exist without parallelism?
 
@@ -168,7 +174,7 @@ Yes. A single thread can make progress on multiple tasks by switching between th
 
 ---
 
-## FU-006 — What is the difference between I/O-bound and CPU-bound workloads?
+## PY-002 / FU-2 — What is the difference between I/O-bound and CPU-bound workloads? ![TYPE](https://img.shields.io/badge/TYPE-Workload_analysis-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
 
 **Question (EN):** What is the difference between I/O-bound and CPU-bound workloads?
 
@@ -182,7 +188,7 @@ An **I/O-bound** workload spends much of its time waiting for external operation
 
 ---
 
-## FU-007 — How does the GIL affect concurrency and parallelism in CPython?
+## PY-002 / FU-3 — How does the GIL affect concurrency and parallelism in CPython? ![TYPE](https://img.shields.io/badge/TYPE-CPython_behavior-64748b) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
 
 **Question (EN):** How does the GIL affect concurrency and parallelism in CPython?
 
@@ -196,7 +202,7 @@ In conventional CPython builds, the GIL prevents multiple threads from executing
 
 ---
 
-## FU-008 — How do you decide whether a workload needs concurrency or parallelism?
+## PY-002 / FU-4 — How do you decide whether a workload needs concurrency or parallelism? ![TYPE](https://img.shields.io/badge/TYPE-Senior_judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
 
 **Question (EN):** How do you decide whether a workload needs concurrency or parallelism?
 
@@ -216,186 +222,253 @@ First identify the bottleneck. If the workload mostly waits for network, databas
 
 ---
 
-# PY-003 — Main Question
+# PY-003 — Main Question ![TYPE](https://img.shields.io/badge/TYPE-MAIN_QUESTION-2563eb) ![LEVEL](https://img.shields.io/badge/LEVEL-L3-7c3aed) ![PRIORITY](https://img.shields.io/badge/PRIORITY-P0-d97706)
 
 **Question (EN):** How does Python execute a program from source code to runtime behavior?
 
 ## The main idea
 
-Python does not simply read each line of source code and immediately execute it. In CPython, source code is first parsed and compiled. The resulting code objects are then executed by the interpreter.
+Python does not simply execute source code one line at a time as it reads it. In CPython, source code is decoded, parsed, and compiled. The resulting code objects are then executed by the interpreter.
 
-A simple mental model:
+A useful mental model:
 
-1. **Source code:** the Python program you write.
-2. **Parsing:** Python checks the syntax and builds an abstract syntax tree (AST).
-3. **Compilation:** CPython creates code objects containing bytecode and metadata.
-4. **Runtime execution:** the interpreter executes those code objects and creates or uses runtime objects.
-5. **External operations:** the program may call native libraries and operating-system services.
+1. **Read and decode:** CPython reads the source and decodes it into text.
+2. **Parse:** the parser checks the grammar and builds an abstract syntax tree (AST).
+3. **Compile:** the compiler turns the parsed program into code objects containing bytecode and metadata.
+4. **Execute:** the interpreter executes those code objects in a runtime environment.
+5. **Interact:** the program may call native extensions, libraries, and operating-system services.
 
-This is a conceptual model of CPython. Other Python implementations may use different execution mechanisms.
+This describes the usual CPython path. Python defines language behavior, but other Python implementations may use different execution machinery.
 
-## Compilation is not the same as execution
+## Compilation is not execution
 
-This distinction is especially important in interviews.
+Keep three events separate:
 
-When CPython compiles a module, it also compiles the body of a function defined in that module. But compiling the function body does not execute it.
+- **Compilation:** the function body is compiled into a code object.
+- **Function definition:** when execution reaches a `def` statement, Python creates a function object and binds its name.
+- **Function call:** the function body starts running when the function is called.
 
-There are three separate events:
-
-- **Compilation:** the function's source is compiled into a code object.
-- **Function definition:** when the module executes the `def` statement, Python creates a function object.
-- **Function call:** the function body executes when the function is called.
-
-A name error or other runtime problem inside a function may therefore remain unnoticed until that function is called. Syntax errors, in contrast, are detected during parsing or compilation before the module starts executing.
+A function body is compiled when its containing module is compiled, but it does not run just because the function was defined. A runtime error inside the body may therefore appear only when the function is called. Syntax errors are detected during parsing or compilation, before the module's top-level statements execute.
 
 ## Bytecode, code objects, and function objects
 
-- **Bytecode** is a set of instructions for the CPython interpreter. It is not CPU machine code.
-- **Code object** contains compiled instructions and metadata, such as constants, names, and information needed for execution.
-- **Function object** is the callable runtime object. It references a code object and carries context such as global namespace, default arguments, and closure information.
+- **Bytecode** is an instruction format used by CPython's interpreter. It is not native CPU machine code.
+- **Code object** stores compiled instructions and metadata, such as constants, names, and source-position information.
+- **Function object** is the callable object created by executing a function definition. It refers to a code object and carries execution context such as its global namespace, defaults, and closure.
 
-Think of a code object as the compiled function body, and a function object as that code connected to the context in which it will run.
+A useful distinction: a code object represents compiled code; a function object connects that code to the context in which it will run.
+
+## What happens inside the runtime?
+
+The Python 3.15.2 execution model describes conceptual runtime layers:
+
+- **Process:** operating-system resources such as memory, file descriptors, and sockets.
+- **Python global runtime:** state shared at the runtime level.
+- **Interpreter:** interpreter-specific state and execution environment.
+- **Thread:** the host thread that executes Python and native code.
+- **Thread state:** Python execution state associated with a thread.
+
+A runtime can contain multiple interpreters, and an interpreter can have multiple thread states. This is a conceptual model: implementations do not have to represent every layer as a separate concrete object.
+
+Do not confuse the Python interpreter with the operating-system process. A process is an OS-level execution container; the interpreter is the Python implementation executing code within that environment.
 
 ## Is bytecode machine code?
 
-No. Machine code is executed directly by the processor. CPython bytecode is executed by CPython's interpreter machinery. Normal CPython execution does not require producing a standalone native executable.
+No. Native machine code is executed directly by the processor. CPython bytecode is interpreted by CPython's execution machinery. Normal CPython execution does not require producing a standalone native executable.
 
-## What is a .pyc file?
+Also, avoid describing the interpreter as a permanently fixed loop over an unchanging set of opcodes. CPython's execution machinery and optimizations evolve across releases.
 
-Python may cache compiled bytecode in `__pycache__` as `.pyc` files, commonly when modules are imported. When the cache is valid, Python may reuse it instead of compiling the source again.
+## Adaptive specialization in modern CPython
 
-This is an optimization, not a required step for every program run. A `.pyc` file contains Python bytecode, not native machine code.
+Modern CPython can adapt execution to observed runtime behavior. It may specialize instructions for common cases and use inline caches to make repeated operations faster.
+
+This is an implementation optimization, not a change to Python's language semantics. The exact instructions and specialization strategy can change between CPython releases.
+
+The `dis` module can inspect CPython bytecode. Its adaptive view can show specialized instructions (for example, with `dis.dis(function, adaptive=True)`). This is useful for investigation, but bytecode should not be treated as a stable application interface.
+
+## What is a.pyc file?
+
+Python can cache compiled module bytecode in `.pyc` files, usually under `__pycache__`. When the cache is valid, an import may reuse it instead of compiling the source again.
+
+This is an optimization, not a requirement for every execution. A `.pyc` file contains Python bytecode, not native machine code. Cache validity is checked; the existence of a file alone does not mean Python will always use it.
 
 ## Why this matters in a backend service
 
-Consider a FastAPI application. During startup, Python imports the entry-point module and its dependencies. Module-level statements execute: objects are created, routes are registered, and application components are initialized.
+Consider a FastAPI application. During startup, the process starts Python and the application imports its entry-point module and dependencies. Module-level statements execute: objects are created, routes are registered, and components are initialized.
 
-Later, when an HTTP request arrives, the corresponding endpoint and service functions are called. A failure during import or module initialization can prevent the application from starting; a failure inside an endpoint may occur only when a request reaches it.
+Later, when an HTTP request arrives, the relevant endpoint and service functions are called. An error during import or module initialization can prevent startup; an error inside an endpoint may appear only when a request reaches that code.
 
-This distinction helps separate application startup problems from request-processing problems.
+This distinction helps separate startup failures from request-time failures.
 
 ## Interview-ready answer (EN)
 
-“Python execution involves parsing and compilation before runtime execution. In CPython, source code is parsed into an abstract syntax tree and compiled into code objects containing bytecode and metadata.
+“When CPython runs a program, it reads and decodes the source, parses it into an AST, and compiles it into code objects containing bytecode and metadata. The interpreter then executes those code objects in a runtime environment.
 
-The interpreter executes these code objects in a runtime environment. When a module executes, its top-level statements run and create runtime objects and bindings. A function definition creates a function object, but its body executes only when the function is called.
+Compilation and execution are different. A function body is compiled with its containing module, but executing the function definition creates a function object; the body runs only when the function is called.
 
-Bytecode is not native machine code. CPython executes it using its interpreter machinery. Compiled bytecode may be cached in .pyc files, but this is an optimization rather than a requirement.
+Bytecode is not native machine code, and its format is a CPython implementation detail. Modern CPython can adapt and specialize bytecode at runtime, but those optimizations do not change the language-level contract. Compiled module bytecode may also be cached in.pyc files.
 
-I also distinguish Python language guarantees from CPython-specific implementation details, because bytecode and interpreter internals can change between versions.”
+For production diagnosis, I distinguish module import and startup behavior from request-time execution, and I separate Python language guarantees from CPython and operating-system implementation details.”
 
 ---
 
-## FU-009 — What are the main stages of Python execution?
+## PY-003 / FU-1 — What are the main stages of Python execution? ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
 
 **Question (EN):** What are the main stages between Python source code and the execution of its instructions in CPython?
 
 **Explanation**
 
-The main sequence is source decoding, parsing into an AST, compilation into code objects, and runtime execution. During execution, Python creates objects, resolves names, calls functions, and may interact with native libraries or the operating system.
+The usual CPython path is: read and decode source, parse it into an AST, compile it into code objects, and execute those objects in the runtime. Execution can create objects, resolve names, call functions, and interact with native libraries or the operating system.
 
 **Interview answer (EN)**
 
-“CPython reads and decodes the source, parses it into an AST, and compiles it into code objects containing bytecode and metadata. The interpreter then executes these objects in a runtime environment. During execution, Python creates objects, resolves names, calls functions, and interacts with native libraries and operating-system services.”
+“CPython reads and decodes the source, parses it into an AST, compiles it into code objects containing bytecode and metadata, and then executes those objects in its runtime. During execution, Python creates objects, resolves names, calls functions, and may interact with native libraries and operating-system services.”
 
 ---
 
-## FU-010 — Why does running a module differ from importing it?
+## PY-003 / FU-2 — Why does running a module differ from importing it? ![TYPE](https://img.shields.io/badge/TYPE-Application-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
 
 **Question (EN):** How would you investigate a case where a Python module behaves differently when run as a script versus imported by another module?
 
 **Explanation**
 
-When a file is run directly, its `__name__` is normally `__main__`. When imported, it receives its import name. This affects name guards, package context, relative imports, and initialization behavior.
+When a file is run directly, its `__name__` is normally `"__main__"`. When imported, its `__name__` is the module's import name. The package context, import path, working directory, and module-level side effects may also differ. Running a package module with `python -m package.module` often preserves the intended package context better than executing a file by path.
 
 **Interview answer (EN)**
 
-“I first compare the execution context. Direct script execution normally sets `__name__` to `__main__`, while importing uses the module's import name. I check `__name__`, `__package__`, `sys.path`, the working directory, and the exact command. I also investigate relative imports and module-level side effects. For package applications, I prefer a consistent package-aware entry point, such as `python -m package.module`.”
+“I compare the execution context first: `__name__`, `__package__`, `sys.path`, the working directory, and the exact command. I then inspect relative imports and module-level side effects. Direct execution normally sets `__name__` to `__main__`, while importing uses the module's import name. For package applications, I prefer a consistent package-aware entry point, such as `python -m package.module`.”
 
 ---
 
-## FU-011 — Which execution details are implementation-specific?
+## PY-003 / FU-3 — Which execution details are implementation-specific? ![TYPE](https://img.shields.io/badge/TYPE-Edge_cases_and_trade-offs-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
 
 **Question (EN):** Which aspects of bytecode and interpreter behavior are implementation details rather than language guarantees, and why does that distinction matter?
 
 **Explanation**
 
-Python specifies language behavior, but it does not promise that every interpreter uses the same bytecode or internal execution machinery. CPython opcodes, frame internals, and execution optimizations are implementation-specific and may change.
+Python specifies language semantics, not one universal bytecode format or interpreter architecture. CPython opcodes, inline caches, adaptive specialization, and internal frame representations are implementation details that may change between releases. In particular, do not assume every function call must materialize a Python-visible `PyFrameObject`; CPython's internal execution-frame representation and the frame objects exposed for introspection are distinct concepts.
 
 **Interview answer (EN)**
 
-“Python defines language semantics, but it does not guarantee a particular bytecode format or interpreter implementation. In CPython, opcodes, frame internals, and execution optimizations are implementation-specific and may change between versions. I rely on documented behavior for application correctness and isolate implementation-specific dependencies when they are necessary.”
+“Python defines language semantics, but it does not guarantee a particular bytecode format or interpreter implementation. CPython opcodes, specialization strategies, and internal frame representations can change between releases. I rely on documented language behavior for application correctness and use implementation-specific details only when needed for debugging or measured optimization.”
 
 ---
 
-## FU-012 — How do you choose the diagnostic layer?
+## PY-003 / FU-4 — How do you choose the diagnostic layer? ![TYPE](https://img.shields.io/badge/TYPE-Senior_judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
 
 **Question (EN):** When diagnosing a production issue, how would you decide whether to inspect Python-level behavior, CPython internals, or the operating-system/runtime environment?
 
 **Explanation**
 
-Choose the diagnostic layer based on symptoms and evidence:
+Choose the layer based on symptoms and evidence:
 
-- **Application:** business logic, data, and dependency usage.
-- **Python/CPython:** exceptions, runtime behavior, memory, call stacks, and execution overhead.
-- **Operating system/runtime:** CPU and memory limits, processes, networking, file descriptors, and containers.
+- **Application:** business logic, data, dependency usage, and request flow.
+- **Python/CPython:** exceptions, imports, call stacks, object lifetime, memory behavior, and interpreter overhead.
+- **Operating system/container:** CPU and memory limits, processes, networking, file descriptors, and system-level failures.
 
-**Interview answer (EN)**
+Start broad with metrics, logs, and traces. Go deeper only when the evidence points to a lower layer.
 
-“I start with observable symptoms, metrics, logs, and traces. I inspect application-level behavior when the issue involves business logic or dependency usage. I investigate Python and CPython when evidence points to runtime behavior, memory management, or execution overhead. I inspect the operating system and container environment when there are signs of resource limits, process failures, network problems, or system-level constraints. I choose the diagnostic layer based on evidence rather than assumptions.”
+**Interview answer (EN)****
+
+“I start with symptoms, metrics, logs, and traces. I inspect application behavior when the issue involves business logic or dependency usage. I investigate Python and CPython when evidence points to imports, exceptions, memory management, call stacks, or interpreter overhead. I inspect the operating system and container when there are signs of resource limits, process failures, networking problems, or file-descriptor exhaustion. I choose the diagnostic layer from evidence rather than assumptions.”
 
 **References**
 - [Python 3.15.2 — Execution model](https://docs.python.org/3.15/reference/executionmodel.html)
 - [Python 3.15.2 — Code objects](https://docs.python.org/3.15/reference/datamodel.html#code-objects)
 - [Python 3.15.2 — dis module](https://docs.python.org/3.15/library/dis.html)
+- [Python 3.15.2 — Command-line and environment](https://docs.python.org/3.15/using/cmdline.html)
 - [Python 3.15.2 — Import system](https://docs.python.org/3.15/reference/import.html)
 
 ---
 
-# PY-004 — Main Question
+
+# PY-004 — Main Question ![TYPE](https://img.shields.io/badge/TYPE-MAIN_QUESTION-2563eb) ![LEVEL](https://img.shields.io/badge/LEVEL-L3-7c3aed) ![PRIORITY](https://img.shields.io/badge/PRIORITY-P0-d97706)
 
 **Question (EN):** What happens during a function call in CPython?
 
+## The main idea
 
-**What the interviewer evaluates**
+A function call is more than jumping to another line of code. Python evaluates the call expression, binds arguments to parameters, establishes the execution state, runs the function body, and then returns a result or propagates an exception.
 
-- Understanding of Python's call semantics and argument binding.
-- Knowledge of function objects, code objects, local and global namespaces, and execution frames.
-- Understanding of return values, exception propagation, and nested calls.
-- Ability to distinguish language-level behavior from CPython's internal call implementation.
-- Ability to reason about call overhead without prematurely optimizing code.
+A useful mental model:
 
-**Short Answer**
+1. Evaluate the callable expression and argument expressions.
+2. Invoke the callable using Python's call semantics.
+3. Bind positional and keyword arguments to parameters.
+4. Establish or resume the function's execution state.
+5. Execute the body.
+6. Return a value or propagate an exception.
 
-When a Python function is called, Python evaluates the callable and its arguments, applies the call protocol, binds the supplied arguments to the function's parameters, and begins executing the function body. Conceptually, the call runs the function's code object in a new execution context with access to local, global, built-in, and closure-related state. In CPython, this involves interpreter-managed execution state and frame machinery, although the exact frame allocation and call path have evolved across versions.
+The exact internal call path is an implementation detail. The semantic behavior is what application code should rely on.
 
-The function either returns a value, raises an exception, or—in the case of a generator or coroutine function—produces a generator or coroutine object whose body is executed according to its own lifecycle.
+## 1. Evaluating the call
 
-**Detailed Answer**
+Before the function body starts, Python evaluates the callable expression and the argument expressions. Those expressions can have side effects or raise exceptions themselves.
 
-A normal Python function call can be understood as a sequence of semantic and runtime operations:
+The target does not have to be an ordinary Python function. It can be a bound method, a built-in function, a class, or an instance whose type implements `__call__`.
 
-1. **Evaluate the call expression.** Python evaluates the callable expression and the argument expressions according to the language's evaluation rules. This can itself execute arbitrary code or raise an exception before the function body starts.
-2. **Resolve the callable and perform the call protocol.** The target may be a Python function, a bound method, a class, a built-in callable, or a user-defined object implementing the __call__ method. Different callable categories may use different internal paths, but they must obey the applicable call semantics.
-3. **Bind arguments to parameters.** Positional arguments, keyword arguments, defaults, positional-only parameters, keyword-only parameters, and variadic parameters (*args and **kwargs) are handled according to the function signature. Invalid combinations raise TypeError before the function body executes. For Python functions, default argument expressions are evaluated when the function definition executes, not afresh on every call.
-4. **Establish execution state.** The function executes with local state and access to its global namespace, built-ins, and any closure cells. Conceptually, Python needs an execution frame for the active function call. CPython's internal representation and allocation strategy for this state have changed; it is not correct to assume every call always allocates a traditional heap-allocated frame object in exactly the same way.
-5. **Execute the function body.** The interpreter evaluates statements and expressions, performs name lookups, calls other functions, handles control flow, and may enter native code. Local variable access and global lookup have different semantics and may have different performance characteristics.
-6. **Complete the call.** A return statement produces the return value. Reaching the end of a function without an explicit return produces None. An exception that is not handled inside the function propagates to the caller, unwinding execution state as required.
-7. **Release or retain relevant state.** Once a call completes, its active execution state is no longer needed as an active call. Objects referenced by local variables may remain alive if other references exist—for example, through returned objects, closures, tracebacks, or other retained references. A traceback can retain frames and their local state, which is one reason long-lived exception references can contribute to memory retention.
+## 2. Argument binding
 
-A function call is therefore more than a jump to another instruction address: it includes argument evaluation and binding, execution-context management, control-flow handling, and result or exception propagation.
+Python maps the supplied arguments to the function's parameters:
 
-**Internal Mechanics**
+- Positional arguments are matched according to parameter order.
+- Keyword arguments are matched by parameter name.
+- Default values are used when an optional parameter is not supplied.
+- `*args` collects extra positional arguments.
+- `**kwargs` collects extra keyword arguments.
+- Positional-only and keyword-only parameters restrict how an argument may be supplied.
 
-- **Function object:** contains or references the function's code and runtime metadata, including its global namespace and defaults; closure information is available when applicable.
-- **Code object:** contains compiled instructions and metadata. It is reusable across calls; each call does not recompile the function body.
-- **Argument binding:** maps supplied positional and keyword arguments to the declared parameters and applies defaults and variadic collection rules.
-- **Execution frame:** represents the active execution context, including local state and links to relevant namespaces and execution information. CPython's frame internals and optimization strategy are implementation details.
-- **Call protocol:** Python supports multiple callable categories. CPython has optimized internal call paths, but their exact details are not a language guarantee.
-- **Return and exception paths:** normal completion returns a value to the caller; exceptional completion propagates an exception and associated traceback information.
-- **Closures:** nested functions can retain references to variables from enclosing scopes through closure cells, allowing those values to outlive the outer function call.
+Invalid calls—for example, a missing required argument, an unexpected keyword, or supplying the same parameter twice—raise `TypeError` before the function body executes.
 
-**Practical Example**
+Important: default argument expressions are evaluated once, when the `def` statement executes. They are not re-evaluated on every call.
+
+## 3. Function object and code object
+
+- **Function object:** the callable runtime object. It refers to the compiled code and carries context such as the global namespace, defaults, and closure information.
+- **Code object:** the compiled instructions and metadata. It can be reused across many calls; Python does not recompile the function body on every invocation.
+
+A function object therefore connects reusable compiled code to the context in which that code executes.
+
+## 4. Execution state and frames
+
+Conceptually, an active function call needs an execution frame. The frame represents information needed to execute the code and continue correctly, including:
+
+- the code being executed and the current instruction position;
+- local variables and parameter values;
+- access to global and built-in namespaces;
+- closure cells for variables captured from enclosing scopes;
+- control-flow and exception-handling state;
+- information needed for debugging, tracing, and returning to the caller.
+
+Do not assume that all local variables are always stored in a normal Python dictionary or that every call allocates a fully materialized `PyFrameObject`.
+
+In modern CPython, the internal `_PyInterpreterFrame` representation is distinct from the Python-visible `PyFrameObject`. A visible frame object can be created or exposed when introspection, tracing, or debugging needs it. This is an implementation detail, not a Python language guarantee.
+
+## 5. How does the call return?
+
+When the function executes `return expression`, the evaluated value is returned to the caller. If execution reaches the end of the function without an explicit return, the result is `None`.
+
+If an exception is raised and not handled inside the function, it propagates to the caller. As it propagates, Python unwinds the active execution contexts until a matching handler is found or the exception reaches the top level.
+
+Tracebacks contain references to execution frames. Retaining an exception or traceback can therefore retain local variables and objects referenced by those frames.
+
+## 6. Important CPython implementation detail: optimized calls
+
+CPython has optimized call machinery. Its C API documents the `tp_call` and `vectorcall` protocols; vectorcall can reduce argument packaging overhead for supported callables.
+
+Since CPython 3.11, ordinary Python-to-Python calls can use an optimized interpreter path that avoids the older pattern of recursively re-entering the evaluator for every Python call. Internal frames are also lighter than the traditional model.
+
+These are CPython implementation details. They explain performance behavior, but application correctness must not depend on a particular internal call path or frame layout.
+
+## 7. Generators and coroutines are different
+
+Calling an ordinary function starts executing its body immediately.
+
+Calling a generator function creates a generator object; its body advances when the generator is iterated. Calling an `async def` function creates a coroutine object; its body runs when the coroutine is awaited or scheduled.
+
+Generators and coroutines preserve execution state across suspension points. Their lifecycle is not the same as an ordinary function that runs to completion in one call.
+
+## Practical example
 
 ~~~python
 def make_multiplier(factor):
@@ -404,360 +477,101 @@ def make_multiplier(factor):
     return multiply
 
 triple = make_multiplier(3)
-result = triple(10, offset=2)
+result = triple(10, offset=2)  # 32
 ~~~
 
-When make_multiplier(3) is called, its parameter is bound and its body creates a nested function object. The returned multiply function retains access to factor through its closure. Later, triple(10, offset=2) binds value positionally and offset by keyword, executes the function body, resolves factor through the closure, and returns 32.
+When `make_multiplier(3)` runs, it creates and returns a function object. The returned function retains `factor` through a closure. Later, the call binds `value` positionally and `offset` by keyword, executes the body, reads `factor` from the closure, and returns `32`.
 
-**Code Example — Inspecting a Function's Metadata**
+## Interview-ready answer (EN)
 
-~~~python
-import inspect
+“When a function call is evaluated, Python first evaluates the callable and argument expressions, then applies the call semantics and binds positional and keyword arguments to the function's parameters. The function body executes using its compiled code object and a runtime context that provides local state, globals, built-ins, and closure variables where applicable.
 
-def describe(item, limit=10, *, strict=False):
-    return item[:limit]
+Conceptually, an execution frame represents the active call. In CPython, the internal frame representation and call path are implementation details and have changed across versions. During execution, the function can return a value or propagate an exception.
 
-print(inspect.signature(describe))
-print(describe.__code__.co_varnames)
-print(describe.__code__.co_freevars)
-~~~
-
-inspect.signature() exposes the callable's signature where supported. Code-object attributes provide implementation-oriented introspection. These facilities are useful for debugging and tooling, but code-object internals should not be treated as a stable application-level data format. In this example, co_freevars is empty because describe does not close over an enclosing variable.
-
-**Best Practices**
-
-- Keep function signatures explicit and avoid unnecessary positional/keyword ambiguity.
-- Understand that default values are evaluated once when the function definition executes.
-- Use closures intentionally and be aware of the objects they retain.
-- Keep exception handling close to the layer that can make a meaningful recovery decision.
-- Use profiling to establish whether call overhead is material before changing function boundaries.
-- Prefer readable decomposition over premature inlining or complicated dispatch tricks.
-- When inspecting frames or tracebacks, avoid retaining them longer than necessary if they hold large object graphs.
-
-**Trade-offs & Alternatives**
-
-- **Many small functions:** improve modularity, testing, reuse, and readability, but may add some call overhead in hot paths.
-- **Larger functions or inlining:** can reduce some call overhead but may harm maintainability and make testing harder; arbitrary source-level function inlining is not a universal Python guarantee.
-- **Closures:** provide convenient encapsulation of lexical state, but can extend object lifetimes.
-- **Decorators and wrappers:** add composability and cross-cutting behavior, but can add call layers and affect introspection unless metadata is preserved.
-- **Python versus native callables:** built-ins and extension functions may have different performance characteristics, but benchmark results depend on workload and interpreter version.
-
-**Common Mistakes**
-
-- Saying that every call recompiles the function.
-- Assuming every callable is an ordinary Python function.
-- Assuming all arguments are copied when passed to a function; Python uses object-reference assignment semantics.
-- Forgetting that argument expressions are evaluated before the call and can have side effects.
-- Assuming default expressions are evaluated on every invocation.
-- Treating a frame as necessarily a Python dictionary containing all locals at all times.
-- Assuming function-call overhead is the bottleneck without profiling.
-- Ignoring traceback and closure references when investigating retained memory.
-
-**Senior-Level Perspective**
-
-A senior engineer should understand both the semantic contract and the implementation boundary. For correctness, reason about argument binding, object references, scope, return behavior, and exception propagation. For performance, measure realistic workloads and identify whether time is spent in Python call dispatch, the function body, serialization, allocation, I/O, or downstream services.
-
-CPython has changed its internal call machinery and frame optimizations over time. Therefore, avoid basing architecture on assumptions about a specific internal frame allocation path. If an optimization depends on CPython internals, isolate it, pin and test supported versions, and document why the measured benefit justifies the coupling.
-
-**Interview-Ready Answer (EN)**
-
-“When a function call is evaluated, Python first evaluates the callable and argument expressions, then applies the call protocol and binds positional and keyword arguments to the function's parameters. The function body executes using its compiled code object and a runtime context that provides local state, globals, built-ins, and closure variables where applicable.
-
-Conceptually, an execution frame represents the active call. In CPython, the exact frame representation and call path are implementation details and have changed across versions. During execution, the function can return a value or propagate an exception. If it is a generator or coroutine function, calling it creates a generator or coroutine object rather than immediately running the body to completion.
-
-For performance, I profile representative workloads before optimizing call boundaries, because the dominant cost may be inside the function or in I/O rather than the call mechanism itself.”
-
-
-**Follow-up Questions & Answers**
+A generator or coroutine function has a different lifecycle: calling it creates a generator or coroutine object rather than immediately running its body to completion. For performance, I profile representative workloads before optimizing call boundaries, because the dominant cost may be inside the function or in I/O rather than the call mechanism itself.”
 
 ---
 
-## FU-013 — Execution state during a function call
+## PY-004 / FU-1 — What execution state is needed during a function call? ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
 
 **Question (EN):** What execution state does CPython need to establish or maintain when entering and executing a Python function?
 
+**Explanation**
 
-**What the interviewer evaluates:** Understanding of code objects, function objects, argument binding, local state, globals, built-ins, closures, and frames.
+The runtime needs the function's code, bound arguments, local execution state, access to globals and built-ins, closure cells where applicable, and control-flow information. Conceptually, this is represented by an execution frame.
 
-**Short Answer**
+In CPython, internal execution frames are not identical to Python-visible `PyFrameObject` instances. A visible frame may be exposed when introspection or debugging requires it.
 
-CPython must make the function's code and execution context available: bound arguments, local-variable state, references to the function's global namespace and built-ins, closure cells when present, and the control-flow state needed to execute and return or raise an exception. Conceptually this is represented by an execution frame. The exact internal frame layout and allocation strategy are CPython implementation details and vary by version.
+**Interview answer (EN)**
 
-**Detailed Answer**
-
-The function object provides the compiled code and associated runtime metadata. Before executing the body, the call machinery validates and binds arguments to parameters. The executing function then needs access to its local variables and parameter values, global namespace, built-ins namespace, closure cells for free variables, current instruction and exception-handling state, and caller/execution metadata needed for tracing and propagation.
-
-Not every implementation stores all of this in one Python-visible object. In CPython, internal frame and interpreter structures have evolved, and optimized execution may avoid materializing a full Python frame object until introspection or tracing requires it.
-
-**Internal Mechanics**
-
-A code object describes the compiled block. A function object connects that code to globals, defaults, and closure information. Local-variable storage is optimized for execution and should not be assumed to be a normal dictionary in every circumstance. When frame introspection is requested, CPython may expose or materialize a frame object according to the version's implementation.
-
-**Practical Example**
-
-~~~python
-def outer(prefix):
-    suffix = "!"
-    def inner(name):
-        return prefix + name + suffix
-    return inner
-
-greet = outer("Hello, ")
-print(greet("Ada"))
-~~~
-
-The inner function uses its own parameter name, but it also needs access to prefix and suffix from the enclosing scope. Those free variables are retained through closure cells after outer has returned.
-
-**Best Practices**
-
-Understand the distinction between locals, globals, built-ins, and closure variables. Use inspect and frame inspection for targeted debugging, not as a routine dependency of application logic. Avoid retaining frame and traceback objects unnecessarily.
-
-**Trade-offs & Alternatives**
-
-Materializing and inspecting frames is valuable for debuggers, profilers, and diagnostics, but introspection can add overhead and may retain references to large object graphs. Optimized execution paths can reduce overhead but make assumptions about internal frame layout less portable.
-
-**Common Mistakes**
-
-- Assuming every local namespace is always a fully materialized dictionary.
-- Assuming a function's globals are taken from the caller's module.
-- Forgetting that closures retain enclosing variables.
-- Assuming a Python-visible frame object must be allocated in exactly the same way for every call and every CPython version.
-
-**Senior-Level Perspective**
-
-When debugging memory retention, inspect whether closures, tracebacks, or stored frame references are keeping objects alive. When building profilers or debuggers, use documented introspection APIs and test against supported CPython versions rather than depending on private frame internals.
-
-**Interview-Ready Answer (EN)**
-
-“CPython needs the function's code object, bound arguments, local execution state, and access to the function's globals, built-ins, and closure cells. It also maintains control-flow and exception state so the function can continue, return, or propagate an exception. Conceptually this is an execution frame, but CPython's internal frame representation and allocation strategy have changed over time. A full Python-visible frame is not necessarily materialized in the same way for every call.”
-
+“CPython needs the function's code object, bound arguments, local execution state, and access to globals, built-ins, and closure cells. It also maintains control-flow and exception state so execution can continue, return, or propagate an exception. Conceptually this is an execution frame, but the internal frame representation is an implementation detail and is not necessarily materialized as a Python-visible frame object for every call.”
 
 ---
 
-## FU-014 — Profiling function-call overhead
+## PY-004 / FU-2 — How do you investigate function-call overhead? ![TYPE](https://img.shields.io/badge/TYPE-Application-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
 
 **Question (EN):** How can you use profiling and call-stack information to investigate excessive function-call overhead in a Python service?
 
+**Explanation**
 
-**What the interviewer evaluates:** Profiling methodology, interpretation of cumulative and self time, sampling versus deterministic profiling, and production-safe optimization.
+Start with a representative workload and a measurable service objective. Use a profiler to inspect call counts, self time, and cumulative time, then correlate the results with request traces.
 
-**Short Answer**
+- **Self time:** time attributed to the function itself, excluding subcalls.
+- **Cumulative time:** time in the function plus its subcalls.
+- **Call count:** how often the function was invoked; a high count alone does not prove it is a bottleneck.
 
-I reproduce or capture a representative workload, measure a baseline, and use a profiler to identify functions with high call counts and meaningful cumulative or self time. I correlate profiles with traces and request-level latency so I can distinguish Python call overhead from time spent in I/O, database operations, serialization, locks, or native code. I then test a targeted change and compare results under the same workload.
+A deterministic profiler can provide detailed call information but add overhead. Sampling profilers are often less intrusive, but their results are statistical.
 
-**Detailed Answer**
+**Interview answer (EN)**
 
-1. **Define the performance objective.** Determine whether the issue is throughput, CPU utilization, p95/p99 latency, or a specific endpoint's response time.
-2. **Capture a representative workload.** Use realistic input sizes, concurrency, and request mix. Microbenchmarks alone may not reflect production behavior.
-3. **Measure a baseline.** Record wall-clock latency, CPU time, throughput, memory, and relevant service-level indicators.
-4. **Profile call paths.** A deterministic profiler such as cProfile can show call counts and time attributed to functions. Sampling profilers can often provide lower-overhead insight into production-like workloads.
-5. **Interpret the metrics correctly.** Self time estimates time spent in a function excluding subcalls; cumulative time includes time in subcalls. A function with many calls is not automatically a bottleneck.
-6. **Correlate with distributed traces.** Determine whether time is spent in Python execution, database queries, remote calls, serialization, lock contention, or other waits.
-7. **Form a specific hypothesis.** Excessive tiny helper calls in a hot CPU path may be relevant, while a high call count in a database client may simply reflect expected I/O behavior.
-8. **Change one thing and remeasure.** Compare the same workload and environment, including correctness, latency distribution, CPU, memory, and maintainability.
-
-**Internal Mechanics**
-
-Call-stack profiles reveal the hierarchy of calls and where time accumulates. Deterministic profiling instruments function-call events and can perturb timing; sampling profiling periodically samples execution state and typically has lower overhead but may miss very short events. Native extensions and blocking system calls may require tools beyond a Python-only profiler.
-
-**Practical Example**
-
-Suppose an endpoint transforms thousands of records. A profile shows a small normalization helper called millions of times with substantial cumulative CPU time. After verifying correctness, you may reduce repeated work by normalizing once, using a more suitable built-in operation, or changing the data flow. If instead the profile and traces show most latency inside a database query, merging Python helper functions is unlikely to improve endpoint latency.
-
-**Best Practices**
-
-- Profile production-representative workloads.
-- Distinguish self time from cumulative time.
-- Use sampling tools when deterministic profiling overhead is unacceptable.
-- Correlate CPU profiles with request traces and infrastructure metrics.
-- Benchmark before and after under controlled conditions.
-- Keep performance changes small and preserve readable abstractions where possible.
-
-**Trade-offs & Alternatives**
-
-Deterministic profiling gives detailed call counts but may distort timing. Sampling is less intrusive but statistically approximate. Microbenchmarks are useful for isolated operations but cannot replace end-to-end measurements. Native profilers may be necessary when time is spent in extension code or system calls.
-
-**Common Mistakes**
-
-- Optimizing the function with the highest call count without examining time.
-- Confusing cumulative time with self time.
-- Treating wall-clock waiting as Python CPU overhead.
-- Comparing benchmarks with different input sizes or environments.
-- Removing useful abstractions based on intuition rather than measured benefit.
-
-**Senior-Level Perspective**
-
-The optimization decision should be based on service-level impact, not an attractive microbenchmark. Establish whether call overhead contributes materially to the endpoint's latency or CPU budget. Estimate the maximum possible benefit, account for maintainability costs, and validate the change under realistic concurrency. If the bottleneck is downstream I/O, focus on query plans, connection pooling, batching, caching, or concurrency limits instead.
-
-**Interview-Ready Answer (EN)**
-
-“I start by defining the target metric and capturing a representative workload. I use a profiler to inspect call counts, self time, and cumulative time, and I correlate that data with request traces. A high call count alone does not prove that calls are expensive; the time may be in a database, network request, serialization routine, or native extension. Once I have a specific hypothesis, I make a targeted change and compare the same workload before and after, checking latency percentiles, CPU, memory, and correctness. I avoid sacrificing maintainability for an optimization that has no measurable service-level benefit.”
-
+“I define the target metric and capture a representative workload. I inspect call counts, self time, and cumulative time, and correlate the profile with request traces. A high call count alone does not prove that call dispatch is expensive; time may be spent in a database, network request, serialization, or native code. I make a targeted change only after identifying the bottleneck, then compare latency percentiles, throughput, CPU, memory, and correctness under the same workload.”
 
 ---
 
-## FU-015 — Different execution lifecycles
+## PY-004 / FU-3 — How do recursion, exceptions, generators, and coroutines change the lifecycle? ![TYPE](https://img.shields.io/badge/TYPE-Edge_cases_and_lifecycle-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
 
 **Question (EN):** How do recursion, exceptions, generators, and asynchronous functions affect the execution lifecycle compared with an ordinary function call?
 
+**Explanation**
 
-**What the interviewer evaluates:** Control-flow semantics, suspended execution, coroutine scheduling, exception propagation, and resource-lifecycle awareness.
+- **Recursion:** creates nested logical calls with separate parameters and local execution state. Deep recursion can hit the recursion limit.
+- **Exceptions:** transfer control by unwinding execution contexts until a matching handler is found.
+- **Generators:** calling a generator function creates a generator object. Its body advances during iteration and retains state between `yield` points.
+- **Coroutines:** calling an `async def` function creates a coroutine object. Its body runs when awaited or scheduled, and it can suspend at `await` points.
 
-**Short Answer**
+An event loop schedules coroutine progress; it does not create one operating-system thread per coroutine.
 
-Recursion creates nested active calls and therefore nested execution state. Exceptions transfer control through stack unwinding until a matching handler is found. A generator function call creates a generator object and suspends its body until iteration advances it; its state is retained between yields. An async function call creates a coroutine object; its body runs when the coroutine is awaited or scheduled by an event loop. These are different lifecycles from an ordinary function that runs immediately to completion.
+**Interview answer (EN)**
 
-**Detailed Answer**
-
-- **Ordinary function:** after arguments are evaluated and bound, the function body runs until it returns or raises. Its active execution state is then left.
-- **Recursion:** each recursive invocation has its own logical call state and parameter/local values. Deep recursion can hit the interpreter's recursion limit or exhaust available resources. Tail-call elimination is not a general Python language guarantee.
-- **Exceptions:** raising an exception changes control flow. Python searches for a matching handler while unwinding execution contexts. A traceback records the propagation path and can retain references to frames and local objects.
-- **Generator functions:** calling a generator function returns a generator object without immediately executing the body to completion. Advancing it with next() or iteration runs until the next yield, return, or exception. The generator retains its suspended execution state between advances.
-- **Async functions:** calling an async def function creates a coroutine object; it does not by itself run the coroutine body. Awaiting or scheduling it allows an event loop to drive its execution. At an await that suspends, control can return to the event loop so other tasks can run. An awaitable that completes immediately may not cause a scheduling suspension.
-- **Cancellation and cleanup:** asynchronous tasks can receive cancellation, typically delivered at a suspension point. Cleanup should use try/finally and asynchronous context managers appropriately; cancellation should not be accidentally swallowed.
-
-**Internal Mechanics**
-
-Generators and coroutines preserve state across suspension points, including the information needed to resume execution. CPython has specialized runtime objects and execution machinery for generators and coroutines. The event loop schedules coroutine progress; it is not the same thing as a separate OS thread for each coroutine.
-
-**Practical Example**
-
-~~~python
-def ordinary():
-    print("body runs during call")
-    return 1
-
-def generate():
-    print("body starts on iteration")
-    yield 1
-
-async def asynchronous():
-    print("body starts when awaited/scheduled")
-    return 1
-
-ordinary()
-g = generate()
-next(g)
-coro = asynchronous()
-~~~
-
-The coroutine object in this example must be awaited or scheduled to execute; creating it alone is not enough.
-
-**Best Practices**
-
-- Bound recursive depth or use an iterative algorithm when appropriate.
-- Handle exceptions at meaningful recovery boundaries and preserve diagnostic context.
-- Close generators or use context-manager patterns when they own resources.
-- Await or schedule coroutine objects and do not leave them unawaited.
-- Make cancellation-safe cleanup explicit in asynchronous code.
-- Avoid blocking operations on an event-loop thread.
-
-**Trade-offs & Alternatives**
-
-Recursion can express tree and divide-and-conquer algorithms clearly, while iteration avoids deep call nesting. Generators provide lazy processing and lower peak memory for streams, but introduce suspended state and lifecycle concerns. Asyncio supports high concurrency for I/O-bound work, but requires cooperative non-blocking operations and does not automatically accelerate CPU-bound work.
-
-**Common Mistakes**
-
-- Assuming a generator body executes when the generator function is called.
-- Assuming an async function runs immediately when called.
-- Treating an event loop as one thread per coroutine.
-- Assuming Python performs general tail-call optimization.
-- Swallowing cancellation or failing to release resources.
-- Retaining exceptions and tracebacks indefinitely without considering referenced frames.
-
-**Senior-Level Perspective**
-
-Choose the execution model according to workload and lifecycle requirements. Use recursion when depth is bounded and clarity benefits; generators for lazy synchronous pipelines; coroutines for cooperative I/O concurrency; and threads or processes when their respective execution and isolation properties fit the workload. Design cleanup, cancellation, backpressure, and observability as part of the lifecycle—not as afterthoughts.
-
-**Interview-Ready Answer (EN)**
-
-“An ordinary function runs when called and completes by returning or raising. Recursion creates nested calls with separate logical execution state. Exceptions unwind control flow until a handler is found. A generator call returns a generator object whose body advances on iteration and retains state between yields. An async function call returns a coroutine object; it runs when awaited or scheduled, and the event loop drives it across suspension points. These differences matter for resource cleanup, cancellation, stack depth, and scheduling.”
-
+“An ordinary function runs when called and completes by returning or raising. Recursion creates nested calls with separate logical execution state. Exceptions unwind control flow until a handler is found. A generator call returns an object whose body advances during iteration and retains state between yields. An async function call returns a coroutine object that runs when awaited or scheduled. These differences affect stack depth, scheduling, cancellation, and resource cleanup.”
 
 ---
 
-## FU-016 — When call mechanics matter for optimization
+## PY-004 / FU-4 — When should call mechanics influence an optimization decision? ![TYPE](https://img.shields.io/badge/TYPE-Senior_judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
 
 **Question (EN):** When would knowledge of CPython call mechanics materially change an optimization decision, and how would you validate that the optimization is worthwhile?
 
+**Explanation**
 
-**What the interviewer evaluates:** Performance judgment, measurement discipline, version awareness, and maintainability trade-offs.
+Call mechanics matter when profiling shows that call dispatch or repeated wrapper layers consume a meaningful part of a CPU-bound hot path. CPython optimizations such as vectorcall can reduce some overhead, but they do not make every call free.
 
-**Short Answer**
+Validate the hypothesis with representative benchmarks, production metrics, and the Python versions the service supports. Consider readability and maintenance cost as well as speed.
 
-It matters when profiling demonstrates that Python-level call dispatch or repeated wrapper/dispatch layers consume a meaningful part of a CPU-bound workload. Knowledge of CPython's call optimizations can explain results and guide targeted experiments, but it should not replace measurement. I validate an optimization with representative benchmarks and service-level metrics, compare supported interpreter versions, and ensure correctness and maintainability are preserved.
+**Interview answer (EN)**
 
-**Detailed Answer**
+“I optimize call mechanics only when profiling shows that call dispatch or wrapper layers are a material cost in a representative workload. I estimate the maximum possible end-to-end gain, test a focused alternative, and compare latency percentiles, throughput, CPU, memory, correctness, and maintainability. CPython's call optimizations change over time, so I avoid depending on private internals unless that dependency is isolated and justified by measured results.”
 
-Call mechanics may matter in extremely hot loops that invoke tiny Python functions millions of times; deep wrapper or decorator chains; callback-heavy code where dispatch is a measurable fraction of CPU time; transformation pipelines with many small per-item calls; or framework paths where repeated indirection accumulates under high request volume.
-
-Even in these cases, call overhead should be isolated from the work performed by the function. A call may appear frequently in a profile but consume little self time; the actual cost may be allocations, attribute lookup, data conversion, locks, or I/O.
-
-Potential optimizations include reducing redundant wrapper layers, moving invariant work out of hot loops, batching operations, using appropriate built-ins, reducing repeated dynamic lookup, or changing the algorithm and data flow. In selected cases, a native extension or vectorized library may be appropriate. The choice should be driven by the workload and operational constraints.
-
-**Internal Mechanics**
-
-CPython versions can optimize calls and execution paths differently. Specialization, vectorcall-related mechanisms, and frame optimizations may affect measured costs. These are implementation details; a micro-optimization that helps one interpreter release may be neutral or harmful on another. Do not write code that depends on private call internals unless the dependency is intentional and isolated.
-
-**Practical Validation Plan**
-
-1. Capture a representative input distribution and concurrency profile.
-2. Establish a baseline using repeatable benchmarks and production telemetry.
-3. Confirm that call overhead is material using profiles, not only call counts.
-4. Estimate the maximum possible gain: if calls account for only a small fraction of total CPU time, the end-to-end improvement is bounded.
-5. Implement one targeted alternative while preserving behavior.
-6. Run correctness, edge-case, and regression tests.
-7. Benchmark on each supported Python implementation/version and deployment configuration.
-8. Compare p50/p95/p99 latency, throughput, CPU, memory, and operational complexity.
-9. Retain the optimization only if the measured benefit justifies its maintenance cost.
-
-**Best Practices**
-
-- Optimize algorithms and unnecessary work before relying on interpreter-specific tricks.
-- Benchmark realistic workloads, not only synthetic single-call loops.
-- Keep a before/after record and pin the runtime used for comparison.
-- Include correctness and maintainability in the decision.
-- Reassess performance-sensitive assumptions during Python upgrades.
-
-**Trade-offs & Alternatives**
-
-Inlining may reduce call overhead but can duplicate logic and reduce testability. Batching can reduce repeated calls and I/O but may increase memory use and latency for individual items. Native code can improve CPU performance but adds build, ABI, debugging, and deployment complexity. Keeping small functions may be the best choice when their overhead is negligible relative to the clarity they provide.
-
-**Common Mistakes**
-
-- Optimizing based on intuition or a single microbenchmark.
-- Assuming a specific CPython optimization will exist in every version.
-- Ignoring algorithmic complexity and data-structure costs.
-- Trading away readability for a negligible speedup.
-- Measuring only average latency while p95/p99 regresses.
-- Failing to retest after a runtime upgrade.
-
-**Senior-Level Perspective**
-
-The decision should connect a measured low-level cost to a meaningful service-level outcome. If function dispatch consumes a substantial CPU budget in a hot path, reducing redundant calls may be justified. If it contributes negligibly to end-to-end latency, preserve clean abstractions and focus on the actual bottleneck. Document the evidence, runtime scope, expected benefit, and rollback criteria.
-
-**Interview-Ready Answer (EN)**
-
-“I would only optimize call mechanics after profiling shows that Python call dispatch or repeated wrapper layers are a material cost in a representative CPU-bound workload. I would inspect self time and call paths, estimate the maximum possible end-to-end gain, and test a focused alternative such as reducing redundant calls or batching work. Then I would compare correctness, latency percentiles, throughput, CPU, memory, and maintainability on the supported Python versions. CPython call optimizations change over time, so I would avoid relying on private internals unless the dependency is isolated and justified by measured results.”
-
-
-
-## PY-004 review checklist
-
-- [x] Main question and FU-013–FU-016 included.
-- [x] Argument binding, execution state, frames, closures, return and exception paths covered.
-- [x] Ordinary functions distinguished from generators and coroutines.
-- [x] Profiling methodology and optimization trade-offs covered.
-- [ ] Independent technical review against supported CPython versions.
-- [ ] Final editorial review.
-
-**Completion rule:** Authored material is not finally approved until both review stages are complete.
-
-
+**References**
+- [Python 3.15.2 — Execution model](https://docs.python.org/3.15/reference/executionmodel.html)
+- [Python 3.15.2 — Data model: frame objects](https://docs.python.org/3.15/reference/datamodel.html#frame-objects)
+- [Python 3.15.2 — C API: Frame objects](https://docs.python.org/3.15/c-api/frame.html)
+- [Python 3.15.2 — C API: Call protocol](https://docs.python.org/3.15/c-api/call.html)
+- [Python 3.15.2 — sys.setprofile and sys.settrace](https://docs.python.org/3.15/library/sys.html)
 
 ---
 
-# PY-005 — Main Question
+
+# PY-005 — Main Question ![TYPE](https://img.shields.io/badge/TYPE-MAIN_QUESTION-2563eb) ![LEVEL](https://img.shields.io/badge/LEVEL-L3-7c3aed) ![PRIORITY](https://img.shields.io/badge/PRIORITY-P0-d97706)
 
 **Question (EN):** Explain Python's object model: identity, type, and value.
 
@@ -765,7 +579,7 @@ The decision should connect a measured low-level cost to a meaningful service-le
 
 Every Python object has an identity, a type, and a value. Identity distinguishes the particular object; type defines its behavior and supported operations; value is the data or state it represents. An object's identity and type remain stable during its lifetime, while its value may change if it is mutable.
 
-A variable is a name bound to an object, not a typed storage container. Assignment normally binds a name; it does not copy the object. Multiple names can therefore refer to the same mutable object.
+A variable is a name bound to an object, not a typed storage container; this is Python's name binding model. Assignment normally binds a name; it does not copy the object. Multiple names can therefore refer to the same mutable object through aliasing and shared references.
 
 ~~~python
 first = [1, 2]
@@ -780,7 +594,7 @@ alias.append(3)     # The change is visible through first as well
 
 Use is for identity-sensitive checks such as None or a private sentinel; use == for value equality. Use isinstance() when subclasses are acceptable. Prefer protocols or polymorphism when callers need behavior rather than a specific implementation.
 
-Do not confuse Python object identity with domain identity. Two ORM instances may represent the same database row while being distinct Python objects. Use stable domain identifiers across persistence, serialization, and distributed boundaries. The id() value is lifetime-scoped, not a durable key or portable memory address.
+Do not confuse Python object identity with domain identity. Two ORM instances may represent the same database row while being distinct Python objects. Use stable domain identifiers across persistence, serialization, and distributed boundaries. The id() result is guaranteed to be unique only while the object is alive; an ID may be reused after the object is destroyed. In CPython, id() is currently the object's memory address, but that is an implementation detail, not a language guarantee.
 
 **Interview-Ready Answer (EN)**
 
@@ -788,7 +602,7 @@ Do not confuse Python object identity with domain identity. Two ORM instances ma
 
 ---
 
-## FU-017 — Identity, type, and value over an object's lifetime
+## PY-005 / FU-1 — Identity, type, and value over an object's lifetime ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
 
 **Question (EN):** Which of an object's identity, type, and value can change during its lifetime?
 
@@ -800,7 +614,7 @@ Do not confuse Python object identity with domain identity. Two ORM instances ma
 
 ---
 
-## FU-018 — Choosing identity, equality, and type checks
+## PY-005 / FU-2 — Choosing identity, equality, and type checks ![TYPE](https://img.shields.io/badge/TYPE-Application-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
 
 **Question (EN):** How would you choose between identity checks, equality checks, and type checks in a code review?
 
@@ -812,7 +626,7 @@ Do not confuse Python object identity with domain identity. Two ORM instances ma
 
 ---
 
-## FU-019 — Why is is not a value comparison?
+## PY-005 / FU-3 — Why is is not a value comparison? ![TYPE](https://img.shields.io/badge/TYPE-Edge_cases_and_trade-offs-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
 
 **Question (EN):** Why can using is to compare strings, numbers, or other values produce unreliable results?
 
@@ -820,11 +634,11 @@ Do not confuse Python object identity with domain identity. Two ORM instances ma
 
 **Interview-Ready Answer (EN)**
 
-“is checks object identity, whereas == checks equality according to the type's comparison semantics. Two separately created values can be equal without being the same object. Interning or constant reuse may make identity comparisons appear to work for some strings or integers, but that behavior is implementation-dependent. I use is for sentinels and == for value comparisons.”
+“is checks object identity, whereas == invokes the type's equality semantics, which may be customized. Two separately created values can compare equal without being the same object. Interning or constant reuse may make identity comparisons appear to work for some strings or integers, but that behavior is implementation-dependent. I use is for sentinels and == for value comparisons. I also remember that id() is only unique during an object's lifetime and is not a persistent identifier.”
 
 ---
 
-## FU-020 — Identity and mutability in API design
+## PY-005 / FU-4 — Identity and mutability in API design ![TYPE](https://img.shields.io/badge/TYPE-Senior_judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
 
 **Question (EN):** How should API design avoid accidental dependencies on object identity, mutability, or concrete implementation types?
 
@@ -834,9 +648,9 @@ Do not confuse Python object identity with domain identity. Two ORM instances ma
 
 “I make ownership and mutation semantics explicit: callers should know whether an API changes an input, retains a reference, or returns shared state. I use stable domain identifiers rather than Python object identity across persistence and distributed boundaries. Immutable value objects are useful when equality is value-based, provided nested state and hashing are handled correctly. I expose required behavior through suitable abstractions or protocols so callers are not coupled to an unnecessary concrete implementation.”
 
-**Status:** Authored; independent technical and editorial review pending.
+**Status:** Audited against the Python 3.15.2 data model, comparison semantics, and programming FAQ; four follow-ups retained.
 
-# PY-006 — Main Question
+# PY-006 — Main Question ![TYPE](https://img.shields.io/badge/TYPE-MAIN_QUESTION-2563eb) ![LEVEL](https://img.shields.io/badge/LEVEL-L3-7c3aed) ![PRIORITY](https://img.shields.io/badge/PRIORITY-P0-d97706)
 
 **Question (EN):** How does Python resolve attribute access, and how do descriptors and special methods affect that process?
 
@@ -855,7 +669,7 @@ Attribute access in Python is governed by the object model. For ordinary instanc
 
 An expression such as `obj.name` invokes attribute access machinery; it is not simply a dictionary lookup in `obj.__dict__`. The default behavior is implemented by `object.__getattribute__`, with the object's type and descriptor protocol determining the result.
 
-For a typical instance, the important precedence rules are:
+For a typical instance, the important attribute lookup precedence rules are:
 
 1. A **data descriptor** found on the type takes precedence over an entry with the same name in the instance namespace. A descriptor is a data descriptor when its type provides `__set__` or `__delete__`.
 2. If no data descriptor applies, Python checks the instance namespace.
@@ -866,16 +680,16 @@ This is a useful model for ordinary instance attribute access, not a universal d
 
 **The descriptor protocol**
 
-A descriptor is an object whose type defines one or more of `__get__`, `__set__`, or `__delete__`. Descriptors are the foundation of properties, many methods, and several framework features. A function stored on a class is a non-data descriptor: accessing it through an instance creates a bound method by supplying the instance as the receiver. A `property` is a data descriptor and can control reads and writes even when an instance dictionary contains a same-named key.
+A descriptor is an object whose type defines one or more of `__get__`, `__set__`, or `__delete__`. Python recognizes these protocol methods on the descriptor's type, not merely as attributes attached to an individual descriptor instance. Descriptors are the foundation of properties, method binding, and several framework features. A function stored on a class is a non-data descriptor: accessing it through an instance invokes method binding and produces a bound method. A `property` is a data descriptor and can control reads and writes even when an instance dictionary contains a same-named key. For instance access, `__get__` receives the instance and its type; for class access, it receives `None` and the owner class.
 
 **Attribute access hooks**
 
-- `__getattribute__(self, name)` is called for ordinary attribute access and can customize or intercept lookup. A custom implementation commonly delegates to `object.__getattribute__(self, name)`; otherwise, careless implementations can recurse indefinitely.
-- `__getattr__(self, name)` is called only after ordinary lookup fails with `AttributeError`. It is appropriate for fallback behavior, such as proxy objects or dynamically exposed attributes.
+- `__getattribute__``(self, name)` is called for ordinary attribute access and can customize or intercept lookup. A custom implementation commonly delegates to `object.__getattribute__``(self, name)`; otherwise, careless implementations can recurse indefinitely.
+- `__getattr__``(self, name)` is called only after ordinary lookup fails with `AttributeError`. It is appropriate for fallback behavior, such as proxy objects or dynamically exposed attributes.
 
 **Special methods**
 
-Operations such as `len(obj)`, `iter(obj)`, arithmetic, and context management use special-method lookup rules. For many implicit operations, Python looks up the special method on the type rather than consulting an instance attribute of the same name. Assigning `obj.__len__` therefore does not generally make `len(obj)` use that instance attribute. This type-level lookup supports consistent protocol behavior and allows optimized dispatch.
+Operations such as `len(obj)` (via `__len__`), `iter(obj)` (via `__iter__`), arithmetic, and context management use special-method lookup rules. For many implicit operations, Python looks up the special method on the type rather than consulting an instance attribute of the same name. Assigning `obj.__len__` therefore does not generally make `len(obj)` use that instance attribute. This type-level lookup supports consistent protocol behavior and allows optimized dispatch.
 
 **Senior-Level Perspective**
 
@@ -889,7 +703,7 @@ When debugging unexpected attribute behavior, identify the exact lookup path: in
 
 ---
 
-## FU-021 — Attribute lookup precedence
+## PY-006 / FU-1 — Attribute lookup precedence ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
 
 **Question (EN):** In what order does Python search for an attribute on an instance, and how can an instance attribute interact with a class attribute?
 
@@ -911,7 +725,7 @@ This explains why assigning to an attribute can shadow a method in some cases, w
 
 ---
 
-## FU-022 — Data descriptors and non-data descriptors
+## PY-006 / FU-2 — Data descriptors and non-data descriptors ![TYPE](https://img.shields.io/badge/TYPE-Mechanism_and_application-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
 
 **Question (EN):** What is the difference between a data descriptor and a non-data descriptor, and why does the distinction matter?
 
@@ -933,7 +747,7 @@ This distinction is important in frameworks that use descriptors for validation,
 
 ---
 
-## FU-023 — `__getattribute__` versus `__getattr__`
+## PY-006 / FU-3 — `__getattribute__` versus `__getattr__` ![TYPE](https://img.shields.io/badge/TYPE-Edge_cases-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
 
 **Question (EN):** What is the difference between `__getattribute__` and `__getattr__`, and what risks arise when overriding them?
 
@@ -955,7 +769,7 @@ A custom `__getattribute__` can implement proxies, access control, lazy resoluti
 
 ---
 
-## FU-024 — Implicit special-method lookup
+## PY-006 / FU-4 — Implicit special-method lookup ![TYPE](https://img.shields.io/badge/TYPE-Senior_judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
 
 **Question (EN):** Why can assigning a special method to an instance fail to change the behavior of an implicit operation such as `len(obj)`?
 
@@ -977,7 +791,7 @@ This is different from explicitly evaluating `obj.__len__()`, which is ordinary 
 
 
 
-# PY-007 — Main Question
+# PY-007 — Main Question ![TYPE](https://img.shields.io/badge/TYPE-MAIN_QUESTION-2563eb) ![LEVEL](https://img.shields.io/badge/LEVEL-L2-L3-7c3aed) ![PRIORITY](https://img.shields.io/badge/PRIORITY-P0-d97706)
 
 **Question (EN):** How do Python lists, tuples, sets, and dictionaries differ internally and semantically?
 
@@ -1002,7 +816,7 @@ Use a list for an ordered, mutable sequence; a tuple for a fixed record or immut
 
 **Important Distinctions**
 
-A shallow copy creates a new outer container but retains references to the same nested objects. Mutating a nested list or dictionary can therefore be visible through both containers. A tuple is not deeply immutable if it contains mutable objects. Dictionary keys and set elements must maintain stable hash and equality behavior while stored.
+A shallow copy creates a new outer container but retains references to the same nested objects. Mutating a nested list or dictionary can therefore be visible through both containers. A tuple is not deeply immutable if it contains mutable objects. Dictionary keys and set elements must maintain stable hash and equality behavior while stored. Equal keys share one mapping entry: for example, `True`, `1`, and `1.0` compare equal and address the same dictionary key.
 
 **Senior-Level Perspective**
 
@@ -1010,16 +824,20 @@ Start with semantics and correctness, then profile representative data sizes and
 
 **Interview-Ready Answer (EN)**
 
-“Lists and tuples are ordered sequences: lists are mutable, while tuples are immutable at the container level. Sets hold unique hashable elements and are useful for membership checks and set operations. Dictionaries map unique hashable keys to values and preserve insertion order. In CPython, lists and tuples are array-like containers of references, whereas sets and dictionaries use hash tables. Their common lookup and membership operations are typically average O(1), while list indexing is O(1) and middle insertion or deletion is O(n). I choose based on required semantics first, then benchmark realistic workloads and account for memory, mutation patterns, and hash behavior.”
+“Lists and tuples are ordered sequences: lists are mutable, while tuples are immutable at the container level. Sets hold unique hashable elements and are useful for membership checks and set operations. Dictionaries map unique hashable keys to values and preserve insertion order. In CPython, lists and tuples are array-like containers of references, whereas sets and dictionaries use hash tables. Their common lookup and membership operations are typically average O(1), while list indexing is O(1) and middle insertion or deletion is O(n). In Python 3.15, `frozendict` adds a built-in immutable mapping. I choose based on required semantics first, then benchmark realistic workloads and account for memory, mutation patterns, and hash behavior.”
 
 **References**
 
 - [Python 3.15 documentation: Built-in Types](https://docs.python.org/3.15/library/stdtypes.html)
 - [Python 3.15 documentation: Data model](https://docs.python.org/3.15/reference/datamodel.html)
+- [Python 3.15: What's New — frozendict (PEP 814)](https://docs.python.org/3.15/whatsnew/3.15.html)
+
+
+**Python 3.15 note:** `frozendict` is a built-in immutable mapping, not a `dict` subclass. `frozenset` is the immutable counterpart of `set` and is hashable when all its elements are hashable. It preserves insertion order. It is hashable only when all keys and values are hashable; immutability is shallow, so mutable values can still change. This is distinct from `types.MappingProxyType`, which is a read-only dynamic view of an underlying mapping.
 
 ---
 
-## FU-025 — Collection semantics and CPython representations
+## PY-007 / FU-1 — Collection semantics and CPython representations ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
 
 **Question (EN):** What are the key semantic and typical implementation differences between lists, tuples, sets, and dictionaries in CPython?
 
@@ -1033,7 +851,7 @@ Lists and tuples are ordered sequences indexed by position; lists allow item rep
 
 ---
 
-## FU-026 — Selecting a collection for a service
+## PY-007 / FU-2 — Selecting a collection for a service ![TYPE](https://img.shields.io/badge/TYPE-Application-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
 
 **Question (EN):** How would you choose a built-in collection for an ordered sequence, membership checks, deduplication, and keyed lookup in a real service?
 
@@ -1047,7 +865,7 @@ Use a list for an ordered sequence that may change, a tuple for a fixed sequence
 
 ---
 
-## FU-027 — Ordering, copying, and complexity edge cases
+## PY-007 / FU-3 — Ordering, copying, and complexity edge cases ![TYPE](https://img.shields.io/badge/TYPE-Edge_cases_and_trade-offs-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
 
 **Question (EN):** What should you consider when relying on insertion order, shallow copying, nested mutable values, or average-case complexity?
 
@@ -1061,7 +879,7 @@ Dictionary insertion order is guaranteed by the language, but set iteration orde
 
 ---
 
-## FU-028 — Collection choice under production constraints
+## PY-007 / FU-4 — Collection choice under production constraints ![TYPE](https://img.shields.io/badge/TYPE-Senior_judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
 
 **Question (EN):** How would workload shape, data volume, mutation patterns, and memory pressure influence your collection choice and benchmarking strategy?
 
@@ -1074,7 +892,7 @@ Identify the operation mix, data volume, ordering requirements, mutation frequen
 “I start from the production access pattern: reads versus writes, lookup versus iteration, ordering, data size, and memory limits. Then I benchmark representative distributions and measure latency and memory, including build and update costs. I avoid choosing from asymptotic complexity alone, and keep redundant indexes only when their measured benefit justifies their operational cost.”
 
 
-# PY-008 — Main Question
+# PY-008 — Main Question ![TYPE](https://img.shields.io/badge/TYPE-MAIN_QUESTION-2563eb) ![LEVEL](https://img.shields.io/badge/LEVEL-L2-L3-7c3aed) ![PRIORITY](https://img.shields.io/badge/PRIORITY-P0-d97706)
 
 **Question (EN):** How do Python dictionaries work internally, and what are the performance and correctness implications of hash-table behavior?
 
@@ -1128,7 +946,7 @@ Treat dictionary keys as stable values. For custom key classes, design __eq__() 
 
 ---
 
-## FU-029 — The hash and equality contract
+## PY-008 / FU-1 — The hash and equality contract ![TYPE](https://img.shields.io/badge/TYPE-Core_contract-7c3aed) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
 
 **Question (EN):** What contract must __hash__() and __eq__() satisfy for objects used as dictionary keys?
 
@@ -1142,7 +960,7 @@ The essential rule is: if a == b, then hash(a) == hash(b). The reverse is not re
 
 ---
 
-## FU-030 — Collision resolution and resizing
+## PY-008 / FU-2 — Collision resolution and resizing ![TYPE](https://img.shields.io/badge/TYPE-Internal_mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
 
 **Question (EN):** What happens when dictionary keys collide, and why can insertion or lookup become slower?
 
@@ -1156,7 +974,7 @@ A collision means multiple keys compete for a candidate table position. CPython 
 
 ---
 
-## FU-031 — Mutable custom keys and hash stability
+## PY-008 / FU-3 — Mutable custom keys and hash stability ![TYPE](https://img.shields.io/badge/TYPE-Correctness_and_design-7c3aed) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
 
 **Question (EN):** Why is it dangerous to use a mutable object as a dictionary key, and how should a custom key type be designed?
 
@@ -1170,7 +988,7 @@ If a key's hash changes after insertion, the dictionary may search for it using 
 
 ---
 
-## FU-032 — Hash randomization and production security
+## PY-008 / FU-4 — Hash randomization and production security ![TYPE](https://img.shields.io/badge/TYPE-Security_and_production-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
 
 **Question (EN):** How does hash randomization help protect Python services, and why should hash() not be used as a persistent identifier?
 
@@ -1184,7 +1002,7 @@ Python salts the hashes of str and bytes with a process-specific unpredictable v
 
 ---
 
-# PY-009 — Main Question
+# PY-009 — Main Question ![TYPE](https://img.shields.io/badge/TYPE-MAIN_QUESTION-2563eb) ![LEVEL](https://img.shields.io/badge/LEVEL-L3-7c3aed) ![PRIORITY](https://img.shields.io/badge/PRIORITY-P0-d97706)
 
 **Question (EN):** How does memory management work in Python, and how do reference counting and garbage collection interact?
 
@@ -1220,6 +1038,10 @@ The gc module exposes collection controls, statistics, debugging facilities, and
 **Python 3.15.2 details**
 
 The gc module documents generational collection and exposes per-generation statistics. In Python 3.15, gc.get_stats() and collection callbacks include duration and candidates, which help measure collection cost and work performed. Collection thresholds and generation behavior have changed across recent releases, including changes in 3.14 and 3.14.5; avoid memorizing old threshold behavior as a permanent contract. Consult the documentation for the exact runtime version being deployed.
+
+**Free-threaded CPython distinction**
+
+In a free-threaded build, do not assume that reaching a conventional reference-count value always causes immediate deallocation. CPython uses biased, deferred, and per-thread reference-counting techniques for selected objects; reclamation can be delayed until safe points or a GC run. QSBR can also defer reclamation of some internal data structures. Even after memory is reclaimed by the runtime, the allocator may retain it, so RSS may remain unchanged. These are free-threaded CPython implementation details, not general Python language guarantees.
 
 **Object memory is not the same as process memory**
 
@@ -1257,7 +1079,7 @@ For production memory issues, I separate live-object retention from allocator be
 
 ---
 
-## FU-033 — Reference counting versus cyclic garbage collection
+## PY-009 / FU-1 — Reference counting versus cyclic garbage collection ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
 
 **Question (EN):** What is the difference between reference counting and cyclic garbage collection in CPython?
 
@@ -1275,7 +1097,7 @@ The cyclic garbage collector supplements reference counting. It examines support
 
 ---
 
-## FU-034 — Reference cycles and reachability
+## PY-009 / FU-2 — Reference cycles and reachability ![TYPE](https://img.shields.io/badge/TYPE-Reachability-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
 
 **Question (EN):** Why can a reference cycle remain in memory even when the application no longer uses any of its objects?
 
@@ -1293,7 +1115,7 @@ CPython's cyclic collector detects supported unreachable cycles by examining tra
 
 ---
 
-## FU-035 — del, finalizers, and deterministic cleanup
+## PY-009 / FU-3 — del, finalizers, and deterministic cleanup ![TYPE](https://img.shields.io/badge/TYPE-Resource_lifecycle-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
 
 **Question (EN):** Does using del or defining __del__() guarantee that an object or its resources are released immediately?
 
@@ -1311,7 +1133,7 @@ A __del__() finalizer is not a reliable resource-management mechanism. Its execu
 
 ---
 
-## FU-036 — Diagnosing memory growth in production
+## PY-009 / FU-4 — Diagnosing memory growth in production ![TYPE](https://img.shields.io/badge/TYPE-Production_diagnosis-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
 
 **Question (EN):** How would you investigate steadily increasing memory usage in a long-running Python service?
 
@@ -1329,3 +1151,1297 @@ Also inspect caches, unbounded queues, global registries, task references, closu
 
 “I start by distinguishing live Python allocations, process RSS, and native memory. I compare tracemalloc snapshots under a repeatable workload, inspect object retention and GC statistics, and correlate that with process metrics. I also check common retention sources such as unbounded caches, queues, background tasks, and global registries. I only tune or force garbage collection after identifying a specific GC-related cause and measuring the impact.”
 
+# PY-010 — Main Question ![TYPE](https://img.shields.io/badge/TYPE-MAIN_QUESTION-2563eb) ![LEVEL](https://img.shields.io/badge/LEVEL-L3-7c3aed) ![PRIORITY](https://img.shields.io/badge/PRIORITY-P0-d97706)
+
+**Question (EN):** What are weak references in Python, how do they differ from strong references, and when should they be used?
+
+**What the interviewer evaluates**
+- Understanding the difference between object reachability and ownership through strong references.
+- Correct use of `weakref.ref`, proxies, weak containers, and weak references to bound methods.
+- Awareness of weak-reference support limitations and the interaction with `__slots__`.
+- Ability to design caches and observer registries without accidentally extending object lifetimes.
+- Understanding that weak references do not guarantee immediate collection or deterministic resource cleanup.
+
+**Short Answer**
+
+A strong reference keeps an object reachable and therefore alive. A weak reference provides access to an object without keeping it alive. Python's `weakref` module exposes weak references and weak containers such as `WeakValueDictionary`, `WeakKeyDictionary`, and `WeakSet`. They are useful when a cache, registry, or relationship should not become the reason an object remains in memory. A weak reference must be treated as optional: its referent may disappear, so code should retrieve it once and check whether the result is `None`.
+
+**Explanation**
+
+A Python object can be referenced by variables, attributes, containers, closures, frames, and other runtime structures. An ordinary reference is strong: as long as a strong path keeps an object reachable, the object remains alive.
+
+A weak reference does not contribute to keeping its referent alive. If no strong references remain, the runtime may reclaim the object. A weak reference does not force collection; it simply does not prevent it. The exact time of reclamation is not a portable language guarantee.
+
+**The core weakref APIs**
+
+- `weakref.ref(obj)` creates a weak reference. Calling it returns the referent if it is still alive, or `None` otherwise.
+- `weakref.proxy(obj)` creates a proxy that forwards most operations to the referent. If the referent has disappeared, using the proxy raises `ReferenceError`. Proxies are not hashable.
+- `WeakValueDictionary` stores values weakly. An entry disappears when its value is no longer strongly referenced elsewhere.
+- `WeakKeyDictionary` stores keys weakly. It is useful for associating metadata with objects owned by other parts of an application.
+- `WeakSet` stores its elements weakly.
+- `WeakMethod` supports weak references to bound methods. A normal bound method object is ephemeral, so a plain weak reference to it is generally not the intended solution.
+
+Most application code should prefer weak container abstractions over manually managing low-level weak references.
+
+**Safe dereferencing**
+
+Do not check a weak reference and then call it again later. In concurrent code, the referent could disappear between those operations. Retrieve it once into a local strong reference, check for `None`, and then use that local reference.
+
+**When are weak references useful?**
+
+- **Caches:** a cache should not necessarily own large objects merely because it indexes them. A weak-value cache allows an object to disappear when the rest of the application no longer needs it.
+- **Observer and listener registries:** a publisher can avoid keeping subscribers alive solely because they registered for notifications.
+- **Metadata registries:** a `WeakKeyDictionary` can associate metadata with objects without extending their lifetime.
+- **Object relationships:** a weak back-reference can avoid an ownership path that would otherwise keep a parent or related object alive.
+
+Weak references do not automatically fix memory leaks. If another strong reference remains—for example, in a global list, closure, task, queue, or ordinary dictionary—the object remains alive.
+
+**Weak-reference support is not universal**
+
+Not every Python object can be weakly referenced. Ordinary instances of user-defined classes generally support weak references. Built-in `list` and `dict` instances do not directly support them, although subclasses can. `int` and `tuple` do not support weak references, even when subclassed. If a class defines `__slots__`, it must include `'__weakref__'` to enable weak references unless support is inherited from a base class.
+
+**Weak references and finalization**
+
+A weakref callback can be notified when its referent is about to be finalized, but the referent is no longer available through that weak reference. `weakref.finalize` offers a higher-level finalization API and keeps the finalizer registration alive until the target is collected.
+
+The finalizer callback, its arguments, or a closure must not hold a strong reference to the target, directly or indirectly. Otherwise, the target may never become collectible. Finalization is not deterministic resource management. Use context managers or `try/finally` for files, sockets, database connections, and transactions.
+
+**Senior-Level Perspective**
+
+Treat weak references as a lifetime and ownership tool, not as a general memory optimization switch. Define which component owns an object and which components merely observe or index it. Use weak references only when disappearance is valid behavior and callers can handle it. Test cleanup behavior, concurrency, callback lifetimes, and weak-reference support for the actual types involved. For caches, also define eviction, size limits, and consistency semantics; weak references alone are not a complete cache policy.
+
+**Interview-Ready Answer (EN)**
+
+“A strong reference keeps an object alive because it contributes to the object's reachability. A weak reference lets another component refer to the object without owning its lifetime. Python provides `weakref.ref`, proxies, and weak containers such as `WeakValueDictionary`, `WeakKeyDictionary`, and `WeakSet`.
+
+I use them when a cache, observer registry, or metadata mapping should not keep an otherwise unused object alive. I dereference safely by retrieving the object once and checking for `None`, because the referent may disappear. I also verify that the target type supports weak references and avoid callbacks or finalizers that accidentally retain the target. Weak references do not replace explicit resource cleanup or solve leaks caused by other strong references.”
+
+**References**
+- [Python 3.15.2 Library Reference: weakref — Weak references](https://docs.python.org/3.15/library/weakref.html)
+- [Python 3.15.2 Data Model: object.__del__()](https://docs.python.org/3.15/reference/datamodel.html#object.__del__)
+- [Python 3.15.2 Data Model: __slots__](https://docs.python.org/3.15/reference/datamodel.html#slots)
+
+---
+
+## PY-010 / FU-1 — Strong references versus weak references ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
+
+**Question (EN):** What exactly changes in an object's lifetime when a strong reference is replaced by a weak reference?
+
+**What the interviewer evaluates:** Understanding of reachability, object lifetime, and safe dereferencing.
+
+**Answer**
+
+A strong reference contributes to keeping an object reachable. A weak reference does not. Replacing the last strong reference with a weak reference means that the weak reference alone will not keep the object alive. Once no strong references remain, the runtime may reclaim the object, and calling the weak reference will then return `None`.
+
+The weak reference does not destroy the object itself and does not specify when collection occurs. The important distinction is ownership: a strong reference participates in keeping the object alive; a weak reference provides conditional access without ownership.
+
+Retrieve the referent once into a local variable and check for `None`. That local variable is then a strong reference for as long as it remains bound.
+
+**Interview-Ready Answer (EN)**
+
+“A strong reference contributes to object reachability and keeps the object alive. A weak reference does not. If all strong references disappear, the object may be collected even though weak references to it still exist. I dereference once, check for `None`, and use the resulting local strong reference.”
+
+---
+
+## PY-010 / FU-2 — Weak references in caches and observer registries ![TYPE](https://img.shields.io/badge/TYPE-Application-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
+
+**Question (EN):** When would you choose a `WeakValueDictionary`, a `WeakKeyDictionary`, or a `WeakSet` in a real application?
+
+**What the interviewer evaluates:** Practical API selection and the ability to avoid accidental object retention.
+
+**Answer**
+
+Choose based on which side should be weak:
+
+- `WeakValueDictionary`: keys remain strongly held by the mapping, but values are weak. Use it when the mapping indexes objects that should be collectible when no other component needs them.
+- `WeakKeyDictionary`: keys are weak and values are strong. Use it to attach metadata to objects owned elsewhere without making the mapping the owner of those objects.
+- `WeakSet`: elements are weak. Use it for registries of live objects, such as subscribers, when the registry should not keep them alive.
+
+For an observer system, a weak registry can prevent the publisher from retaining subscribers solely because they registered. The application must still define what happens when a subscriber disappears and manage callback and bound-method lifetimes correctly.
+
+**Interview-Ready Answer (EN)**
+
+“I choose the weak container according to which object should not be owned by the registry. WeakValueDictionary weakens values, WeakKeyDictionary weakens keys, and WeakSet weakens its elements. They are useful for caches, metadata, and observer registries, but they do not replace explicit cache policies or lifecycle design.”
+
+---
+
+## PY-010 / FU-3 — Weak-reference support and implementation edge cases ![TYPE](https://img.shields.io/badge/TYPE-Edge_Cases-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
+
+**Question (EN):** Can every Python object be weakly referenced, and what should you check when a class uses `__slots__`?
+
+**What the interviewer evaluates:** Knowledge of type capabilities and practical constraints of the weakref protocol.
+
+**Answer**
+
+No. Weak-reference support depends on the object's type. Most ordinary user-defined class instances support it, but built-in `list` and `dict` instances do not directly support weak references. Their subclasses can support weak references. Types such as `int` and `tuple` do not become weak-referenceable merely by subclassing.
+
+When a class defines `__slots__`, weak-reference support is disabled unless `'__weakref__'` is included in the slots or inherited from a base class that already provides it.
+
+Also distinguish `weakref.ref` from `weakref.proxy`: a dead reference returns `None`, while using a proxy after its referent is gone raises `ReferenceError`. For bound methods, use `WeakMethod` rather than assuming a plain weak reference will preserve the method binding.
+
+**Interview-Ready Answer (EN)**
+
+“Not every object supports weak references. I verify the target type rather than assuming the protocol is universal. With __slots__, I include __weakref__ when weak-reference support is required and is not inherited. I also account for the different failure behavior of refs and proxies, and use WeakMethod for bound methods.”
+
+---
+
+## PY-010 / FU-4 — Weak references, finalizers, and ownership design ![TYPE](https://img.shields.io/badge/TYPE-Senior_Judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
+
+**Question (EN):** How would you design a weak-reference-based registry without introducing a new memory leak or unreliable cleanup behavior?
+
+**What the interviewer evaluates:** Senior-level lifecycle design, callback safety, and deterministic resource management.
+
+**Answer**
+
+First, define ownership explicitly: the registry observes objects but should not own them. Select a weak container based on whether keys, values, or elements should be weak. Ensure that callbacks, closures, stored arguments, and bound methods do not retain the target strongly, directly or indirectly.
+
+For bound-method subscriptions, use an approach designed for weak methods, such as `WeakMethod`, and remove stale entries safely. Treat object disappearance as a normal state and make notification or lookup code tolerate it.
+
+Do not use weak references as a substitute for closing resources. Use context managers or `try/finally` for deterministic cleanup. If finalization is genuinely needed, `weakref.finalize` is usually a safer high-level tool than a custom `__del__`, but its callback must not retain the target.
+
+**Interview-Ready Answer (EN)**
+
+“I separate ownership from observation. The registry stores weak references so it does not keep subscribers alive, and I ensure callbacks and closures do not capture the target strongly. I handle expired references as a normal case and use WeakMethod for bound-method subscriptions where appropriate. For external resources, I still use context managers; weak references and finalizers are not deterministic resource-management mechanisms.”
+---
+
+## PY-011 — Context Managers, Resource Management & RAII ![TYPE](https://img.shields.io/badge/TYPE-MAIN_QUESTION-2563eb) ![LEVEL](https://img.shields.io/badge/LEVEL-L3-7c3aed) ![PRIORITY](https://img.shields.io/badge/PRIORITY-P0-d97706)
+
+**Main Question (EN):** How do Python context managers work, how do they provide deterministic resource management, and how do they compare with RAII?
+
+**Question (RU):** Как работают контекстные менеджеры Python, как они обеспечивают детерминированное управление ресурсами и чем отличаются от RAII?
+
+**Simple explanation**
+
+A context manager defines what happens when execution enters and leaves a block. The `with` statement makes cleanup predictable: after successful entry, the exit protocol is invoked when the block finishes, including when an exception occurs inside it.
+
+The key distinction is that resource cleanup is tied to the block boundary, not to when the garbage collector eventually destroys the object.
+
+**Protocol and execution lifecycle**
+
+A synchronous context manager implements:
+
+- `__enter__()`: prepares or acquires the resource and returns the value bound by `as`.
+- `__exit__(exc_type, exc_value, traceback)`: performs cleanup and receives exception details if the block exits because of an exception.
+
+The order is: evaluate the context expression, resolve the special methods, call `__enter__()`, bind its return value to `as`, execute the body, then call `__exit__()`.
+
+If `__enter__()` raises, that manager's `__exit__()` is not called. If `__enter__()` returns successfully, `__exit__()` is called when the suite exits. With multiple managers, entry is left-to-right and exit is right-to-left, as with nested `with` statements.
+
+If the body raises, `__exit__()` receives the exception type, value, and traceback. A truthy return value suppresses the exception; a false value or `None` allows it to propagate. On normal exit, all three arguments are `None`, and the return value is ignored. An exception raised by `__exit__()` becomes the new propagating exception.
+
+**Deterministic cleanup versus garbage collection**
+
+Use context managers for resources that require timely release: files, sockets, database connections and transactions, locks, temporary directories, and sessions. Garbage collection and finalizers do not provide a reliable application-level schedule for releasing such resources.
+
+A context manager does not necessarily destroy the Python object at block exit. It ends the managed context and performs the cleanup defined by that manager; the object itself may remain reachable.
+
+**Asynchronous context managers**
+
+An asynchronous context manager implements `__aenter__()` and `__aexit__()` and is used with `async with`. These methods are awaited, allowing asynchronous acquisition and cleanup, for example when managing network or database connections.
+
+**The contextlib toolkit**
+
+- `@contextmanager`: creates a synchronous context manager from a generator that yields exactly once. Code before `yield` enters the context; code after it performs exit/cleanup.
+- `@asynccontextmanager`: asynchronous-generator counterpart for `async with`.
+- `ExitStack`: manages a dynamic collection of synchronous context managers and cleanup callbacks; unwinds them in reverse registration order.
+- `AsyncExitStack`: manages asynchronous contexts and cleanup, and can combine synchronous and asynchronous managers.
+
+**RAII comparison**
+
+RAII in C++ associates resource release with object destruction and scope-bound lifetime. Python's `with` offers a similar practical guarantee for a block, but it is an explicit context-management protocol rather than a guarantee that object destruction occurs at block exit. Python does not have Rust-style borrow checking or ownership guarantees.
+
+**Senior-level design guidance**
+
+Acquire resources as close as possible to the scope that owns them. Register cleanup immediately after acquisition, preserve exception propagation by default, and use `ExitStack` when acquisition is conditional or dynamic. Do not use `__del__` or garbage-collection timing as the primary cleanup strategy for external resources.
+
+**Interview Answer (EN)**
+
+“Python context managers provide deterministic setup and cleanup around a block through the `with` statement. A synchronous manager implements `__enter__` and `__exit__`; the asynchronous protocol uses `__aenter__` and `__aexit__` with `async with`. Once entry succeeds, the exit method is called whether the block completes normally or raises. It receives exception details and can suppress an exception only by returning a truthy value. I use context managers for files, locks, transactions, sockets, and other external resources rather than relying on garbage collection or finalizers. Compared with C++ RAII, Python provides explicit block-scoped cleanup through a protocol; it does not require the managed object itself to be destroyed when the block ends.”
+
+**Official references (Python 3.15.2)**
+
+- [The with statement](https://docs.python.org/3.15/reference/compound_stmts.html#the-with-statement)
+- [With Statement Context Managers](https://docs.python.org/3.15/reference/datamodel.html#with-statement-context-managers)
+- [contextlib](https://docs.python.org/3.15/library/contextlib.html)
+
+### PY-011 / FU-1 — Mechanism: What exactly happens when a `with` block exits because of an exception? ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
+
+**Question (EN):** What exactly happens when a `with` block exits because of an exception?
+
+**Question (RU):** Что именно происходит, когда блок `with` завершается из-за исключения?
+
+**Answer**
+
+Python invokes `__exit__()` with the exception type, exception instance, and traceback. If the method returns a truthy value, the exception is suppressed and execution continues after the `with` statement. If it returns a false value or `None`, the exception propagates. If no exception occurred, `__exit__()` receives three `None` values and its return value is ignored. The method should normally not re-raise the supplied exception; propagation is controlled by its return value.
+
+**Interview-Ready Answer (EN)**
+
+“On exceptional exit, Python passes the exception details to `__exit__`. A truthy return value suppresses the exception; otherwise it propagates. On normal exit, the method receives three `None` values. I preserve propagation by default and suppress only explicitly expected exceptions.”
+
+### PY-011 / FU-2 — Application: When should you use `ExitStack` instead of nested `with` statements? ![TYPE](https://img.shields.io/badge/TYPE-Application-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
+
+**Question (EN):** When should you use `ExitStack` instead of nested `with` statements?
+
+**Question (RU):** Когда следует использовать `ExitStack` вместо вложенных операторов `with`?
+
+**Answer**
+
+Use `ExitStack` when the number of resources is dynamic, acquisition is conditional, or cleanup callbacks must be registered incrementally. Each successfully entered context or registered callback is unwound in reverse order. This also protects already-acquired resources if a later acquisition fails. For a small, fixed set of resources, ordinary nested or multi-item `with` statements are clearer.
+
+**Interview-Ready Answer (EN)**
+
+“I choose `ExitStack` when resource acquisition is dynamic or conditional. It lets me register cleanup immediately after each successful acquisition and unwinds the stack in reverse order, including when a later acquisition fails. For a fixed small set, regular `with` statements are simpler.”
+
+### PY-011 / FU-3 — Edge cases: What happens if `__enter__()` fails, or if `__exit__()` itself raises? ![TYPE](https://img.shields.io/badge/TYPE-Edge_Cases-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
+
+**Question (EN):** What happens if `__enter__()` fails, or if `__exit__()` itself raises?
+
+**Question (RU):** Что происходит, если `__enter__()` завершается ошибкой или если исключение возникает внутри самого `__exit__()`?
+
+**Answer**
+
+If `__enter__()` raises before returning, the context manager has not successfully entered, so its `__exit__()` is not invoked automatically. Therefore, an `__enter__()` implementation that acquires one resource and then performs another fallible operation must clean up the first resource itself if the later operation fails. `ExitStack` can help register cleanup during partial acquisition. If `__exit__()` raises while handling an exception from the body, the new exception propagates and the original exception is generally retained as its context.
+
+**Interview-Ready Answer (EN)**
+
+“Automatic exit is guaranteed only after `__enter__` returns successfully. Partial acquisition inside `__enter__` therefore needs its own rollback or an `ExitStack`. If `__exit__` raises, that new failure propagates, with the earlier exception available through exception chaining.”
+
+### PY-011 / FU-4 — Senior judgment: How would you design reliable resource management in a synchronous and asynchronous backend? ![TYPE](https://img.shields.io/badge/TYPE-Senior_Judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
+
+**Question (EN):** How would you design reliable resource management in a synchronous and asynchronous backend?
+
+**Question (RU):** Как спроектировать надёжное управление ресурсами в синхронном и асинхронном backend-приложении?
+
+**Answer**
+
+Define ownership and lifetime at the layer that acquires the resource. Use synchronous context managers for synchronous resources and asynchronous context managers for resources whose acquisition or cleanup requires awaiting. Keep transaction boundaries explicit, release locks in all exit paths, and register cleanup immediately after acquisition. Use `ExitStack` or `AsyncExitStack` for optional or variable resource sets. Preserve unexpected exceptions, make cleanup idempotent where practical, and do not rely on garbage collection or `__del__` for timely release. Also ensure that a resource is not used after its context has ended.
+
+**Interview-Ready Answer (EN)**
+
+“I make resource ownership and lifetime explicit. Synchronous resources use `with`; asynchronous resources use `async with`. I keep database transaction and lock scopes narrow, register cleanup immediately, and use the appropriate exit stack for dynamic acquisition. Unexpected exceptions propagate, cleanup is safe on every exit path, and no correctness property depends on garbage-collection timing.”
+---
+
+## PY-012 — Exception Handling, Exception Hierarchy & Exception Groups ![TYPE](https://img.shields.io/badge/TYPE-MAIN_QUESTION-2563eb) ![LEVEL](https://img.shields.io/badge/LEVEL-L3-7c3aed) ![PRIORITY](https://img.shields.io/badge/PRIORITY-P0-d97706)
+
+**Main Question (EN):** Explain Python's exception hierarchy and exception-handling model. How do propagation, exception chaining, and exception groups work?
+
+**Question (RU):** Объясните иерархию исключений и модель обработки исключений в Python. Как работают распространение исключений, связывание причин и группы исключений?
+
+**Simple explanation**
+
+An exception is a control-flow mechanism used to report an error or another exceptional condition. Python raises it where the condition is detected and searches outward through the active call stack for a matching handler. If no handler is found, the exception remains unhandled and terminates the current execution path.
+
+Senior-level exception handling is about choosing the correct boundary: handle errors where the application can recover or translate them meaningfully, preserve the original cause, and allow unexpected failures to propagate.
+
+**Exception hierarchy**
+
+All Python exceptions derive from `BaseException`. The two important branches are:
+
+- `Exception`: ordinary application and runtime errors. Most application-specific exceptions should derive from this class.
+- Direct `BaseException` branches include `KeyboardInterrupt`, `SystemExit`, and `GeneratorExit`. These represent process interruption, termination, or generator shutdown rather than ordinary application failures.
+
+Do not normally catch `BaseException` in application code: doing so can intercept shutdown and interruption signals. Prefer specific exception classes; use `Exception` only at deliberate broad boundaries such as task supervision or a top-level request boundary.
+
+**The try / except / else / finally model**
+
+- `try`: contains the operations whose exceptions are being considered.
+- `except`: handles a matching exception raised in the `try` suite, including one raised by a function called from it.
+- `else`: runs only if the `try` suite completes without raising. It keeps success-only operations outside the protected region, avoiding accidental handling of their errors.
+- `finally`: runs as the construct exits, whether an exception occurred or not; it is intended for cleanup.
+
+An exception raised inside an `except` or `else` suite is not handled by another `except` clause belonging to the same `try`. It can be handled by an outer construct. A `finally` suite still runs during exit. Avoid `return`, `break`, or `continue` in `finally`: they can discard a pending exception or override a return value; Python 3.14+ emits a SyntaxWarning for these control-flow statements in `finally`.
+
+**Propagation and the termination model**
+
+If a function does not handle an exception, it propagates to its caller, then to the caller's caller, until a matching handler is found. Python uses termination-style exception handling: control leaves the failing operation and transfers to a handler. The handler does not automatically repair the failed operation or resume it at the exact failing instruction.
+
+At an architectural level, a repository may raise a database-related exception, a service may translate it into a domain-level exception, and an API boundary may map that into an appropriate protocol response. Translate only when the new abstraction adds meaning; do not hide unexpected errors or erase useful diagnostics.
+
+**Exception chaining**
+
+When a new exception is raised while another is being handled, Python normally records the previous exception as `__context__`.
+
+Use explicit chaining when translating an error and its direct cause matters:
+
+- `raise NewError(...) from original_error` sets `__cause__`.
+- `raise NewError(...) from None` suppresses the display of the implicit context in the traceback; the original context remains available for introspection.
+
+Preserve causal information when crossing abstraction boundaries. It is valuable for debugging, observability, and incident analysis.
+
+**ExceptionGroup and except***
+
+Added in Python 3.11, exception groups represent multiple exceptions that need to be reported together, commonly when concurrent tasks fail independently.
+
+- `ExceptionGroup` derives from `Exception` and contains only `Exception` instances.
+- `BaseExceptionGroup` derives from `BaseException` and can contain any `BaseException`. Its constructor produces an `ExceptionGroup` automatically when all members are ordinary `Exception` instances.
+- `except*` handles matching subgroups by exception type. Unmatched members remain in the group and continue propagating after the matching handlers run.
+
+A single `try` statement cannot mix `except` and `except*` clauses. Unlike ordinary `except`, `except*` can execute more than one matching handler for different subgroups of the same group.
+
+**User-defined exceptions**
+
+Define application exceptions by deriving from `Exception` or a suitable application-specific subclass. Keep the hierarchy purposeful and stable. Exception types should communicate meaningful categories that callers can handle, while attributes can carry structured context such as an entity identifier or operation name. Prefer single inheritance from built-in exception types; multiple inheritance across built-in exception classes can cause layout conflicts.
+
+**Senior-level design guidance**
+
+1. Catch the narrowest useful exception type.
+2. Catch an exception only where recovery, translation, or meaningful handling is possible.
+3. Preserve the original exception using chaining when translating it.
+4. Do not silently swallow unexpected failures.
+5. Keep cleanup in `finally` or context managers, not in ad hoc exception handlers alone.
+6. Use exception groups when multiple independent failures must be represented; use `except*` to handle their categories selectively.
+7. At service/API boundaries, map domain failures to stable external errors without leaking internal stack traces or sensitive implementation details.
+
+**Interview Answer (EN)**
+
+“Python exceptions derive from `BaseException`, with `Exception` as the base for ordinary application errors. I normally catch specific exception types and avoid catching `BaseException`, because that can intercept signals such as `KeyboardInterrupt` and `SystemExit`. A `try` suite is handled by matching `except` clauses; `else` runs only on success, and `finally` is for cleanup. Unhandled exceptions propagate up the call stack. When translating an exception across architectural layers, I preserve its cause with `raise... from...`. For multiple independent failures, Python 3.11 introduced `ExceptionGroup` and `except*`, which allow selective handling of subgroups. My general rule is to handle errors where recovery or meaningful translation is possible and preserve unexpected failures and their diagnostic context.”
+
+**Official references (Python 3.15.2)**
+
+- [Built-in Exceptions and hierarchy](https://docs.python.org/3.15/library/exceptions.html)
+- [Errors and Exceptions tutorial](https://docs.python.org/3.15/tutorial/errors.html)
+- [The try statement and except*](https://docs.python.org/3.15/reference/compound_stmts.html#the-try-statement)
+- [Execution model — Exceptions](https://docs.python.org/3.15/reference/executionmodel.html#exceptions)
+
+### PY-012 / FU-1 — Mechanism: Why should application code usually catch `Exception` rather than `BaseException`? ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
+
+**Question (EN):** Why should application code usually catch `Exception` rather than `BaseException`?
+
+**Question (RU):** Почему прикладной код обычно должен перехватывать `Exception`, а не `BaseException`?
+
+**Answer**
+
+`Exception` represents ordinary errors that application code may reasonably handle. `KeyboardInterrupt`, `SystemExit`, and `GeneratorExit` are direct branches of `BaseException`, not subclasses of `Exception`. Catching `BaseException` broadly can prevent normal interruption, process termination, or generator shutdown. Catch specific errors whenever possible; use a broad `Exception` handler only at a deliberate boundary, and re-raise when the failure cannot be handled.
+
+**Interview-Ready Answer (EN)**
+
+“I catch specific exceptions whenever possible. `Exception` covers ordinary application failures, while `BaseException` also includes control-flow signals such as `KeyboardInterrupt` and `SystemExit`. A broad `BaseException` handler can interfere with shutdown and interruption, so I avoid it in normal application code.”
+
+### PY-012 / FU-2 — Application: How should a backend translate a low-level exception into a domain-level or API error? ![TYPE](https://img.shields.io/badge/TYPE-Application-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
+
+**Question (EN):** How should a backend translate a low-level exception into a domain-level or API error?
+
+**Question (RU):** Как backend должен преобразовывать низкоуровневое исключение в доменную ошибку или ошибку API?
+
+**Answer**
+
+Translate at an abstraction boundary where the new layer can add meaning. For example, a repository can expose a database failure as a domain-specific persistence error, and the API boundary can map a known domain error to a stable HTTP response. Use explicit exception chaining, such as `raise DomainError(...) from exc`, to preserve the underlying cause. Do not convert every unknown exception into a client error: unexpected failures should remain visible to logging and error monitoring and normally become a generic server error externally.
+
+**Interview-Ready Answer (EN)**
+
+“I translate exceptions at architectural boundaries where the new abstraction adds useful meaning. I preserve the original cause with explicit chaining, map known domain errors to stable API responses, and avoid exposing internal details or misclassifying unexpected failures as client errors.”
+
+### PY-012 / FU-3 — Edge cases: What is the difference between `__cause__`, `__context__`, and `raise... from None`? ![TYPE](https://img.shields.io/badge/TYPE-Edge_Cases-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
+
+**Question (EN):** What is the difference between `__cause__`, `__context__`, and `raise... from None`?
+
+**Question (RU):** В чём разница между `__cause__`, `__context__` и `raise... from None`?
+
+**Answer**
+
+`__context__` is set automatically when a new exception is raised while another exception is being handled. `__cause__` is set explicitly by `raise new_error from original_error`, identifying the direct cause. `raise new_error from None` sets the context-suppression flag so the implicit context is not displayed in the traceback; it does not erase the original context from the exception object. Use explicit causes when translating errors; suppress context only when hiding it from the displayed traceback is intentional and safe.
+
+**Interview-Ready Answer (EN)**
+
+“`__context__` records an exception that was active when another exception was raised. `__cause__` records an explicit cause supplied with `raise... from...`. `from None` suppresses display of the implicit context but does not remove it from the exception object.”
+
+### PY-012 / FU-4 — Senior judgment: When should you use `ExceptionGroup` and `except*` in concurrent systems? ![TYPE](https://img.shields.io/badge/TYPE-Senior_Judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
+
+**Question (EN):** When should you use `ExceptionGroup` and `except*` in concurrent systems?
+
+**Question (RU):** Когда в конкурентных системах следует использовать `ExceptionGroup` и `except*`?
+
+**Answer**
+
+Use exception groups when multiple independent operations can fail and the system needs to report more than one failure instead of discarding all but the first. This commonly occurs in structured concurrency and task groups. Use `except*` when different exception categories require different handling policies: matching subgroups are handled separately while unmatched exceptions continue propagating. Do not use groups merely to wrap a single ordinary failure; preserve cancellation and process-control semantics, and avoid suppressing failures that the caller needs to know about.
+
+**Interview-Ready Answer (EN)**
+
+“I use `ExceptionGroup` when several independent tasks can fail and all relevant failures need to be reported. I use `except*` to handle matching categories independently while allowing unmatched failures to propagate. This is particularly useful with structured concurrency, where a task group may surface multiple errors.”
+
+## PY-013 — Iterators, Generators & Lazy Evaluation ![TYPE](https://img.shields.io/badge/TYPE-MAIN_QUESTION-2563eb) ![LEVEL](https://img.shields.io/badge/LEVEL-L3-7c3aed) ![PRIORITY](https://img.shields.io/badge/PRIORITY-P0-d97706)
+
+**Main Question:** Explain Python's iteration model. What is the difference between an iterable, an iterator, and a generator, and how do generators enable lazy evaluation?
+
+**Core explanation**
+
+An **iterable** is an object that provides an iterator, normally through `__iter__()`. An **iterator** implements `__iter__()` (returning itself) and `__next__()` (returning the next item or raising `StopIteration`). An iterable is a source from which iteration can be requested; an iterator is the stateful object that performs the traversal. Reusable containers commonly create a fresh iterator on each call to `iter()`, while an iterator is normally consumed as it advances. Once exhausted, a conforming iterator must continue raising `StopIteration`.
+
+A **generator** is a specialized iterator produced by a generator function or generator expression. A function containing `yield` is a generator function. Calling it creates a generator object without immediately executing the function body. Execution starts when the generator is advanced. At each `yield`, the generator produces a value and suspends while retaining its local bindings, instruction position, evaluation state, and exception-handling state. A later `next()` resumes it; the value of the suspended `yield` expression is `None` when resumed through `next()`.
+
+**Lazy evaluation** computes values only when requested. A list comprehension eagerly creates a list; a generator expression produces values incrementally. This can reduce intermediate memory use and enable streaming pipelines, but does not guarantee bounded memory for the whole application: a consumer that stores every result still materializes the data. Laziness also changes when side effects and exceptions occur.
+
+Generators support `send()`, `throw()`, and `close()`. `send(value)` resumes a started generator and makes the suspended `yield` expression evaluate to that value; a non-`None` value cannot be sent before the generator has started. `throw()` raises an exception at the suspension point. `close()` injects `GeneratorExit` to initiate cleanup. A generator should not yield another value while handling closure.
+
+`yield from` delegates iteration and generator control operations to a subiterator. It forwards relevant `send()`, `throw()`, and close behavior and evaluates to the subgenerator's return value when that subgenerator terminates. A `return value` from a generator is conveyed through `StopIteration.value`. Under PEP 479, a `StopIteration` escaping from inside generator code is converted to `RuntimeError`, preventing accidental silent termination.
+
+Asynchronous iteration is a separate protocol: `__aiter__()` returns an asynchronous iterator, `__anext__()` returns an awaitable for the next item, and `StopAsyncIteration` signals exhaustion. Asynchronous generators are defined with `async def` containing `yield` and are consumed with `async for`; they are not ordinary synchronous generators. If an asynchronous generator exits early, its asynchronous cleanup must be driven, normally through `aclose()` or the event loop's async-generator finalization machinery.
+
+**Production considerations**
+
+Generators are useful for large files, paginated APIs, ETL, database result streaming, and incremental transformations. Consider one-shot consumption, exception timing, side effects, cancellation, backpressure, and whether the consumer buffers results. If a generator owns a file, cursor, transaction, or network resource, use deterministic cleanup with context managers or explicit close semantics. Do not rely on garbage collection for timely release. For async generators, handle early exit and cancellation and ensure `aclose()` is awaited where required.
+
+**Interview-Ready Answer (EN)**
+
+“An iterable provides an iterator, while an iterator maintains traversal state and produces values through `__next__()`. A generator is a specialized iterator whose execution can suspend at `yield` and resume later, retaining its local state. Generator expressions enable lazy, incremental processing and can reduce intermediate memory use, which is useful for streaming and large datasets. However, laziness does not guarantee bounded memory or backpressure across the whole pipeline. In production I also account for one-shot consumption, exception and side-effect timing, cancellation, and deterministic cleanup of resources held by generators.”
+
+**Follow-ups**
+
+### PY-013 / FU-1 — Mechanism: What is the difference between an iterable and an iterator, and why is an iterator usually stateful? ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
+
+**Question (EN):** What is the difference between an iterable and an iterator, and why is an iterator usually stateful?
+
+**Question (RU):** В чём разница между iterable и iterator и почему итератор обычно хранит состояние?
+
+**Answer**
+
+An iterable provides a way to obtain an iterator through `__iter__()`. An iterator implements `__next__()` and maintains its current traversal state. A reusable iterable can commonly create multiple independent iterators, while a particular iterator is normally consumed as it advances. Once `StopIteration` has been raised, a conforming iterator continues to raise it.
+
+**Interview-Ready Answer (EN)**
+
+“An iterable provides an iterator, while an iterator produces values through `__next__()` and maintains traversal state. A reusable iterable can usually create multiple independent iterators, whereas a particular iterator is generally consumed as it advances.”
+
+### PY-013 / FU-2 — Application: When would you choose a generator instead of a list in a backend data-processing pipeline? ![TYPE](https://img.shields.io/badge/TYPE-Application-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
+
+**Question (EN):** When would you choose a generator instead of a list in a backend data-processing pipeline?
+
+**Question (RU):** Когда в backend-пайплайне обработки данных следует выбрать генератор вместо списка?
+
+**Answer**
+
+Choose a generator when data can be processed incrementally and the complete result does not need to be retained at once: large files, ETL, paginated API responses, or streaming transformations. It reduces intermediate materialization and lets a consumer process each item as it arrives. It does not automatically provide backpressure, bounded memory for the whole system, or repeatable traversal; those properties depend on the consumer and pipeline design.
+
+**Interview-Ready Answer (EN)**
+
+“I choose generators when data can be processed incrementally and the full result does not need to be retained. They reduce intermediate memory usage and support streaming pipelines, but I still design consumer behavior, backpressure, error handling, and resource cleanup explicitly.”
+
+### PY-013 / FU-3 — Edge cases: What happens when `StopIteration` is raised inside a generator, and how does `yield from` handle delegation? ![TYPE](https://img.shields.io/badge/TYPE-Edge_Cases-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
+
+**Question (EN):** What happens when `StopIteration` is raised inside a generator, and how does `yield from` handle delegation?
+
+**Question (RU):** Что происходит, если внутри генератора возникает `StopIteration`, и как `yield from` выполняет делегирование?
+
+**Answer**
+
+Under PEP 479, a `StopIteration` that escapes from generator code is transformed into `RuntimeError`, preventing an internal error from looking like normal exhaustion. `yield from` delegates iteration to a subiterator and forwards generator control operations. If the subgenerator returns a value, that value becomes the result of the `yield from` expression.
+
+**Interview-Ready Answer (EN)**
+
+“PEP 479 converts an escaping `StopIteration` raised inside a generator into `RuntimeError`, preventing accidental silent termination. `yield from` delegates iteration and generator control operations to a subiterator, and it can capture the subgenerator's return value.”
+
+### PY-013 / FU-4 — Senior judgment: What production risks should you consider when using generators and asynchronous generators for resource-backed streams? ![TYPE](https://img.shields.io/badge/TYPE-Senior_Judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
+
+**Question (EN):** What production risks should you consider when using generators and asynchronous generators for resource-backed streams?
+
+**Question (RU):** Какие production-риски необходимо учитывать при использовании генераторов и асинхронных генераторов для потоков, связанных с ресурсами?
+
+**Answer**
+
+Account for early termination, exceptions, task cancellation, connection closure, and execution of `finally` blocks. A generator may retain a file descriptor, transaction, cursor, or network connection while suspended. Use context managers or explicit close semantics for deterministic synchronous cleanup. For asynchronous generators, ensure early-exit cleanup is driven with `aclose()` and awaited where required. Do not depend on nondeterministic garbage-collection finalization for timely resource release.
+
+**Interview-Ready Answer (EN)**
+
+“For resource-backed generators, I explicitly handle early termination, exceptions, cancellation, and cleanup. I use context managers for deterministic synchronous resource management and ensure asynchronous generators are closed with `aclose()` or an equivalent lifecycle mechanism. I never rely on garbage collection for timely resource release.”
+
+## PY-014 — Decorators, Closures & Function Wrapping ![TYPE](https://img.shields.io/badge/TYPE-MAIN_QUESTION-2563eb) ![LEVEL](https://img.shields.io/badge/LEVEL-L3-7c3aed) ![PRIORITY](https://img.shields.io/badge/PRIORITY-P0-d97706)
+
+**Main Question:** Explain how Python decorators work. How are decorators related to closures and function wrappers, and what production concerns should you consider?
+
+**Core explanation**
+
+A **decorator** is a callable that takes a function or another callable and returns a callable, often one that adds or changes behavior. The `@` syntax is syntactic sugar: applying `@decorator` to a function is broadly equivalent to defining the function and then binding `function_name = decorator(function_name)`. The returned object, not necessarily the original function, is bound to the function's name.
+
+Decorator expressions are evaluated when the function definition executes, in the containing scope. With stacked decorators, application is nested: `@outer` above `@inner` is equivalent to `function = outer(inner(function))`. Thus the inner decorator is applied first, and the outer decorator receives its result. The wrapper logic normally runs when the decorated callable is invoked, not when the decorator is applied.
+
+A **closure** is a function together with access to variables from an enclosing function scope. The inner function can continue using those bindings after the outer function has returned. A closure retains access to the binding, not merely an immutable snapshot of its value. `nonlocal` allows rebinding a name in the nearest enclosing function scope; `global` refers to the module-level namespace. Mutable closure state can persist across calls and can be shared by multiple invocations of the same wrapper.
+
+A **wrapper** is the callable returned by a decorator. It commonly accepts `*args` and `**kwargs`, performs additional work, calls the wrapped callable, and returns or transforms its result. A well-designed wrapper should preserve the wrapped callable's observable behavior unless changing it is intentional. It should normally propagate exceptions unchanged unless the decorator has an explicit exception policy.
+
+Use `functools.wraps` on the wrapper. It applies `update_wrapper()`, copying the standard metadata attributes (including name, qualified name, module, documentation, annotations and type parameters according to the current defaults), updating the wrapper's attribute dictionary, and adding `__wrapped__` pointing to the wrapped callable. This supports introspection, documentation tools, debugging, and access to the original callable. It does not make every arbitrary wrapper's runtime signature or behavior identical to the original.
+
+A **decorator factory** is used when the decorator needs configuration. The outer function accepts configuration and returns the actual decorator; that decorator accepts the target callable and returns its wrapper. This pattern supports configurable retry limits, cache policies, timeouts, and authorization rules.
+
+**Production considerations**
+
+- Preserve arguments, return values, exceptions, and metadata intentionally.
+- Be explicit about decorator stacking order. For example, authorization must not be bypassed by returning a protected cached result before checking the caller's permissions.
+- For `async def` targets, use an async-aware wrapper when logic must surround completion: it should await the coroutine and handle its result, exceptions, or cancellation at the correct point. A synchronous wrapper that merely returns a coroutine may run its own post-call logic before the coroutine executes.
+- Treat closure state as shared state when the same wrapper is called repeatedly. Define ownership, lifecycle, and synchronization where concurrent calls can overlap.
+- Avoid expensive side effects during module import or function definition unless that timing is intentional.
+- Document retry behavior and require idempotency or an explicit safety policy before automatically repeating operations.
+
+**Interview-Ready Answer (EN)**
+
+“A decorator is a callable transformation applied to a function when its definition executes. The returned callable is bound to the function's name and often uses a wrapper to add behavior such as logging, authorization, caching, or retries. Closures let wrappers retain access to configuration or state from an enclosing scope, while `nonlocal` can rebind that state. I use `functools.wraps` to preserve metadata and `__wrapped__`, and I carefully review decorator order, exception and return-value behavior, async handling, and concurrency around mutable closure state.”
+
+**Follow-ups**
+
+### PY-014 / FU-1 — Mechanism: How does Python apply a decorator, and when is the decorator executed? ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
+
+**Question (EN):** How does Python apply a decorator, and when is the decorator executed?
+
+**Question (RU):** Как Python применяет декоратор и когда именно он выполняется?
+
+**Answer**
+
+When the function definition executes, Python evaluates the decorator expressions and applies them to the newly created function object. The result of the final application is bound to the function's name. Therefore, the decorator itself is applied at definition time, while the wrapper's operational logic normally runs on subsequent calls.
+
+**Interview-Ready Answer (EN)**
+
+“A decorator expression is evaluated when the function definition executes. The resulting callable is applied to the function object, and its return value is bound to the function name. The wrapper's runtime logic executes when the decorated callable is invoked.”
+
+### PY-014 / FU-2 — Application: How would you implement a configurable decorator for logging, retries, or access control? ![TYPE](https://img.shields.io/badge/TYPE-Application-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
+
+**Question (EN):** How would you implement a configurable decorator for logging, retries, or access control?
+
+**Question (RU):** Как спроектировать настраиваемый декоратор для логирования, повторных попыток или контроля доступа?
+
+**Answer**
+
+Use a decorator factory: an outer function accepts configuration and returns a decorator; the decorator receives the target callable and creates a wrapper. The wrapper should use `functools.wraps`, forward arguments correctly, and preserve the intended return and exception behavior. Retry logic needs a bounded attempt policy and an idempotency strategy; access-control checks must happen before the protected operation or any protected cached result is returned.
+
+**Interview-Ready Answer (EN)**
+
+“I use a decorator factory when configuration is required. The returned decorator wraps the target callable, preserves metadata with `functools.wraps`, and forwards arguments, results, and exceptions correctly. I also define explicit policies for retry limits, idempotency, and authorization order.”
+
+### PY-014 / FU-3 — Edge cases: What is a closure, how does `nonlocal` work, and what problems can mutable closure state introduce? ![TYPE](https://img.shields.io/badge/TYPE-Edge_Cases-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
+
+**Question (EN):** What is a closure, how does `nonlocal` work, and what problems can mutable closure state introduce?
+
+**Question (RU):** Что такое замыкание, как работает `nonlocal` и какие проблемы может создавать изменяемое состояние замыкания?
+
+**Answer**
+
+A closure retains access to variables from an enclosing function scope. `nonlocal` allows rebinding a name in the nearest enclosing function scope. Mutable state can unexpectedly be shared across calls and wrapper instances that share the same closure. Under concurrent access it can introduce race conditions, so ownership, lifecycle, and synchronization must be explicit.
+
+**Interview-Ready Answer (EN)**
+
+“A closure retains access to variables from an enclosing function scope. `nonlocal` allows rebinding an existing variable in the nearest enclosing function scope. Mutable closure state can be shared across calls and may introduce race conditions, so I make its lifecycle and concurrency guarantees explicit.”
+
+### PY-014 / FU-4 — Senior judgment: Why are `functools.wraps`, decorator order, and async-aware wrappers important in production systems? ![TYPE](https://img.shields.io/badge/TYPE-Senior_Judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
+
+**Question (EN):** Why are `functools.wraps`, decorator order, and async-aware wrappers important in production systems?
+
+**Question (RU):** Почему `functools.wraps`, порядок декораторов и поддержка async важны в production-системах?
+
+**Answer**
+
+`wraps` preserves important metadata and adds `__wrapped__`, supporting introspection and tooling. Decorator order determines behavior nesting and can affect security: for example, authorization should run before a protected cached result is returned. For an `async def` target, an async wrapper should await the coroutine if it needs to surround the operation's actual completion; otherwise post-call logic may run before the operation executes.
+
+**Interview-Ready Answer (EN)**
+
+“`functools.wraps` preserves metadata and exposes the wrapped callable for introspection. Decorator order defines execution nesting and can affect security and caching semantics. For asynchronous functions, the wrapper must await the coroutine when it needs to observe or control the operation's completion.”
+---
+
+# PY-015 — Scope, LEGB Rule & Name Resolution ![TYPE](https://img.shields.io/badge/TYPE-MAIN_QUESTION-2563eb) ![LEVEL](https://img.shields.io/badge/LEVEL-L3-7c3aed) ![PRIORITY](https://img.shields.io/badge/PRIORITY-P0-d97706)
+
+**Question (EN):** Explain Python's scope rules, the LEGB rule, and how name resolution works.
+
+## Understand the idea
+
+A name is a binding to an object, not a box that contains a value. Name resolution is the process Python uses to determine which binding an expression refers to.
+
+For ordinary name lookup in a function, the LEGB mnemonic describes the search order:
+
+- **Local:** the current function's local scope.
+- **Enclosing:** the local scopes of enclosing functions, from nearest to farthest.
+- **Global:** the current module's global namespace.
+- **Built-in:** the built-in namespace.
+
+If no binding is found, Python raises `NameError`.
+
+## How Python determines local names
+
+Python determines the scope of names from the code block's binding operations. If a name is bound anywhere in a function block, it is treated as local throughout that block unless declared `global` or `nonlocal`. This is a compile-time scope decision, not a decision made only when the assignment line executes.
+
+Consequently, reading that local name before its assignment raises `UnboundLocalError`. This is a subclass of `NameError`.
+
+## global and nonlocal
+
+- `global name` makes assignments to the name target the module's global namespace. A function can read a global name without declaring it global; the declaration is needed when rebinding it.
+- `nonlocal name` makes the name refer to an existing binding in the nearest enclosing function scope. It cannot refer to a module-level global. If no suitable enclosing binding exists, compilation raises `SyntaxError`.
+
+Both statements are parser directives applying to the current code block, not runtime commands that dynamically change another block's scope.
+
+## Closures and late binding
+
+A closure lets an inner function retain access to variables from an enclosing function after that outer function has returned. Conceptually, it retains access to the binding, not necessarily a snapshot of the value.
+
+Free-variable lookup occurs when the inner function executes. Therefore, if the enclosing binding changes before that call, the inner function observes the updated value. This is called late binding and explains common loop-created-lambda surprises.
+
+## Class scope and special cases
+
+A class body's namespace becomes the class attribute namespace, but it is not an enclosing lexical scope for methods. A method does not resolve a bare name by searching the class namespace as though it were an enclosing function. Access class data through an instance or class attribute.
+
+Python 3.12+ annotation scopes are a deliberate exception: they can access their enclosing class namespace. Comprehensions also have their own scope rules; their iteration variables do not normally leak into the containing scope.
+
+The LEGB mnemonic is a useful model for ordinary function lookup, not a complete description of every construct. Class blocks, annotation scopes, and dynamic execution through `exec()` or `eval()` have special rules. In particular, `eval()` and `exec()` do not resolve free variables through the nearest enclosing function scope in the same way as a nested function.
+
+## Interview-ready answer (EN)
+
+“Python resolves ordinary function-level names using the LEGB model: Local, Enclosing, Global, and Built-in. The compiler determines whether a name is local by examining binding operations in the function block. Therefore, assigning to a name anywhere in a function normally makes it local throughout that function, unless it is declared global or nonlocal. Reading it before the assignment can raise UnboundLocalError.
+
+The global statement directs rebinding to the module namespace, while nonlocal targets an existing binding in the nearest enclosing function scope. Closures preserve access to enclosing bindings, and free-variable lookup happens when the closure executes, which explains late binding. I also account for special cases such as class namespaces, annotation scopes, and dynamic execution rather than treating LEGB as a universal lookup algorithm.”
+
+## What to remember
+
+- LEGB is the normal function name-lookup model.
+- A binding anywhere in a function block usually makes that name local throughout the block.
+- `global` targets the module namespace; `nonlocal` targets the nearest enclosing function binding.
+- Closures retain access to bindings; they do not necessarily capture value snapshots.
+- Class namespaces are not ordinary enclosing scopes for methods.
+
+## References
+
+- Python 3.15.2 Language Reference: [Execution model](https://docs.python.org/3.15/reference/executionmodel.html)
+- [global and nonlocal statements](https://docs.python.org/3.15/reference/simple_stmts.html#the-global-statement)
+- [Compound statements](https://docs.python.org/3.15/reference/compound_stmts.html)
+
+---
+
+## PY-015 / FU-1 — How does Python apply LEGB, and how are local names determined? ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
+
+**Question (EN):** How does Python apply the LEGB lookup order, and how does it determine whether a name is local?
+
+**Explanation**
+
+For ordinary function lookup, Python checks the current local scope, enclosing function scopes, the module globals, and then built-ins. However, the compiler classifies names in a function block by examining binding operations such as assignment, import, function definition, and relevant binding constructs. A name assigned anywhere in that block is local throughout the block unless declared global or nonlocal.
+
+**Interview answer (EN)**
+
+“LEGB describes the ordinary lookup order: Local, Enclosing, Global, and Built-in. Local-variable classification is determined from the function block's binding operations, not from the runtime path taken. That is why a read before a conditional assignment can raise UnboundLocalError instead of falling back to a global binding.”
+
+---
+
+## PY-015 / FU-2 — How would you diagnose UnboundLocalError and choose local, global, or nonlocal? ![TYPE](https://img.shields.io/badge/TYPE-Application-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
+
+**Question (EN):** How would you diagnose an UnboundLocalError, and when would you use a local variable, global, or nonlocal?
+
+**Explanation**
+
+First identify every binding operation for the name in the function. If the function assigns to it, Python classifies it as local unless a scope declaration changes that classification. Then determine the intended ownership:
+
+- Prefer a local variable for per-call state.
+- Use `nonlocal` when a nested function intentionally updates state owned by an enclosing function.
+- Use `global` only when rebinding module-level state is genuinely part of the design.
+
+In production code, explicit objects, dependency injection, or encapsulated state are often easier to test than mutable module globals.
+
+**Interview answer (EN)**
+
+“I diagnose UnboundLocalError by checking whether the function binds the name anywhere in its block and whether the read can occur before that binding. I then choose scope based on ownership: local for call-specific state, nonlocal for intentionally shared enclosing-function state, and global only for deliberate module-level rebinding. I generally avoid mutable globals because they complicate tests, concurrency, and lifecycle management.”
+
+---
+
+## PY-015 / FU-3 — Why do methods not close over class namespaces, and what is late binding? ![TYPE](https://img.shields.io/badge/TYPE-Edge_Cases-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
+
+**Question (EN):** Why is a class namespace not an enclosing scope for methods, and how does late binding affect closures?
+
+**Explanation**
+
+A class body executes in a namespace that becomes the class's attribute dictionary. That namespace is not an ordinary lexical enclosing function scope for methods. Methods should access class or instance data through attributes. Annotation scopes introduced with modern type-parameter and type-alias features are a specific exception and can access the enclosing class namespace.
+
+A closure resolves its free-variable binding when it runs. If a loop repeatedly changes the enclosing variable, functions created in that loop may all observe the final binding when later invoked. A factory function can create a separate enclosing binding per function; a default argument can also capture the current object at definition time, though it changes the function's parameter defaults and should be used deliberately.
+
+**Interview answer (EN)**
+
+“Methods do not lexically close over the class body's namespace; the class namespace becomes attributes, which methods access through the class or instance. Annotation scopes are a documented exception. Late binding means a closure reads the current enclosing binding when it executes, not necessarily the value that existed when the closure was created. I avoid loop-capture bugs by creating a distinct scope per iteration or by deliberately binding the value at definition time.”
+
+---
+
+## PY-015 / FU-4 — How should senior engineers manage scope and dynamic name resolution in production? ![TYPE](https://img.shields.io/badge/TYPE-Senior_Judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
+
+**Question (EN):** How do you manage scope and dynamic name resolution in production systems?
+
+**Explanation**
+
+Prefer explicit dependencies and state ownership over hidden mutable globals. Keep function-local state isolated per invocation, use closures only when their retained state is intentional, and document shared mutable state and its synchronization requirements.
+
+Treat `exec()` and `eval()` as dynamic execution boundaries. They complicate auditing, debugging, and security, and their namespace behavior is not identical to ordinary lexical closure lookup. Avoid using them for routine configuration or dispatch when explicit mappings, registries, or dependency injection provide clearer behavior.
+
+**Interview answer (EN)**
+
+“In production, I make state ownership explicit and minimize mutable module-level state. I use closures when encapsulated state is useful, but consider lifetime, concurrency, and test isolation. I avoid dynamic execution unless there is a compelling, controlled requirement, because exec and eval complicate security and name resolution. For extensibility, explicit registries and dependency injection are generally easier to reason about and test.”
+---
+
+# PY-016 — Mutable vs Immutable Objects, Aliasing & Object Sharing ![TYPE](https://img.shields.io/badge/TYPE-MAIN_QUESTION-2563eb) ![LEVEL](https://img.shields.io/badge/LEVEL-L3-7c3aed) ![PRIORITY](https://img.shields.io/badge/PRIORITY-P0-d97706)
+
+**Question (EN):** Explain the difference between mutable and immutable objects in Python, and how aliasing and object sharing affect program behavior.
+
+## Understand the idea
+
+In Python, names refer to objects. Assignment creates a binding between a name and an object; it does not copy the object.
+
+- **Mutable object:** its state can be changed after creation. Common examples include `list`, `dict`, `set`, and `bytearray`.
+- **Immutable object:** its state cannot be changed after creation. Common examples include `int`, `float`, `bool`, `str`, `bytes`, and `tuple`.
+
+Immutability does not prevent rebinding a variable. A name can be made to refer to another object; the original immutable object remains unchanged.
+
+## Mutation vs rebinding
+
+- **Mutation** changes the state of an existing object. Every name that refers to that same mutable object observes the change.
+- **Rebinding** changes which object a particular name refers to. Other names are not automatically redirected.
+
+This distinction is the basis of aliasing and many surprising side effects.
+
+## Aliasing and object sharing
+
+Aliasing means that multiple names or data structures hold references to the same object. If that object is mutable, a mutation through one alias is observable through the others.
+
+Assignment such as `second = first` creates another reference; it does not create an independent copy. To isolate state, choose an appropriate copy strategy or construct a new object explicitly.
+
+## Immutability is not necessarily deep
+
+An immutable container cannot change its own collection of directly referenced objects. However, it may contain references to mutable objects. For example, a tuple can contain a list: the tuple's element reference cannot be replaced, but the referenced list can still be mutated.
+
+Therefore, an immutable outer container is not automatically a deeply immutable object graph. A frozen dataclass also does not recursively freeze mutable objects stored in its fields.
+
+## Shallow copy vs deep copy
+
+- **Shallow copy** creates a new outer compound object but reuses references to its contained objects. Mutating a nested mutable object may therefore be visible through both structures.
+- **Deep copy** recursively copies contained objects where supported, aiming to create a more independent object graph.
+
+Deep copy is not always desirable: it can copy too much, has to handle cycles and shared references, and custom classes may control copying. The `copy.deepcopy()` implementation uses a memo to avoid repeatedly copying the same object and to handle recursive structures. Prefer explicit construction or shallow copying when that matches the required ownership semantics.
+
+Python 3.13+ also provides `copy.replace()` for supported types such as dataclasses and named tuples; it creates a new object with selected fields replaced, rather than performing a general deep copy.
+
+## Function arguments: object sharing
+
+Python's argument passing is often described as **call by sharing** (or object sharing). The parameter becomes a new local name bound to the same object supplied by the caller.
+
+- Mutating a passed mutable object can affect the caller's view of that object.
+- Rebinding the parameter to another object does not rebind the caller's variable.
+- Passing an immutable object does not make it mutable; operations that appear to change its value produce or return another object.
+
+This is neither traditional call by reference nor a copy of every argument.
+
+## Common production pitfalls
+
+- **Mutable default arguments:** default values are evaluated once when the function is defined. A mutable default can therefore be shared across calls. Use a sentinel such as `None` and create per-call state inside the function when sharing is not intended.
+- **Shared state:** caches, registries, and objects passed across components can introduce hidden coupling. Define ownership and mutation boundaries explicitly.
+- **Concurrency:** shared mutable state can require synchronization even if individual interpreter operations appear safe. The GIL is not an application-level consistency guarantee.
+- **Hashing:** objects used as dictionary keys or set elements must obey the hash/equality contract. Mutable value-based objects are generally unsuitable as keys because changing equality-relevant state while stored can break lookup assumptions.
+
+## A subtle case: augmented assignment
+
+The behavior of `+=` depends on the object's type and implementation. Lists typically mutate in place; integers and tuples produce a new value/object binding. Therefore, do not assume augmented assignment always mutates or always creates a new object.
+
+## Interview-ready answer (EN)
+
+“Mutable objects can change their state after creation, while immutable objects cannot. Assignment in Python creates a binding; it does not copy an object. If two names refer to the same mutable object, a mutation through either name is visible through both. Rebinding one name, however, does not redirect the other.
+
+A shallow copy creates a new outer container but retains references to nested objects; a deep copy recursively copies the object graph where supported, which may be more expensive and can copy data that should remain shared. Python passes arguments by object sharing: a function parameter refers to the caller's object, so mutation can be observable by the caller, while rebinding the parameter is local. In production, I define ownership and mutation boundaries, avoid mutable defaults, and use copying only when independent state is actually required.”
+
+## What to remember
+
+- Assignment binds names; it does not copy objects.
+- Mutation changes an object; rebinding changes a name's target.
+- Aliases to one mutable object observe the same mutations.
+- Shallow copy duplicates the outer container; deep copy recursively copies supported contents.
+- Immutable containers can still reference mutable objects.
+- Function parameters share object references with the caller.
+- Avoid unintended shared mutable defaults and state.
+
+## References
+
+- Python 3.15.2 Language Reference: [Objects, values and types](https://docs.python.org/3.15/reference/datamodel.html#objects-values-and-types)
+- [copy — Shallow and deep copy operations](https://docs.python.org/3.15/library/copy.html)
+- [Programming FAQ](https://docs.python.org/3.15/faq/programming.html)
+- [Expressions — Calls and argument binding](https://docs.python.org/3.15/reference/expressions.html#calls)
+
+---
+
+## PY-016 / FU-1 — What is the difference between mutation, rebinding, and aliasing? ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
+
+**Question (EN):** Explain mutation, rebinding, and aliasing. Why can changing an object through one name affect another name?
+
+**Explanation**
+
+A name is a binding to an object. Aliasing exists when multiple names refer to the same object. Mutation changes that shared object's state, so all aliases observe the changed state. Rebinding only changes one name's target and does not modify the original object or other names.
+
+**Interview answer (EN)**
+
+“Mutation changes an existing object's state; rebinding changes which object a name refers to. Assignment creates a binding rather than a copy. When two names alias the same mutable object, a mutation through either name is visible through both, but rebinding one name does not affect the other.”
+
+---
+
+## PY-016 / FU-2 — How do shallow copy and deep copy differ, and when would you use each? ![TYPE](https://img.shields.io/badge/TYPE-Application-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
+
+**Question (EN):** How do shallow and deep copying differ, and how would you choose a copying strategy in a real application?
+
+**Explanation**
+
+A shallow copy creates a new outer container but reuses references to nested objects. A deep copy recursively copies nested objects where supported. Deep copying may be expensive, may copy objects that should remain shared, and needs special handling for cycles and custom objects.
+
+Choose based on ownership requirements:
+- Use no copy when shared identity is intentional.
+- Use a shallow copy when only the outer container must be independent.
+- Use a deep copy when an independent nested object graph is required and all contained objects support the intended semantics.
+- Prefer explicit construction when only selected fields should be copied.
+
+**Interview answer (EN)**
+
+“I choose a copy strategy from the ownership contract. A shallow copy isolates the outer container but preserves nested references. A deep copy recursively duplicates supported contents and is appropriate only when an independent object graph is required. I avoid deep-copying indiscriminately because it can be costly and duplicate resources or state that should remain shared.”
+
+---
+
+## PY-016 / FU-3 — Why can a tuple contain mutable state, and what happens when mutable objects are passed to functions? ![TYPE](https://img.shields.io/badge/TYPE-Edge_Cases-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
+
+**Question (EN):** How can an immutable tuple contain mutable state, and what does Python's call-by-sharing argument model imply for function calls?
+
+**Explanation**
+
+A tuple's structure—the identities of its directly referenced elements—cannot be changed, but one of those elements may itself be mutable. Mutating that nested object does not replace the tuple's element reference.
+
+For function calls, a parameter is a local name bound to the same object passed by the caller. Mutating a mutable argument can be visible to the caller; rebinding the parameter is local and does not rebind the caller's variable.
+
+**Interview answer (EN)**
+
+“Immutability applies to the tuple's own structure, not recursively to every object it references. A tuple can contain a list, and that list can still be mutated. Python uses object sharing for arguments: the parameter and caller initially refer to the same object. Mutations can be observable by the caller, but rebinding the parameter does not change the caller's binding.”
+
+---
+
+## PY-016 / FU-4 — How do you prevent unintended shared mutable state in production systems? ![TYPE](https://img.shields.io/badge/TYPE-Senior_Judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
+
+**Question (EN):** How do you manage object ownership and prevent unintended shared mutable state in production systems?
+
+**Explanation**
+
+Make ownership and mutation boundaries explicit. Avoid mutable default arguments because defaults are evaluated once at function definition and reused across calls. Use per-call construction when independent state is required. For shared caches or registries, document lifecycle, consistency, and synchronization. Do not rely on the GIL as a substitute for application-level synchronization.
+
+**Interview answer (EN)**
+
+“I define which component owns an object and which components may mutate it. I avoid mutable defaults unless shared state is intentional, use explicit copying or immutable data structures at boundaries, and protect shared mutable state with an appropriate synchronization strategy. I also test aliasing and mutation behavior because accidental sharing often creates order-dependent bugs and cross-request state leakage.”
+---
+
+# PY-017 — Python Argument Passing, Parameter Semantics & Function Signatures ![TYPE](https://img.shields.io/badge/TYPE-MAIN_QUESTION-2563eb) ![LEVEL](https://img.shields.io/badge/LEVEL-L3-7c3aed) ![PRIORITY](https://img.shields.io/badge/PRIORITY-P0-d97706)
+
+**Question (EN):** Explain Python's argument-passing model, parameter semantics, and function signatures. How does Python bind arguments to parameters?
+
+## Core concepts
+
+- A **parameter** is a name declared in a function definition.
+- An **argument** is a value or expression supplied in a function call.
+- **Argument binding** maps supplied arguments to the function's parameters.
+- A **signature** describes the callable's accepted parameters, their kinds, defaults, and annotations.
+
+Python uses **object sharing** (also called call by sharing): a parameter becomes a local name bound to the object supplied by the caller. Mutating a shared mutable object can be visible to the caller; rebinding the local parameter does not rebind the caller's variable.
+
+## The five parameter kinds
+
+1. **Positional-only:** must be supplied by position. The `/` marker separates these parameters from the rest.
+2. **Positional-or-keyword:** can be supplied either by position or by keyword. This is the default parameter kind.
+3. **Variadic positional:** `*args` collects extra positional arguments into a tuple.
+4. **Keyword-only:** must be supplied by keyword. A bare `*` or a `*args` parameter marks the boundary.
+5. **Variadic keyword:** `**kwargs` collects extra keyword arguments into a dictionary.
+
+The `/` and `*` markers are syntax separators, not parameters themselves.
+
+## Argument binding process
+
+At a high level, Python:
+1. Evaluates the callable and argument expressions.
+2. Assigns positional arguments to the corresponding positional slots.
+3. Matches keyword arguments by parameter name.
+4. Detects duplicate assignments to the same parameter.
+5. Fills remaining parameters from their default values.
+6. Raises `TypeError` if required parameters remain missing, unexpected arguments are supplied, or the call otherwise violates the signature.
+
+A parameter cannot receive a value twice. A supplied `None` is a value, not an indication that the argument was omitted. Keyword argument order is not generally significant for binding.
+
+## Defaults and evaluation time
+
+Default expressions are evaluated once when the function definition executes, not once per call. The resulting objects are reused by calls that omit those arguments. This is why mutable defaults can accidentally retain state across calls.
+
+Use a sentinel such as `None` when a fresh mutable object is required for each invocation. Distinguish “argument omitted” from “argument explicitly supplied as None” when the API needs that distinction; a unique sentinel object is often appropriate.
+
+## Argument unpacking
+
+- `*iterable` in a call expands an iterable into positional arguments.
+- `**mapping` expands a mapping into keyword arguments, whose keys must be strings matching accepted parameter names unless captured by `**kwargs`.
+- During a call, positional arguments must precede explicit keyword arguments in the call syntax.
+- Multiple unpackings are permitted when their resulting arguments do not cause duplicate bindings or other conflicts.
+
+Unpacking changes how values are supplied; it does not change the target callable's signature.
+
+## Annotations and runtime behavior
+
+Parameter and return annotations are metadata. Python does not automatically enforce ordinary type annotations at function-call time. Static type checkers, IDEs, frameworks, and explicit validation libraries may interpret them.
+
+Annotations therefore do not replace input validation at trust boundaries.
+
+## Signature introspection
+
+The `inspect` module exposes callable signatures:
+- `inspect.signature(callable)` returns an `inspect.Signature`.
+- Its `parameters` mapping describes each parameter and its kind/default/annotation.
+- `Signature.bind(*args, **kwargs)` checks a proposed call against the signature and returns `BoundArguments`, or raises `TypeError`.
+- `bind_partial()` permits required parameters to remain unbound, which is useful for partial-call construction.
+- `apply_defaults()` fills defaults into a `BoundArguments` mapping.
+
+Not every callable is introspectable, and some built-in or extension callables expose limited signature metadata. Treat introspection as a tool, not an absolute guarantee.
+
+## API design guidance
+
+Use positional-only parameters when parameter names should not become part of the public API or when positional calling is intentional. Use keyword-only parameters for configuration options where names improve readability and reduce call-site ambiguity. Avoid accepting arbitrary `**kwargs` unless extensibility or forwarding is a deliberate part of the API contract.
+
+Keep defaults immutable where practical, document whether `None` means “not supplied” or is a valid value, and validate external input explicitly.
+
+## Interview-ready answer (EN)
+
+“Python functions define parameters in a signature, and callers provide arguments that are bound to those parameters. Python supports five parameter kinds: positional-only, positional-or-keyword, variadic positional, keyword-only, and variadic keyword. The slash marks positional-only parameters, while the star marks the keyword-only boundary; `*args` and `**kwargs` collect additional arguments.
+
+During argument binding, positional values fill positional slots, keyword values are matched by name, defaults fill remaining optional slots, and invalid or duplicate assignments raise TypeError. Python uses object sharing: parameters refer to the objects supplied by the caller, so mutation can be observable while local rebinding is not. Defaults are evaluated once at function definition, and annotations are not automatically enforced at runtime. For API design and tooling, I use explicit parameter kinds and `inspect.Signature.bind()` when I need reliable signature-aware argument validation.”
+
+## What to remember
+
+- Parameters belong to definitions; arguments belong to calls.
+- Python has five parameter kinds.
+- `/` marks positional-only; `*` marks keyword-only.
+- `*args` collects a tuple; `**kwargs` collects a dictionary.
+- Binding errors such as missing, duplicate, or unexpected arguments raise `TypeError`.
+- Defaults are evaluated once at function definition.
+- Annotations do not automatically validate calls at runtime.
+- `inspect.Signature.bind()` can validate argument binding.
+
+## References
+
+- [Python 3.15.2 — Function definitions](https://docs.python.org/3.15/reference/compound_stmts.html#function-definitions)
+- [Python 3.15.2 — Calls](https://docs.python.org/3.15/reference/expressions.html#calls)
+- [Python 3.15.2 — Special parameters](https://docs.python.org/3.15/tutorial/controlflow.html#special-parameters)
+- [Python 3.15.2 — inspect.Signature](https://docs.python.org/3.15/library/inspect.html#introspecting-callables-with-the-signature-object)
+
+---
+
+## PY-017 / FU-1 — How does Python bind positional and keyword arguments, and which errors can occur? ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
+
+**Question (EN):** Explain the argument-binding process and the most common reasons a function call raises TypeError.
+
+**Explanation**
+
+Positional arguments fill positional parameter slots in order. Keyword arguments fill slots by name. Defaults fill unassigned optional parameters. A call fails when a required parameter is missing, a parameter receives multiple values, an unsupported keyword is supplied, or too many positional arguments are provided without a variadic positional parameter.
+
+**Interview answer (EN)**
+
+“Python first maps positional arguments to positional slots, then matches keyword arguments by name, and finally applies defaults to unfilled optional parameters. It raises TypeError for missing required parameters, duplicate values, unexpected keywords, or excess positional arguments. A parameter can be bound only once.”
+
+---
+
+## PY-017 / FU-2 — When should an API use positional-only and keyword-only parameters? ![TYPE](https://img.shields.io/badge/TYPE-Application-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
+
+**Question (EN):** How do positional-only and keyword-only parameters improve API design?
+
+**Explanation**
+
+Positional-only parameters prevent callers from depending on parameter names and can preserve flexibility to rename those parameters later. Keyword-only parameters make configuration explicit, improve readability, and prevent callers from accidentally relying on positional order for options.
+
+**Interview answer (EN)**
+
+“I use positional-only parameters when names are implementation details or positional calling is part of the intended interface. I use keyword-only parameters for options and configuration because named arguments make call sites clearer and more robust. I choose parameter kinds deliberately as part of the public API contract.”
+
+---
+
+## PY-017 / FU-3 — Why are mutable defaults dangerous, and what is the role of annotations? ![TYPE](https://img.shields.io/badge/TYPE-Edge_Cases-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
+
+**Question (EN):** Why can mutable default arguments cause bugs, and do type annotations validate arguments at runtime?
+
+**Explanation**
+
+Default expressions are evaluated once when the function definition executes. A mutable object used as a default is therefore reused across calls that omit the argument. Use a sentinel and create fresh per-call state when needed.
+
+Ordinary type annotations do not automatically enforce argument types at runtime. They provide metadata for static analysis and tools; runtime validation must be implemented explicitly or delegated to a validation framework.
+
+**Interview answer (EN)**
+
+“Mutable defaults are shared because defaults are evaluated once at function definition, not on every call. I use a sentinel and create a new object inside the function when each call needs independent state. Type annotations are not runtime enforcement by themselves, so external or untrusted inputs still require explicit validation.”
+
+---
+
+## PY-017 / FU-4 — How do you inspect and validate callable signatures in frameworks and production tooling? ![TYPE](https://img.shields.io/badge/TYPE-Senior_Judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
+
+**Question (EN):** How would you use `inspect.Signature` to validate or adapt arguments in a framework, and what limitations would you consider?
+
+**Explanation**
+
+Use `inspect.signature()` to obtain a callable's signature and `Signature.bind()` to validate positional and keyword arguments against it. `bind_partial()` is useful when constructing partially applied calls. Apply defaults explicitly if the framework needs a complete mapping.
+
+Not every callable exposes complete introspection metadata. Decorators may affect the visible signature; `functools.wraps` and the `__wrapped__` chain help introspection tools discover the wrapped callable, but custom or extension callables may still be limited.
+
+**Interview answer (EN)**
+
+“I use inspect.signature() to obtain a callable's declared interface and Signature.bind() to validate argument mapping before dispatch. I use bind_partial() for staged or partial invocation and apply_defaults() when the framework needs defaulted values included. I account for decorated callables and incomplete metadata, and I avoid treating introspection as a substitute for domain validation or authorization.”
+---
+
+# PY-018 — Python Functions: First-Class Objects, Higher-Order Functions & Functional Programming ![TYPE](https://img.shields.io/badge/TYPE-MAIN_QUESTION-2563eb) ![LEVEL](https://img.shields.io/badge/LEVEL-L3-7c3aed) ![PRIORITY](https://img.shields.io/badge/PRIORITY-P0-d97706)
+
+**Question (EN):** Explain why functions are first-class objects in Python. How do higher-order functions, closures, and functional programming relate to this concept?
+
+## Core concepts
+
+A Python function is an object that can be:
+- assigned to a variable;
+- passed as an argument;
+- returned from another function;
+- stored in a data structure;
+- inspected and, for ordinary Python function objects, augmented with attributes.
+
+This is the meaning of **first-class functions**: functions can be manipulated as values like other objects. A function reference and a function call are different: referring to a function does not execute it; calling it does.
+
+A callable is broader than a function. Instances of classes implementing `__call__`, bound methods, built-in functions, and `functools.partial` objects can also be callable.
+
+## Higher-order functions
+
+A **higher-order function** accepts one or more functions/callables as arguments, returns a function/callable, or both.
+
+Examples:
+- `sorted(iterable, key=...)` accepts a callable used to derive sorting keys.
+- `map()` applies a callable to items and returns an iterator.
+- `filter()` uses a predicate to select items.
+- `functools.reduce()` cumulatively combines iterable elements with a callable.
+- `functools.partial()` creates a callable with some arguments pre-filled.
+- Decorators accept a callable and commonly return a wrapped callable.
+
+Do not confuse the concepts: first-class describes how the language treats functions; higher-order describes what a particular function does with callables.
+
+## Closures and lexical scope
+
+A **closure** is a function together with access to variables from its enclosing lexical scope. An inner function can continue to access enclosing-scope bindings after the outer function has returned.
+
+A variable referenced from an enclosing scope rather than locally or globally is commonly called a free variable. The function's closure retains the necessary binding context.
+
+Closures are useful for:
+- function factories and configurable behavior;
+- decorators;
+- callbacks that need context;
+- encapsulating small pieces of state without defining a class.
+
+A closure does not automatically make captured state immutable or thread-safe. If multiple calls or threads mutate shared captured state, synchronization and lifecycle need deliberate design. Late binding also matters: a closure generally observes the current value of the captured binding when the inner function executes, not necessarily a snapshot taken when it was created.
+
+## Functional programming in Python
+
+Python supports functional programming but is multi-paradigm; it does not require a purely functional style.
+
+Useful concepts include:
+- **Pure functions:** same relevant inputs produce the same result, with no externally observable side effects.
+- **Immutability:** prefer values that are not mutated, or create new values instead of changing shared state.
+- **Higher-order functions:** compose behavior by passing functions as values.
+- **Function composition:** combine smaller transformations into a larger operation.
+- **Declarative transformations:** express the desired transformation rather than manually controlling every iteration step.
+
+Purity is a design property, not something Python enforces. A function can read global state, perform I/O, mutate arguments, or raise exceptions.
+
+## Practical trade-offs
+
+Functional techniques can improve testability, reuse, and reasoning when transformations are isolated and side effects are explicit. However, excessive callbacks, nested closures, or chains of opaque transformations can make debugging and control flow harder.
+
+Choose the simplest design that makes data flow and side effects clear. Use classes when state, invariants, and lifecycle are central; use functions when behavior is naturally composable and stateless or when a small closure is sufficient.
+
+## Backend engineering applications
+
+- Middleware and decorators that wrap request handling.
+- Dependency injection through provider callables.
+- Event callbacks and hooks.
+- Validation predicates and filtering.
+- Data-processing pipelines and transformations.
+- Retry, caching, metrics, and tracing wrappers.
+- Async schedulers and APIs that accept coroutine functions or other callables.
+
+Remember that an async function is still a function object; calling it creates a coroutine object. A callable is not necessarily a synchronous function, so frameworks must understand whether the returned object needs to be awaited.
+
+## Interview-ready answer (EN)
+
+“Python functions are first-class objects: they can be assigned to variables, passed as arguments, returned from other functions, and stored in data structures. This enables higher-order functions, which accept or return callables. Examples include decorators, callbacks, map, filter, and functools.partial.
+
+Closures allow inner functions to retain access to variables from their enclosing lexical scope. They are useful for function factories, decorators, callbacks, and encapsulated state, although shared mutable closure state requires careful lifecycle and concurrency design.
+
+Python supports functional programming concepts such as pure functions, immutability, composition, and declarative transformations, but it remains a multi-paradigm language. I choose functional or object-oriented techniques based on clarity, testability, maintainability, and performance.”
+
+## What to remember
+
+- First-class means functions can be treated as values.
+- Higher-order functions accept or return callables.
+- A callable is not necessarily a Python function object.
+- Closures retain access to enclosing-scope bindings.
+- Captured mutable state is not automatically immutable or thread-safe.
+- Python supports functional programming but does not enforce purity.
+- Prefer clear data flow and explicit side effects over unnecessary abstraction.
+
+## References
+
+- [Python 3.15.2 — Functional Programming HOWTO](https://docs.python.org/3.15/howto/functional.html)
+- [Python 3.15.2 — functools](https://docs.python.org/3.15/library/functools.html)
+- [Python 3.15.2 — Built-in functions: map](https://docs.python.org/3.15/library/functions.html#map)
+- [Python 3.15.2 — Execution model and name resolution](https://docs.python.org/3.15/reference/executionmodel.html)
+
+---
+
+## PY-018 / FU-1 — What makes a function a first-class object, and how is that different from a callable? ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
+
+**Question (EN):** What does it mean that functions are first-class objects, and why is the term callable broader than function?
+
+**Explanation**
+
+First-class means a function can be treated as a value: assigned, passed, returned, and stored. A callable is any object that can be invoked. Ordinary functions, bound methods, built-ins, classes, and instances implementing `__call__` may be callable. Therefore, every ordinary function is callable, but not every callable is a function object.
+
+**Interview answer (EN)**
+
+“First-class describes the ability to manipulate functions as values. Callable describes the ability to invoke an object. A Python function is both, but callable objects also include instances with __call__, classes, bound methods, and partial objects. This distinction matters when designing APIs that accept behavior rather than only function objects.”
+
+---
+
+## PY-018 / FU-2 — How would you use higher-order functions in a backend application? ![TYPE](https://img.shields.io/badge/TYPE-Application-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
+
+**Question (EN):** Give practical backend examples of higher-order functions and explain when they improve a design.
+
+**Explanation**
+
+Examples include middleware wrappers, decorators for metrics or authorization, validation predicates, callbacks, dependency providers, and data transformations. They improve a design when behavior can be injected or composed without coupling the caller to a concrete implementation.
+
+**Interview answer (EN)**
+
+“I use higher-order functions when a component needs configurable behavior: middleware can wrap request handling, predicates can be injected into filtering, and decorators can add metrics or tracing. I keep the abstraction explicit and avoid deeply nested callback chains when they make execution order or error handling difficult to follow.”
+
+---
+
+## PY-018 / FU-3 — What are closure late binding and shared mutable state risks? ![TYPE](https://img.shields.io/badge/TYPE-Edge_Cases-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
+
+**Question (EN):** What does a closure retain, and what problems can arise from late binding or mutable captured state?
+
+**Explanation**
+
+A closure retains access to bindings in an enclosing lexical scope. It does not necessarily capture an immutable snapshot of each value. If a captured binding changes before the inner function runs, the function observes the current binding. Multiple closures may also share the same mutable object. This can produce surprising results in loops, callbacks, and concurrent code.
+
+**Interview answer (EN)**
+
+“A closure retains access to enclosing-scope bindings, not necessarily a frozen copy of their values. Late binding means the inner function can observe a binding's later value. If closures share mutable state, calls can interfere with one another and concurrent execution may require synchronization. I make capture semantics and state ownership explicit, and avoid hidden shared mutation.”
+
+---
+
+## PY-018 / FU-4 — When should you choose functional composition over classes or imperative code? ![TYPE](https://img.shields.io/badge/TYPE-Senior_Judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
+
+**Question (EN):** How do you decide between functional composition, object-oriented design, and imperative control flow in production Python?
+
+**Explanation**
+
+Functional composition is effective for isolated transformations, stateless behavior, and explicit pipelines. Classes are useful when state, invariants, identity, and lifecycle are central. Imperative code is often clearer for complex orchestration, resource management, and control flow. Python supports all three; no paradigm should be applied dogmatically.
+
+**Interview answer (EN)**
+
+“I choose the paradigm that makes state, dependencies, and side effects easiest to understand. I favor small composable functions for transformations and validation, classes when state and invariants have a meaningful lifecycle, and imperative orchestration when it makes control flow clearer. I evaluate testability, readability, operational behavior, and performance rather than maximizing functional purity.”
+
+
+# PY-019 — Main Question ![TYPE](https://img.shields.io/badge/TYPE-MAIN_QUESTION-2563eb) ![LEVEL](https://img.shields.io/badge/LEVEL-L2--L3-7c3aed) ![PRIORITY](https://img.shields.io/badge/PRIORITY-P1-d97706)
+
+**Question (EN):** What are lambda expressions in Python, how do they work, and when should you use them instead of named functions?
+
+## Understand the idea
+
+A lambda expression creates a function object. Its general form is: **lambda parameters: expression**. The expression after the colon is evaluated when the function is called, and its resulting value is returned automatically.
+
+A lambda is called *anonymous* because the expression does not define the function with a descriptive identifier. It is still an ordinary function object: it can be assigned to a variable, passed as an argument, returned from another function, or stored in a collection. The term does not describe a special execution model.
+
+Conceptually, a lambda behaves like a simplified function definition whose body consists of one returned expression. The parameter list follows the same general parameter rules used by function definitions.
+
+## What makes lambda different from def?
+
+- **Expression-only body:** a lambda body must be one expression. It cannot contain a statement suite such as assignments, loops, or try/except.
+- **Implicit return:** the value of that expression is returned automatically; there is no explicit return statement.
+- **No parameter annotations:** functions created with lambda expressions cannot declare annotations.
+- **Limited documentation and naming:** a lambda normally has the name <lambda>, which is less informative in debugging output and introspection.
+- **Same first-class nature:** a function defined with def can be passed around just as easily. Lambda is not required to make a function usable as a callback.
+
+The important distinction is syntactic convenience, not capability to participate in higher-order programming.
+
+## Where lambda is useful
+
+Lambda is most useful for a short, local operation supplied to an API that expects a callable. Typical examples include a sorting key, a key for min() or max(), or a small transformation passed to a higher-order function.
+
+A short key expression can communicate which field determines sorting without introducing a separate top-level function. If the operation needs a meaningful name, is reused, or requires several steps, a named function is usually clearer.
+
+## Closures and evaluation
+
+Lambda expressions follow the same lexical scoping rules as nested functions defined with def. They can refer to names from an enclosing scope. A captured free variable is generally a reference to an enclosing binding, not an automatic snapshot of its current value. Therefore, late-binding behavior can occur in lambdas created inside loops or callbacks.
+
+Default parameter expressions follow the normal function-definition rule: they are evaluated when the lambda expression creates the function object, not on every call. This can be used deliberately, but it should not obscure the function's intent.
+
+## Choosing lambda, def, or a built-in
+
+Prefer lambda when the function is genuinely small, local, and immediately understandable. Prefer def when behavior needs a descriptive name, multiple operations, annotations, a docstring, reuse, focused tests, or clearer tracebacks.
+
+Also consider whether a built-in, a comprehension, or a generator expression communicates the transformation more directly. Lambda does not inherently make an operation faster; choose it for concise expression of intent, not as a performance optimization.
+
+## Interview-ready answer (EN)
+
+“A lambda expression creates an ordinary function object from a single expression. Its result is returned implicitly, and it can be passed wherever a callable is expected. I use lambdas for short, local callbacks, especially key functions for sorting or selection. They follow the same closure and late-binding rules as nested functions. I prefer a named function when the behavior is reused, non-trivial, needs annotations or documentation, or would be harder to debug as an anonymous callable. The decision is mainly about readability and maintainability, not performance.”
+
+---
+
+## PY-019 / FU-1 — What function object does a lambda expression create, and how does its body differ from a function defined with def? ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
+
+**Question (EN):** What does evaluating a lambda expression produce, and what are the main syntactic restrictions of its body?
+
+**Explanation**
+
+Evaluating a lambda expression creates a function object. The lambda body is a single expression, not a block of statements. When called, that expression is evaluated and its value is returned implicitly. The object is callable and can be passed, returned, or stored like a function created with def.
+
+The lambda form cannot contain a statement suite or parameter annotations. A conditional expression can still be used, but complex nested expressions quickly become difficult to read.
+
+**Interview answer (EN)**
+
+“Evaluating a lambda expression creates a normal function object. Its body is restricted to one expression, whose value is returned implicitly. It supports a function parameter list, but unlike a function defined with def, it cannot contain statements or parameter annotations. The difference is syntactic simplicity, not a separate callable type.”
+
+---
+
+## PY-019 / FU-2 — Where are lambda functions useful in Python APIs and data transformations? ![TYPE](https://img.shields.io/badge/TYPE-Application-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
+
+**Question (EN):** Give practical examples of appropriate lambda use and explain why the lambda form helps.
+
+**Explanation**
+
+A lambda is useful when an API needs a small callable and the behavior is obvious at the call site. Common examples include the key argument of sorting and selection operations, small predicates, and short callbacks passed to higher-order functions.
+
+The benefit is locality: the reader can understand the operation without navigating to a separate definition. If the expression becomes dense, is reused, or encodes business rules, a named function provides a better abstraction.
+
+**Interview answer (EN)**
+
+“I use lambda for short call-site behavior, such as extracting a sort key or supplying a simple predicate. It keeps a tiny transformation next to the API that consumes it. I do not use it to hide business rules or create complicated expression chains; when the behavior deserves a name or reuse, I define a regular function.”
+
+---
+
+## PY-019 / FU-3 — How do lambda expressions interact with closures, late binding, default arguments, and introspection? ![TYPE](https://img.shields.io/badge/TYPE-Edge_Cases-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
+
+**Question (EN):** Do lambdas capture values differently from nested functions, and what should you know about their runtime metadata?
+
+**Explanation**
+
+A lambda follows the same lexical scoping and closure rules as a nested function defined with def. Free variables are resolved through their enclosing bindings, so a lambda created in a loop may observe the final value of a loop variable when called later. This is late binding, not a special lambda behavior.
+
+Default arguments are evaluated when the lambda function object is created, just as with def. For introspection, the function's name is normally <lambda>; it also lacks parameter annotations. These characteristics can make logs, tracebacks, generated documentation, and framework introspection less descriptive.
+
+**Interview answer (EN)**
+
+“Lambdas do not have special closure semantics. Like nested def functions, they resolve free variables through enclosing scopes, so late binding can affect callbacks created in loops. Default arguments are evaluated when the function object is created. A lambda normally exposes the name <lambda> and cannot declare parameter annotations, which is another reason to use a named function when observability or introspection matters.”
+
+---
+
+## PY-019 / FU-4 — When should you replace a lambda with a named function or a clearer built-in expression? ![TYPE](https://img.shields.io/badge/TYPE-Senior_Judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
+
+**Question (EN):** How do you decide whether lambda, def, or a built-in transformation is the best production choice?
+
+**Explanation**
+
+Choose lambda for a short, local, self-explanatory callable. Choose def when behavior needs a meaningful name, multiple steps, annotations, documentation, reuse, direct testing, or useful stack traces. Choose a built-in, comprehension, or generator expression when it expresses the data transformation more clearly than a callback.
+
+Avoid nested conditional expressions and compressed business logic inside lambdas. A named function can improve reviewability and diagnostics without changing the fact that Python functions are first-class objects. Lambda should not be selected on the assumption that it is inherently faster.
+
+**Interview answer (EN)**
+
+“My default is to optimize for clarity. I use lambda only when the expression is short and obvious at the call site. I use def for reusable or domain-specific behavior, for logic that needs documentation or annotations, and when tracebacks or tests benefit from a stable name. I also prefer built-ins or comprehensions when they express the transformation more directly. I do not treat lambda as a performance optimization.”
+
+
+
+## References — PY-019
+
+- [Python 3.15.2 Language Reference — Lambda expressions](https://docs.python.org/3.15/reference/expressions.html#lambdas)
+- [Python 3.15.2 Tutorial — Lambda Expressions](https://docs.python.org/3.15/tutorial/controlflow.html#lambda-expressions)
+- [Python 3.15.2 Functional Programming HOWTO — Small functions and the lambda expression](https://docs.python.org/3.15/howto/functional.html#small-functions-and-the-lambda-expression)

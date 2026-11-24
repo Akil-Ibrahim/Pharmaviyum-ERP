@@ -27,8 +27,8 @@ Not every topic needs the same number of subsections. Examples, code, and deeper
 - [English — EN](./EN/README.md)
 - [Русский — RU](./RU/README.md)
 
-Question IDs are identical in both languages, so PY-001 and FU-001 always refer to the same topics.
+Question IDs are identical in both languages. Main Question IDs are global (PY-001, PY-002, ...); Follow-up IDs are local to each Main Question (FU-1 through FU-4).
 
 ## Current progress
 
-The separated EN/RU materials currently cover PY-001–PY-008 and FU-001–FU-032. More topics will be added in sequence. The older bilingual source file is retained as a migration reference until the separated materials have been checked.
+The separated EN/RU materials currently cover PY-001–PY-019 and 76 Follow-ups (FU-1–FU-4 per Main Question). More topics will be added in sequence. The older bilingual source file is retained as a migration reference until the separated materials have been checked.
