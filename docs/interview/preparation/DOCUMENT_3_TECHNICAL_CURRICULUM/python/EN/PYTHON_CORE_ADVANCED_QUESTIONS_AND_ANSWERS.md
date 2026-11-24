@@ -6,9 +6,9 @@
 **Question map:** [English Question Map](./PYTHON_CORE_ADVANCED.md)  
 **Navigation:** [Python curriculum index](../README.md)
 
-English study material for PY-001–PY-018 and FU-001–FU-072. Each topic explains the concept and provides an interview-ready answer. The Russian version uses the same question IDs.
+English study material for PY-001–PY-018. Each Main Question has four locally numbered Follow-ups (FU-1 to FU-4). The Russian version uses the same question IDs.
 
-**Numbering rule:** Every Main Question has exactly four Follow-ups. FU IDs are globally sequential across the curriculum and never restart for a new Main Question: PY-001 → FU-001–FU-004, PY-002 → FU-005–FU-008, and so on.
+**Numbering rule:** Every Main Question has exactly four Follow-ups, numbered locally as FU-1, FU-2, FU-3, and FU-4. The parent PY ID keeps each GitHub heading unique (for example, PY-018 / FU-1).
 
 **Review status:** Authored; independent technical and editorial review pending. Do not treat this material as finally approved until both reviews are complete.
 
@@ -61,7 +61,7 @@ Python additionally supports optional free-threaded builds, which can execute th
 
 ---
 
-## FU-001 — What does the GIL protect? ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
+## PY-001 / FU-1 — What does the GIL protect? ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
 
 **Question (EN):** What does the GIL protect, and why does CPython use it?
 
@@ -75,7 +75,7 @@ The GIL coordinates access to parts of CPython's internal state and Python objec
 
 ---
 
-## FU-002 — How does the GIL affect CPU-bound and I/O-bound work? ![TYPE](https://img.shields.io/badge/TYPE-Application-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
+## PY-001 / FU-2 — How does the GIL affect CPU-bound and I/O-bound work? ![TYPE](https://img.shields.io/badge/TYPE-Application-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
 
 **Question (EN):** How does the GIL affect CPU-bound and I/O-bound multithreaded workloads?
 
@@ -89,7 +89,7 @@ CPU-bound work spends most of its time calculating. I/O-bound work spends much o
 
 ---
 
-## FU-003 — How do you choose between threading, multiprocessing, and asyncio? ![TYPE](https://img.shields.io/badge/TYPE-Design_trade-offs-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
+## PY-001 / FU-3 — How do you choose between threading, multiprocessing, and asyncio? ![TYPE](https://img.shields.io/badge/TYPE-Design_trade-offs-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
 
 **Question (EN):** How would you choose between threading, multiprocessing, and asyncio for a Python backend workload?
 
@@ -105,7 +105,7 @@ CPU-bound work spends most of its time calculating. I/O-bound work spends much o
 
 ---
 
-## FU-004 — What changes in free-threaded CPython? ![TYPE](https://img.shields.io/badge/TYPE-Senior_judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
+## PY-001 / FU-4 — What changes in free-threaded CPython? ![TYPE](https://img.shields.io/badge/TYPE-Senior_judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
 
 **Question (EN):** What changes in free-threaded CPython, and what should a team check before adopting it?
 
@@ -160,7 +160,7 @@ In Python, threading and asyncio are commonly used for concurrency, while multip
 
 ---
 
-## FU-005 — Can concurrency exist without parallelism? ![TYPE](https://img.shields.io/badge/TYPE-Fundamentals-7c3aed) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
+## PY-002 / FU-1 — Can concurrency exist without parallelism? ![TYPE](https://img.shields.io/badge/TYPE-Fundamentals-7c3aed) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
 
 **Question (EN):** Can concurrency exist without parallelism?
 
@@ -174,7 +174,7 @@ Yes. A single thread can make progress on multiple tasks by switching between th
 
 ---
 
-## FU-006 — What is the difference between I/O-bound and CPU-bound workloads? ![TYPE](https://img.shields.io/badge/TYPE-Workload_analysis-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
+## PY-002 / FU-2 — What is the difference between I/O-bound and CPU-bound workloads? ![TYPE](https://img.shields.io/badge/TYPE-Workload_analysis-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
 
 **Question (EN):** What is the difference between I/O-bound and CPU-bound workloads?
 
@@ -188,7 +188,7 @@ An **I/O-bound** workload spends much of its time waiting for external operation
 
 ---
 
-## FU-007 — How does the GIL affect concurrency and parallelism in CPython? ![TYPE](https://img.shields.io/badge/TYPE-CPython_behavior-64748b) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
+## PY-002 / FU-3 — How does the GIL affect concurrency and parallelism in CPython? ![TYPE](https://img.shields.io/badge/TYPE-CPython_behavior-64748b) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
 
 **Question (EN):** How does the GIL affect concurrency and parallelism in CPython?
 
@@ -202,7 +202,7 @@ In conventional CPython builds, the GIL prevents multiple threads from executing
 
 ---
 
-## FU-008 — How do you decide whether a workload needs concurrency or parallelism? ![TYPE](https://img.shields.io/badge/TYPE-Senior_judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
+## PY-002 / FU-4 — How do you decide whether a workload needs concurrency or parallelism? ![TYPE](https://img.shields.io/badge/TYPE-Senior_judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
 
 **Question (EN):** How do you decide whether a workload needs concurrency or parallelism?
 
@@ -312,7 +312,7 @@ For production diagnosis, I distinguish module import and startup behavior from 
 
 ---
 
-## FU-009 — What are the main stages of Python execution? ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
+## PY-003 / FU-1 — What are the main stages of Python execution? ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
 
 **Question (EN):** What are the main stages between Python source code and the execution of its instructions in CPython?
 
@@ -326,7 +326,7 @@ The usual CPython path is: read and decode source, parse it into an AST, compile
 
 ---
 
-## FU-010 — Why does running a module differ from importing it? ![TYPE](https://img.shields.io/badge/TYPE-Application-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
+## PY-003 / FU-2 — Why does running a module differ from importing it? ![TYPE](https://img.shields.io/badge/TYPE-Application-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
 
 **Question (EN):** How would you investigate a case where a Python module behaves differently when run as a script versus imported by another module?
 
@@ -340,7 +340,7 @@ When a file is run directly, its `__name__` is normally `"__main__"`. When impor
 
 ---
 
-## FU-011 — Which execution details are implementation-specific? ![TYPE](https://img.shields.io/badge/TYPE-Edge_cases_and_trade-offs-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
+## PY-003 / FU-3 — Which execution details are implementation-specific? ![TYPE](https://img.shields.io/badge/TYPE-Edge_cases_and_trade-offs-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
 
 **Question (EN):** Which aspects of bytecode and interpreter behavior are implementation details rather than language guarantees, and why does that distinction matter?
 
@@ -354,7 +354,7 @@ Python specifies language semantics, not one universal bytecode format or interp
 
 ---
 
-## FU-012 — How do you choose the diagnostic layer? ![TYPE](https://img.shields.io/badge/TYPE-Senior_judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
+## PY-003 / FU-4 — How do you choose the diagnostic layer? ![TYPE](https://img.shields.io/badge/TYPE-Senior_judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
 
 **Question (EN):** When diagnosing a production issue, how would you decide whether to inspect Python-level behavior, CPython internals, or the operating-system/runtime environment?
 
@@ -492,7 +492,7 @@ A generator or coroutine function has a different lifecycle: calling it creates 
 
 ---
 
-## FU-013 — What execution state is needed during a function call? ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
+## PY-004 / FU-1 — What execution state is needed during a function call? ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
 
 **Question (EN):** What execution state does CPython need to establish or maintain when entering and executing a Python function?
 
@@ -508,7 +508,7 @@ In CPython, internal execution frames are not identical to Python-visible `PyFra
 
 ---
 
-## FU-014 — How do you investigate function-call overhead? ![TYPE](https://img.shields.io/badge/TYPE-Application-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
+## PY-004 / FU-2 — How do you investigate function-call overhead? ![TYPE](https://img.shields.io/badge/TYPE-Application-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
 
 **Question (EN):** How can you use profiling and call-stack information to investigate excessive function-call overhead in a Python service?
 
@@ -528,7 +528,7 @@ A deterministic profiler can provide detailed call information but add overhead.
 
 ---
 
-## FU-015 — How do recursion, exceptions, generators, and coroutines change the lifecycle? ![TYPE](https://img.shields.io/badge/TYPE-Edge_cases_and_lifecycle-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
+## PY-004 / FU-3 — How do recursion, exceptions, generators, and coroutines change the lifecycle? ![TYPE](https://img.shields.io/badge/TYPE-Edge_cases_and_lifecycle-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
 
 **Question (EN):** How do recursion, exceptions, generators, and asynchronous functions affect the execution lifecycle compared with an ordinary function call?
 
@@ -547,7 +547,7 @@ An event loop schedules coroutine progress; it does not create one operating-sys
 
 ---
 
-## FU-016 — When should call mechanics influence an optimization decision? ![TYPE](https://img.shields.io/badge/TYPE-Senior_judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
+## PY-004 / FU-4 — When should call mechanics influence an optimization decision? ![TYPE](https://img.shields.io/badge/TYPE-Senior_judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
 
 **Question (EN):** When would knowledge of CPython call mechanics materially change an optimization decision, and how would you validate that the optimization is worthwhile?
 
@@ -602,7 +602,7 @@ Do not confuse Python object identity with domain identity. Two ORM instances ma
 
 ---
 
-## FU-017 — Identity, type, and value over an object's lifetime ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
+## PY-005 / FU-1 — Identity, type, and value over an object's lifetime ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
 
 **Question (EN):** Which of an object's identity, type, and value can change during its lifetime?
 
@@ -614,7 +614,7 @@ Do not confuse Python object identity with domain identity. Two ORM instances ma
 
 ---
 
-## FU-018 — Choosing identity, equality, and type checks ![TYPE](https://img.shields.io/badge/TYPE-Application-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
+## PY-005 / FU-2 — Choosing identity, equality, and type checks ![TYPE](https://img.shields.io/badge/TYPE-Application-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
 
 **Question (EN):** How would you choose between identity checks, equality checks, and type checks in a code review?
 
@@ -626,7 +626,7 @@ Do not confuse Python object identity with domain identity. Two ORM instances ma
 
 ---
 
-## FU-019 — Why is is not a value comparison? ![TYPE](https://img.shields.io/badge/TYPE-Edge_cases_and_trade-offs-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
+## PY-005 / FU-3 — Why is is not a value comparison? ![TYPE](https://img.shields.io/badge/TYPE-Edge_cases_and_trade-offs-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
 
 **Question (EN):** Why can using is to compare strings, numbers, or other values produce unreliable results?
 
@@ -638,7 +638,7 @@ Do not confuse Python object identity with domain identity. Two ORM instances ma
 
 ---
 
-## FU-020 — Identity and mutability in API design ![TYPE](https://img.shields.io/badge/TYPE-Senior_judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
+## PY-005 / FU-4 — Identity and mutability in API design ![TYPE](https://img.shields.io/badge/TYPE-Senior_judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
 
 **Question (EN):** How should API design avoid accidental dependencies on object identity, mutability, or concrete implementation types?
 
@@ -703,7 +703,7 @@ When debugging unexpected attribute behavior, identify the exact lookup path: in
 
 ---
 
-## FU-021 — Attribute lookup precedence ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
+## PY-006 / FU-1 — Attribute lookup precedence ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
 
 **Question (EN):** In what order does Python search for an attribute on an instance, and how can an instance attribute interact with a class attribute?
 
@@ -725,7 +725,7 @@ This explains why assigning to an attribute can shadow a method in some cases, w
 
 ---
 
-## FU-022 — Data descriptors and non-data descriptors ![TYPE](https://img.shields.io/badge/TYPE-Mechanism_and_application-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
+## PY-006 / FU-2 — Data descriptors and non-data descriptors ![TYPE](https://img.shields.io/badge/TYPE-Mechanism_and_application-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
 
 **Question (EN):** What is the difference between a data descriptor and a non-data descriptor, and why does the distinction matter?
 
@@ -747,7 +747,7 @@ This distinction is important in frameworks that use descriptors for validation,
 
 ---
 
-## FU-023 — `__getattribute__` versus `__getattr__` ![TYPE](https://img.shields.io/badge/TYPE-Edge_cases-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
+## PY-006 / FU-3 — `__getattribute__` versus `__getattr__` ![TYPE](https://img.shields.io/badge/TYPE-Edge_cases-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
 
 **Question (EN):** What is the difference between `__getattribute__` and `__getattr__`, and what risks arise when overriding them?
 
@@ -769,7 +769,7 @@ A custom `__getattribute__` can implement proxies, access control, lazy resoluti
 
 ---
 
-## FU-024 — Implicit special-method lookup ![TYPE](https://img.shields.io/badge/TYPE-Senior_judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
+## PY-006 / FU-4 — Implicit special-method lookup ![TYPE](https://img.shields.io/badge/TYPE-Senior_judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
 
 **Question (EN):** Why can assigning a special method to an instance fail to change the behavior of an implicit operation such as `len(obj)`?
 
@@ -834,7 +834,7 @@ Start with semantics and correctness, then profile representative data sizes and
 
 ---
 
-## FU-025 — Collection semantics and CPython representations ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
+## PY-007 / FU-1 — Collection semantics and CPython representations ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
 
 **Question (EN):** What are the key semantic and typical implementation differences between lists, tuples, sets, and dictionaries in CPython?
 
@@ -848,7 +848,7 @@ Lists and tuples are ordered sequences indexed by position; lists allow item rep
 
 ---
 
-## FU-026 — Selecting a collection for a service ![TYPE](https://img.shields.io/badge/TYPE-Application-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
+## PY-007 / FU-2 — Selecting a collection for a service ![TYPE](https://img.shields.io/badge/TYPE-Application-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
 
 **Question (EN):** How would you choose a built-in collection for an ordered sequence, membership checks, deduplication, and keyed lookup in a real service?
 
@@ -862,7 +862,7 @@ Use a list for an ordered sequence that may change, a tuple for a fixed sequence
 
 ---
 
-## FU-027 — Ordering, copying, and complexity edge cases ![TYPE](https://img.shields.io/badge/TYPE-Edge_cases_and_trade-offs-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
+## PY-007 / FU-3 — Ordering, copying, and complexity edge cases ![TYPE](https://img.shields.io/badge/TYPE-Edge_cases_and_trade-offs-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
 
 **Question (EN):** What should you consider when relying on insertion order, shallow copying, nested mutable values, or average-case complexity?
 
@@ -876,7 +876,7 @@ Dictionary insertion order is guaranteed by the language, but set iteration orde
 
 ---
 
-## FU-028 — Collection choice under production constraints ![TYPE](https://img.shields.io/badge/TYPE-Senior_judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
+## PY-007 / FU-4 — Collection choice under production constraints ![TYPE](https://img.shields.io/badge/TYPE-Senior_judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
 
 **Question (EN):** How would workload shape, data volume, mutation patterns, and memory pressure influence your collection choice and benchmarking strategy?
 
@@ -943,7 +943,7 @@ Treat dictionary keys as stable values. For custom key classes, design __eq__() 
 
 ---
 
-## FU-029 — The hash and equality contract ![TYPE](https://img.shields.io/badge/TYPE-Core_contract-7c3aed) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
+## PY-008 / FU-1 — The hash and equality contract ![TYPE](https://img.shields.io/badge/TYPE-Core_contract-7c3aed) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
 
 **Question (EN):** What contract must __hash__() and __eq__() satisfy for objects used as dictionary keys?
 
@@ -957,7 +957,7 @@ The essential rule is: if a == b, then hash(a) == hash(b). The reverse is not re
 
 ---
 
-## FU-030 — Collision resolution and resizing ![TYPE](https://img.shields.io/badge/TYPE-Internal_mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
+## PY-008 / FU-2 — Collision resolution and resizing ![TYPE](https://img.shields.io/badge/TYPE-Internal_mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
 
 **Question (EN):** What happens when dictionary keys collide, and why can insertion or lookup become slower?
 
@@ -971,7 +971,7 @@ A collision means multiple keys compete for a candidate table position. CPython 
 
 ---
 
-## FU-031 — Mutable custom keys and hash stability ![TYPE](https://img.shields.io/badge/TYPE-Correctness_and_design-7c3aed) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
+## PY-008 / FU-3 — Mutable custom keys and hash stability ![TYPE](https://img.shields.io/badge/TYPE-Correctness_and_design-7c3aed) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
 
 **Question (EN):** Why is it dangerous to use a mutable object as a dictionary key, and how should a custom key type be designed?
 
@@ -985,7 +985,7 @@ If a key's hash changes after insertion, the dictionary may search for it using 
 
 ---
 
-## FU-032 — Hash randomization and production security ![TYPE](https://img.shields.io/badge/TYPE-Security_and_production-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
+## PY-008 / FU-4 — Hash randomization and production security ![TYPE](https://img.shields.io/badge/TYPE-Security_and_production-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
 
 **Question (EN):** How does hash randomization help protect Python services, and why should hash() not be used as a persistent identifier?
 
@@ -1076,7 +1076,7 @@ For production memory issues, I separate live-object retention from allocator be
 
 ---
 
-## FU-033 — Reference counting versus cyclic garbage collection ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
+## PY-009 / FU-1 — Reference counting versus cyclic garbage collection ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
 
 **Question (EN):** What is the difference between reference counting and cyclic garbage collection in CPython?
 
@@ -1094,7 +1094,7 @@ The cyclic garbage collector supplements reference counting. It examines support
 
 ---
 
-## FU-034 — Reference cycles and reachability ![TYPE](https://img.shields.io/badge/TYPE-Reachability-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
+## PY-009 / FU-2 — Reference cycles and reachability ![TYPE](https://img.shields.io/badge/TYPE-Reachability-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
 
 **Question (EN):** Why can a reference cycle remain in memory even when the application no longer uses any of its objects?
 
@@ -1112,7 +1112,7 @@ CPython's cyclic collector detects supported unreachable cycles by examining tra
 
 ---
 
-## FU-035 — del, finalizers, and deterministic cleanup ![TYPE](https://img.shields.io/badge/TYPE-Resource_lifecycle-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
+## PY-009 / FU-3 — del, finalizers, and deterministic cleanup ![TYPE](https://img.shields.io/badge/TYPE-Resource_lifecycle-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
 
 **Question (EN):** Does using del or defining __del__() guarantee that an object or its resources are released immediately?
 
@@ -1130,7 +1130,7 @@ A __del__() finalizer is not a reliable resource-management mechanism. Its execu
 
 ---
 
-## FU-036 — Diagnosing memory growth in production ![TYPE](https://img.shields.io/badge/TYPE-Production_diagnosis-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
+## PY-009 / FU-4 — Diagnosing memory growth in production ![TYPE](https://img.shields.io/badge/TYPE-Production_diagnosis-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
 
 **Question (EN):** How would you investigate steadily increasing memory usage in a long-running Python service?
 
@@ -1220,7 +1220,7 @@ I use them when a cache, observer registry, or metadata mapping should not keep 
 
 ---
 
-## FU-037 — Strong references versus weak references ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
+## PY-010 / FU-1 — Strong references versus weak references ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
 
 **Question (EN):** What exactly changes in an object's lifetime when a strong reference is replaced by a weak reference?
 
@@ -1240,7 +1240,7 @@ Retrieve the referent once into a local variable and check for `None`. That loca
 
 ---
 
-## FU-038 — Weak references in caches and observer registries ![TYPE](https://img.shields.io/badge/TYPE-Application-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
+## PY-010 / FU-2 — Weak references in caches and observer registries ![TYPE](https://img.shields.io/badge/TYPE-Application-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
 
 **Question (EN):** When would you choose a `WeakValueDictionary`, a `WeakKeyDictionary`, or a `WeakSet` in a real application?
 
@@ -1262,7 +1262,7 @@ For an observer system, a weak registry can prevent the publisher from retaining
 
 ---
 
-## FU-039 — Weak-reference support and implementation edge cases ![TYPE](https://img.shields.io/badge/TYPE-Edge_Cases-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
+## PY-010 / FU-3 — Weak-reference support and implementation edge cases ![TYPE](https://img.shields.io/badge/TYPE-Edge_Cases-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
 
 **Question (EN):** Can every Python object be weakly referenced, and what should you check when a class uses `__slots__`?
 
@@ -1282,7 +1282,7 @@ Also distinguish `weakref.ref` from `weakref.proxy`: a dead reference returns `N
 
 ---
 
-## FU-040 — Weak references, finalizers, and ownership design ![TYPE](https://img.shields.io/badge/TYPE-Senior_Judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
+## PY-010 / FU-4 — Weak references, finalizers, and ownership design ![TYPE](https://img.shields.io/badge/TYPE-Senior_Judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
 
 **Question (EN):** How would you design a weak-reference-based registry without introducing a new memory leak or unreliable cleanup behavior?
 
@@ -1361,7 +1361,7 @@ Acquire resources as close as possible to the scope that owns them. Register cle
 - [With Statement Context Managers](https://docs.python.org/3.15/reference/datamodel.html#with-statement-context-managers)
 - [contextlib](https://docs.python.org/3.15/library/contextlib.html)
 
-### FU-041 — Mechanism: What exactly happens when a `with` block exits because of an exception? ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
+### PY-011 / FU-1 — Mechanism: What exactly happens when a `with` block exits because of an exception? ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
 
 **Question (EN):** What exactly happens when a `with` block exits because of an exception?
 
@@ -1375,7 +1375,7 @@ Python invokes `__exit__()` with the exception type, exception instance, and tra
 
 “On exceptional exit, Python passes the exception details to `__exit__`. A truthy return value suppresses the exception; otherwise it propagates. On normal exit, the method receives three `None` values. I preserve propagation by default and suppress only explicitly expected exceptions.”
 
-### FU-042 — Application: When should you use `ExitStack` instead of nested `with` statements? ![TYPE](https://img.shields.io/badge/TYPE-Application-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
+### PY-011 / FU-2 — Application: When should you use `ExitStack` instead of nested `with` statements? ![TYPE](https://img.shields.io/badge/TYPE-Application-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
 
 **Question (EN):** When should you use `ExitStack` instead of nested `with` statements?
 
@@ -1389,7 +1389,7 @@ Use `ExitStack` when the number of resources is dynamic, acquisition is conditio
 
 “I choose `ExitStack` when resource acquisition is dynamic or conditional. It lets me register cleanup immediately after each successful acquisition and unwinds the stack in reverse order, including when a later acquisition fails. For a fixed small set, regular `with` statements are simpler.”
 
-### FU-043 — Edge cases: What happens if `__enter__()` fails, or if `__exit__()` itself raises? ![TYPE](https://img.shields.io/badge/TYPE-Edge_Cases-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
+### PY-011 / FU-3 — Edge cases: What happens if `__enter__()` fails, or if `__exit__()` itself raises? ![TYPE](https://img.shields.io/badge/TYPE-Edge_Cases-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
 
 **Question (EN):** What happens if `__enter__()` fails, or if `__exit__()` itself raises?
 
@@ -1403,7 +1403,7 @@ If `__enter__()` raises before returning, the context manager has not successful
 
 “Automatic exit is guaranteed only after `__enter__` returns successfully. Partial acquisition inside `__enter__` therefore needs its own rollback or an `ExitStack`. If `__exit__` raises, that new failure propagates, with the earlier exception available through exception chaining.”
 
-### FU-044 — Senior judgment: How would you design reliable resource management in a synchronous and asynchronous backend? ![TYPE](https://img.shields.io/badge/TYPE-Senior_Judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
+### PY-011 / FU-4 — Senior judgment: How would you design reliable resource management in a synchronous and asynchronous backend? ![TYPE](https://img.shields.io/badge/TYPE-Senior_Judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
 
 **Question (EN):** How would you design reliable resource management in a synchronous and asynchronous backend?
 
@@ -1500,7 +1500,7 @@ Define application exceptions by deriving from `Exception` or a suitable applica
 - [The try statement and except*](https://docs.python.org/3.15/reference/compound_stmts.html#the-try-statement)
 - [Execution model — Exceptions](https://docs.python.org/3.15/reference/executionmodel.html#exceptions)
 
-### FU-045 — Mechanism: Why should application code usually catch `Exception` rather than `BaseException`? ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
+### PY-012 / FU-1 — Mechanism: Why should application code usually catch `Exception` rather than `BaseException`? ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
 
 **Question (EN):** Why should application code usually catch `Exception` rather than `BaseException`?
 
@@ -1514,7 +1514,7 @@ Define application exceptions by deriving from `Exception` or a suitable applica
 
 “I catch specific exceptions whenever possible. `Exception` covers ordinary application failures, while `BaseException` also includes control-flow signals such as `KeyboardInterrupt` and `SystemExit`. A broad `BaseException` handler can interfere with shutdown and interruption, so I avoid it in normal application code.”
 
-### FU-046 — Application: How should a backend translate a low-level exception into a domain-level or API error? ![TYPE](https://img.shields.io/badge/TYPE-Application-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
+### PY-012 / FU-2 — Application: How should a backend translate a low-level exception into a domain-level or API error? ![TYPE](https://img.shields.io/badge/TYPE-Application-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
 
 **Question (EN):** How should a backend translate a low-level exception into a domain-level or API error?
 
@@ -1528,7 +1528,7 @@ Translate at an abstraction boundary where the new layer can add meaning. For ex
 
 “I translate exceptions at architectural boundaries where the new abstraction adds useful meaning. I preserve the original cause with explicit chaining, map known domain errors to stable API responses, and avoid exposing internal details or misclassifying unexpected failures as client errors.”
 
-### FU-047 — Edge cases: What is the difference between `__cause__`, `__context__`, and `raise ... from None`? ![TYPE](https://img.shields.io/badge/TYPE-Edge_Cases-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
+### PY-012 / FU-3 — Edge cases: What is the difference between `__cause__`, `__context__`, and `raise ... from None`? ![TYPE](https://img.shields.io/badge/TYPE-Edge_Cases-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
 
 **Question (EN):** What is the difference between `__cause__`, `__context__`, and `raise ... from None`?
 
@@ -1542,7 +1542,7 @@ Translate at an abstraction boundary where the new layer can add meaning. For ex
 
 “`__context__` records an exception that was active when another exception was raised. `__cause__` records an explicit cause supplied with `raise ... from ...`. `from None` suppresses display of the implicit context but does not remove it from the exception object.”
 
-### FU-048 — Senior judgment: When should you use `ExceptionGroup` and `except*` in concurrent systems? ![TYPE](https://img.shields.io/badge/TYPE-Senior_Judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
+### PY-012 / FU-4 — Senior judgment: When should you use `ExceptionGroup` and `except*` in concurrent systems? ![TYPE](https://img.shields.io/badge/TYPE-Senior_Judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
 
 **Question (EN):** When should you use `ExceptionGroup` and `except*` in concurrent systems?
 
@@ -1584,7 +1584,7 @@ Generators are useful for large files, paginated APIs, ETL, database result stre
 
 **Follow-ups**
 
-### FU-049 — Mechanism: What is the difference between an iterable and an iterator, and why is an iterator usually stateful? ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
+### PY-013 / FU-1 — Mechanism: What is the difference between an iterable and an iterator, and why is an iterator usually stateful? ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
 
 **Question (EN):** What is the difference between an iterable and an iterator, and why is an iterator usually stateful?
 
@@ -1598,7 +1598,7 @@ An iterable provides a way to obtain an iterator through `__iter__()`. An iterat
 
 “An iterable provides an iterator, while an iterator produces values through `__next__()` and maintains traversal state. A reusable iterable can usually create multiple independent iterators, whereas a particular iterator is generally consumed as it advances.”
 
-### FU-050 — Application: When would you choose a generator instead of a list in a backend data-processing pipeline? ![TYPE](https://img.shields.io/badge/TYPE-Application-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
+### PY-013 / FU-2 — Application: When would you choose a generator instead of a list in a backend data-processing pipeline? ![TYPE](https://img.shields.io/badge/TYPE-Application-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
 
 **Question (EN):** When would you choose a generator instead of a list in a backend data-processing pipeline?
 
@@ -1612,7 +1612,7 @@ Choose a generator when data can be processed incrementally and the complete res
 
 “I choose generators when data can be processed incrementally and the full result does not need to be retained. They reduce intermediate memory usage and support streaming pipelines, but I still design consumer behavior, backpressure, error handling, and resource cleanup explicitly.”
 
-### FU-051 — Edge cases: What happens when `StopIteration` is raised inside a generator, and how does `yield from` handle delegation? ![TYPE](https://img.shields.io/badge/TYPE-Edge_Cases-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
+### PY-013 / FU-3 — Edge cases: What happens when `StopIteration` is raised inside a generator, and how does `yield from` handle delegation? ![TYPE](https://img.shields.io/badge/TYPE-Edge_Cases-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
 
 **Question (EN):** What happens when `StopIteration` is raised inside a generator, and how does `yield from` handle delegation?
 
@@ -1626,7 +1626,7 @@ Under PEP 479, a `StopIteration` that escapes from generator code is transformed
 
 “PEP 479 converts an escaping `StopIteration` raised inside a generator into `RuntimeError`, preventing accidental silent termination. `yield from` delegates iteration and generator control operations to a subiterator, and it can capture the subgenerator's return value.”
 
-### FU-052 — Senior judgment: What production risks should you consider when using generators and asynchronous generators for resource-backed streams? ![TYPE](https://img.shields.io/badge/TYPE-Senior_Judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
+### PY-013 / FU-4 — Senior judgment: What production risks should you consider when using generators and asynchronous generators for resource-backed streams? ![TYPE](https://img.shields.io/badge/TYPE-Senior_Judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
 
 **Question (EN):** What production risks should you consider when using generators and asynchronous generators for resource-backed streams?
 
@@ -1673,7 +1673,7 @@ A **decorator factory** is used when the decorator needs configuration. The oute
 
 **Follow-ups**
 
-### FU-053 — Mechanism: How does Python apply a decorator, and when is the decorator executed? ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
+### PY-014 / FU-1 — Mechanism: How does Python apply a decorator, and when is the decorator executed? ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
 
 **Question (EN):** How does Python apply a decorator, and when is the decorator executed?
 
@@ -1687,7 +1687,7 @@ When the function definition executes, Python evaluates the decorator expression
 
 “A decorator expression is evaluated when the function definition executes. The resulting callable is applied to the function object, and its return value is bound to the function name. The wrapper's runtime logic executes when the decorated callable is invoked.”
 
-### FU-054 — Application: How would you implement a configurable decorator for logging, retries, or access control? ![TYPE](https://img.shields.io/badge/TYPE-Application-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
+### PY-014 / FU-2 — Application: How would you implement a configurable decorator for logging, retries, or access control? ![TYPE](https://img.shields.io/badge/TYPE-Application-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
 
 **Question (EN):** How would you implement a configurable decorator for logging, retries, or access control?
 
@@ -1701,7 +1701,7 @@ Use a decorator factory: an outer function accepts configuration and returns a d
 
 “I use a decorator factory when configuration is required. The returned decorator wraps the target callable, preserves metadata with `functools.wraps`, and forwards arguments, results, and exceptions correctly. I also define explicit policies for retry limits, idempotency, and authorization order.”
 
-### FU-055 — Edge cases: What is a closure, how does `nonlocal` work, and what problems can mutable closure state introduce? ![TYPE](https://img.shields.io/badge/TYPE-Edge_Cases-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
+### PY-014 / FU-3 — Edge cases: What is a closure, how does `nonlocal` work, and what problems can mutable closure state introduce? ![TYPE](https://img.shields.io/badge/TYPE-Edge_Cases-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
 
 **Question (EN):** What is a closure, how does `nonlocal` work, and what problems can mutable closure state introduce?
 
@@ -1715,7 +1715,7 @@ A closure retains access to variables from an enclosing function scope. `nonloca
 
 “A closure retains access to variables from an enclosing function scope. `nonlocal` allows rebinding an existing variable in the nearest enclosing function scope. Mutable closure state can be shared across calls and may introduce race conditions, so I make its lifecycle and concurrency guarantees explicit.”
 
-### FU-056 — Senior judgment: Why are `functools.wraps`, decorator order, and async-aware wrappers important in production systems? ![TYPE](https://img.shields.io/badge/TYPE-Senior_Judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
+### PY-014 / FU-4 — Senior judgment: Why are `functools.wraps`, decorator order, and async-aware wrappers important in production systems? ![TYPE](https://img.shields.io/badge/TYPE-Senior_Judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
 
 **Question (EN):** Why are `functools.wraps`, decorator order, and async-aware wrappers important in production systems?
 
@@ -1796,7 +1796,7 @@ The global statement directs rebinding to the module namespace, while nonlocal t
 
 ---
 
-## FU-057 — How does Python apply LEGB, and how are local names determined? ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
+## PY-015 / FU-1 — How does Python apply LEGB, and how are local names determined? ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
 
 **Question (EN):** How does Python apply the LEGB lookup order, and how does it determine whether a name is local?
 
@@ -1810,7 +1810,7 @@ For ordinary function lookup, Python checks the current local scope, enclosing f
 
 ---
 
-## FU-058 — How would you diagnose UnboundLocalError and choose local, global, or nonlocal? ![TYPE](https://img.shields.io/badge/TYPE-Application-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
+## PY-015 / FU-2 — How would you diagnose UnboundLocalError and choose local, global, or nonlocal? ![TYPE](https://img.shields.io/badge/TYPE-Application-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
 
 **Question (EN):** How would you diagnose an UnboundLocalError, and when would you use a local variable, global, or nonlocal?
 
@@ -1830,7 +1830,7 @@ In production code, explicit objects, dependency injection, or encapsulated stat
 
 ---
 
-## FU-059 — Why do methods not close over class namespaces, and what is late binding? ![TYPE](https://img.shields.io/badge/TYPE-Edge_Cases-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
+## PY-015 / FU-3 — Why do methods not close over class namespaces, and what is late binding? ![TYPE](https://img.shields.io/badge/TYPE-Edge_Cases-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
 
 **Question (EN):** Why is a class namespace not an enclosing scope for methods, and how does late binding affect closures?
 
@@ -1846,7 +1846,7 @@ A closure resolves its free-variable binding when it runs. If a loop repeatedly 
 
 ---
 
-## FU-060 — How should senior engineers manage scope and dynamic name resolution in production? ![TYPE](https://img.shields.io/badge/TYPE-Senior_Judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
+## PY-015 / FU-4 — How should senior engineers manage scope and dynamic name resolution in production? ![TYPE](https://img.shields.io/badge/TYPE-Senior_Judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
 
 **Question (EN):** How do you manage scope and dynamic name resolution in production systems?
 
@@ -1948,7 +1948,7 @@ A shallow copy creates a new outer container but retains references to nested ob
 
 ---
 
-## FU-061 — What is the difference between mutation, rebinding, and aliasing? ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
+## PY-016 / FU-1 — What is the difference between mutation, rebinding, and aliasing? ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
 
 **Question (EN):** Explain mutation, rebinding, and aliasing. Why can changing an object through one name affect another name?
 
@@ -1962,7 +1962,7 @@ A name is a binding to an object. Aliasing exists when multiple names refer to t
 
 ---
 
-## FU-062 — How do shallow copy and deep copy differ, and when would you use each? ![TYPE](https://img.shields.io/badge/TYPE-Application-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
+## PY-016 / FU-2 — How do shallow copy and deep copy differ, and when would you use each? ![TYPE](https://img.shields.io/badge/TYPE-Application-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
 
 **Question (EN):** How do shallow and deep copying differ, and how would you choose a copying strategy in a real application?
 
@@ -1982,7 +1982,7 @@ Choose based on ownership requirements:
 
 ---
 
-## FU-063 — Why can a tuple contain mutable state, and what happens when mutable objects are passed to functions? ![TYPE](https://img.shields.io/badge/TYPE-Edge_Cases-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
+## PY-016 / FU-3 — Why can a tuple contain mutable state, and what happens when mutable objects are passed to functions? ![TYPE](https://img.shields.io/badge/TYPE-Edge_Cases-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
 
 **Question (EN):** How can an immutable tuple contain mutable state, and what does Python's call-by-sharing argument model imply for function calls?
 
@@ -1998,7 +1998,7 @@ For function calls, a parameter is a local name bound to the same object passed 
 
 ---
 
-## FU-064 — How do you prevent unintended shared mutable state in production systems? ![TYPE](https://img.shields.io/badge/TYPE-Senior_Judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
+## PY-016 / FU-4 — How do you prevent unintended shared mutable state in production systems? ![TYPE](https://img.shields.io/badge/TYPE-Senior_Judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
 
 **Question (EN):** How do you manage object ownership and prevent unintended shared mutable state in production systems?
 
@@ -2110,7 +2110,7 @@ During argument binding, positional values fill positional slots, keyword values
 
 ---
 
-## FU-065 — How does Python bind positional and keyword arguments, and which errors can occur? ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
+## PY-017 / FU-1 — How does Python bind positional and keyword arguments, and which errors can occur? ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
 
 **Question (EN):** Explain the argument-binding process and the most common reasons a function call raises TypeError.
 
@@ -2124,7 +2124,7 @@ Positional arguments fill positional parameter slots in order. Keyword arguments
 
 ---
 
-## FU-066 — When should an API use positional-only and keyword-only parameters? ![TYPE](https://img.shields.io/badge/TYPE-Application-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
+## PY-017 / FU-2 — When should an API use positional-only and keyword-only parameters? ![TYPE](https://img.shields.io/badge/TYPE-Application-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
 
 **Question (EN):** How do positional-only and keyword-only parameters improve API design?
 
@@ -2138,7 +2138,7 @@ Positional-only parameters prevent callers from depending on parameter names and
 
 ---
 
-## FU-067 — Why are mutable defaults dangerous, and what is the role of annotations? ![TYPE](https://img.shields.io/badge/TYPE-Edge_Cases-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
+## PY-017 / FU-3 — Why are mutable defaults dangerous, and what is the role of annotations? ![TYPE](https://img.shields.io/badge/TYPE-Edge_Cases-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
 
 **Question (EN):** Why can mutable default arguments cause bugs, and do type annotations validate arguments at runtime?
 
@@ -2154,7 +2154,7 @@ Ordinary type annotations do not automatically enforce argument types at runtime
 
 ---
 
-## FU-068 — How do you inspect and validate callable signatures in frameworks and production tooling? ![TYPE](https://img.shields.io/badge/TYPE-Senior_Judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
+## PY-017 / FU-4 — How do you inspect and validate callable signatures in frameworks and production tooling? ![TYPE](https://img.shields.io/badge/TYPE-Senior_Judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
 
 **Question (EN):** How would you use `inspect.Signature` to validate or adapt arguments in a framework, and what limitations would you consider?
 
@@ -2272,7 +2272,7 @@ Python supports functional programming concepts such as pure functions, immutabi
 
 ---
 
-## FU-069 — What makes a function a first-class object, and how is that different from a callable? ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
+## PY-018 / FU-1 — What makes a function a first-class object, and how is that different from a callable? ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
 
 **Question (EN):** What does it mean that functions are first-class objects, and why is the term callable broader than function?
 
@@ -2286,7 +2286,7 @@ First-class means a function can be treated as a value: assigned, passed, return
 
 ---
 
-## FU-070 — How would you use higher-order functions in a backend application? ![TYPE](https://img.shields.io/badge/TYPE-Application-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
+## PY-018 / FU-2 — How would you use higher-order functions in a backend application? ![TYPE](https://img.shields.io/badge/TYPE-Application-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
 
 **Question (EN):** Give practical backend examples of higher-order functions and explain when they improve a design.
 
@@ -2300,7 +2300,7 @@ Examples include middleware wrappers, decorators for metrics or authorization, v
 
 ---
 
-## FU-071 — What are closure late binding and shared mutable state risks? ![TYPE](https://img.shields.io/badge/TYPE-Edge_Cases-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
+## PY-018 / FU-3 — What are closure late binding and shared mutable state risks? ![TYPE](https://img.shields.io/badge/TYPE-Edge_Cases-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
 
 **Question (EN):** What does a closure retain, and what problems can arise from late binding or mutable captured state?
 
@@ -2314,7 +2314,7 @@ A closure retains access to bindings in an enclosing lexical scope. It does not 
 
 ---
 
-## FU-072 — When should you choose functional composition over classes or imperative code? ![TYPE](https://img.shields.io/badge/TYPE-Senior_Judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
+## PY-018 / FU-4 — When should you choose functional composition over classes or imperative code? ![TYPE](https://img.shields.io/badge/TYPE-Senior_Judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
 
 **Question (EN):** How do you decide between functional composition, object-oriented design, and imperative control flow in production Python?
 
