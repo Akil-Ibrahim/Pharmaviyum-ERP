@@ -20,7 +20,7 @@
 - ![Concurrency](https://img.shields.io/badge/-Concurrency-0ea5e9?style=flat-square) — Concurrency
 - ![Parallelism](https://img.shields.io/badge/-Parallelism-d97706?style=flat-square) — Parallelism
 - ![CPU-bound](https://img.shields.io/badge/-CPU-bound-d97706?style=flat-square) — CPU-bound
-- ![I/O-bound](https://img.shields.io/badge/I/O-bound-0891b2?style=flat-square) — I/O-bound
+- ![I/O-bound](https://img.shields.io/badge/-I%2FO-bound-0891b2?style=flat-square) — I/O-bound
 - ![CPython](https://img.shields.io/badge/-CPython-64748b?style=flat-square) — CPython
 - ![Python Bytecode](https://img.shields.io/badge/-Python-Bytecode-64748b?style=flat-square) — Python Bytecode
 - ![Native Extension](https://img.shields.io/badge/-Native-Extension-0f766e?style=flat-square) — Native Extension
@@ -76,7 +76,7 @@
 
 **Оригинальная формулировка (EN):** What is the Global Interpreter Lock (GIL) in CPython, and how does it affect concurrency ![Concurrency](https://img.shields.io/badge/-Concurrency-0ea5e9?style=flat-square) and parallelism ![Parallelism](https://img.shields.io/badge/-Parallelism-d97706?style=flat-square)?
 
-**Что оценивается:** Синхронизация runtime CPython, CPU-bound ![CPU-bound](https://img.shields.io/badge/-CPU-bound-d97706?style=flat-square) и I/O-bound ![I/O-bound](https://img.shields.io/badge/I/O-bound-0891b2?style=flat-square) нагрузки, потокобезопасность, выбор модели конкурентности и free-threaded ![Free-threaded](https://img.shields.io/badge/-Free-threaded-0f766e?style=flat-square) Python.  
+**Что оценивается:** Синхронизация runtime CPython, CPU-bound ![CPU-bound](https://img.shields.io/badge/-CPU-bound-d97706?style=flat-square) и I/O-bound ![I/O-bound](https://img.shields.io/badge/-I%2FO-bound-0891b2?style=flat-square) нагрузки, потокобезопасность, выбор модели конкурентности и free-threaded ![Free-threaded](https://img.shields.io/badge/-Free-threaded-0f766e?style=flat-square) Python.  
 **Уровень:** L3 — Advanced/Senior  
 **Приоритет:** P0 — Core / высокая частота на технических интервью
 
@@ -93,14 +93,14 @@
 
 **Оригинальная формулировка (EN):** What is the difference between concurrency and parallelism, and why is the distinction important in Python?
 
-**Что оценивается:** Различие конкурентности и одновременного выполнения, I/O-bound ![I/O-bound](https://img.shields.io/badge/I/O-bound-0891b2?style=flat-square) и CPU-bound ![CPU-bound](https://img.shields.io/badge/-CPU-bound-d97706?style=flat-square) нагрузки, выбор подходящей модели выполнения в Python.  
+**Что оценивается:** Различие конкурентности и одновременного выполнения, I/O-bound ![I/O-bound](https://img.shields.io/badge/-I%2FO-bound-0891b2?style=flat-square) и CPU-bound ![CPU-bound](https://img.shields.io/badge/-CPU-bound-d97706?style=flat-square) нагрузки, выбор подходящей модели выполнения в Python.  
 **Уровень:** L2–L3 — Intermediate/Advanced  
 **Приоритет:** P0 — Core
 
 Дополнительные вопросы:
 
 - **FU-1 — Основы:** Может ли конкурентность существовать без параллелизма? ![Concurrency](https://img.shields.io/badge/-Concurrency-0ea5e9?style=flat-square) ![Parallelism](https://img.shields.io/badge/-Parallelism-d97706?style=flat-square) ![TYPE](https://img.shields.io/badge/TYPE-Fundamentals-7c3aed) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
-- **FU-2 — Анализ нагрузки:** Чем отличаются I/O-bound и CPU-bound задачи? ![I/O-bound](https://img.shields.io/badge/I/O-bound-0891b2?style=flat-square) ![CPU-bound](https://img.shields.io/badge/-CPU-bound-d97706?style=flat-square) ![TYPE](https://img.shields.io/badge/TYPE-Workload_analysis-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
+- **FU-2 — Анализ нагрузки:** Чем отличаются I/O-bound и CPU-bound задачи? ![I/O-bound](https://img.shields.io/badge/-I%2FO-bound-0891b2?style=flat-square) ![CPU-bound](https://img.shields.io/badge/-CPU-bound-d97706?style=flat-square) ![TYPE](https://img.shields.io/badge/TYPE-Workload_analysis-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
 - **FU-3 — Поведение CPython ![CPython](https://img.shields.io/badge/-CPython-64748b?style=flat-square):** Как GIL ![GIL](https://img.shields.io/badge/-GIL-2563eb?style=flat-square) влияет на конкурентность и параллелизм в CPython? ![TYPE](https://img.shields.io/badge/TYPE-CPython_behavior-64748b) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
 - **FU-4 — Senior-level суждение:** Как определить, нужна ли задаче конкурентность или параллелизм? ![Concurrency](https://img.shields.io/badge/-Concurrency-0ea5e9?style=flat-square) ![Parallelism](https://img.shields.io/badge/-Parallelism-d97706?style=flat-square) ![TYPE](https://img.shields.io/badge/TYPE-Senior_judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
 
