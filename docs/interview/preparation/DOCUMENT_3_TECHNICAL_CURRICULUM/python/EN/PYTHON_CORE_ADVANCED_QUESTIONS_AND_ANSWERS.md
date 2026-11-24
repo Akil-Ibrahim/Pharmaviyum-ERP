@@ -6,7 +6,7 @@
 **Question map:** [English Question Map](./PYTHON_CORE_ADVANCED.md)  
 **Navigation:** [Python curriculum index](../README.md)
 
-English study material for PY-001–PY-016 and FU-001–FU-064. Each topic explains the concept and provides an interview-ready answer. The Russian version uses the same question IDs.
+English study material for PY-001–PY-017 and FU-001–FU-068. Each topic explains the concept and provides an interview-ready answer. The Russian version uses the same question IDs.
 
 **Numbering rule:** Every Main Question has exactly four Follow-ups. FU IDs are globally sequential across the curriculum and never restart for a new Main Question: PY-001 → FU-001–FU-004, PY-002 → FU-005–FU-008, and so on.
 
@@ -2009,3 +2009,161 @@ Make ownership and mutation boundaries explicit. Avoid mutable default arguments
 **Interview answer (EN)**
 
 “I define which component owns an object and which components may mutate it. I avoid mutable defaults unless shared state is intentional, use explicit copying or immutable data structures at boundaries, and protect shared mutable state with an appropriate synchronization strategy. I also test aliasing and mutation behavior because accidental sharing often creates order-dependent bugs and cross-request state leakage.”
+---
+
+# PY-017 — Python Argument Passing, Parameter Semantics & Function Signatures ![TYPE](https://img.shields.io/badge/TYPE-MAIN_QUESTION-2563eb) ![LEVEL](https://img.shields.io/badge/LEVEL-L3-7c3aed) ![PRIORITY](https://img.shields.io/badge/PRIORITY-P0-d97706)
+
+**Question (EN):** Explain Python's argument-passing model, parameter semantics, and function signatures. How does Python bind arguments to parameters?
+
+## Core concepts
+
+- A **parameter** is a name declared in a function definition.
+- An **argument** is a value or expression supplied in a function call.
+- **Argument binding** maps supplied arguments to the function's parameters.
+- A **signature** describes the callable's accepted parameters, their kinds, defaults, and annotations.
+
+Python uses **object sharing** (also called call by sharing): a parameter becomes a local name bound to the object supplied by the caller. Mutating a shared mutable object can be visible to the caller; rebinding the local parameter does not rebind the caller's variable.
+
+## The five parameter kinds
+
+1. **Positional-only:** must be supplied by position. The `/` marker separates these parameters from the rest.
+2. **Positional-or-keyword:** can be supplied either by position or by keyword. This is the default parameter kind.
+3. **Variadic positional:** `*args` collects extra positional arguments into a tuple.
+4. **Keyword-only:** must be supplied by keyword. A bare `*` or a `*args` parameter marks the boundary.
+5. **Variadic keyword:** `**kwargs` collects extra keyword arguments into a dictionary.
+
+The `/` and `*` markers are syntax separators, not parameters themselves.
+
+## Argument binding process
+
+At a high level, Python:
+1. Evaluates the callable and argument expressions.
+2. Assigns positional arguments to the corresponding positional slots.
+3. Matches keyword arguments by parameter name.
+4. Detects duplicate assignments to the same parameter.
+5. Fills remaining parameters from their default values.
+6. Raises `TypeError` if required parameters remain missing, unexpected arguments are supplied, or the call otherwise violates the signature.
+
+A parameter cannot receive a value twice. A supplied `None` is a value, not an indication that the argument was omitted. Keyword argument order is not generally significant for binding.
+
+## Defaults and evaluation time
+
+Default expressions are evaluated once when the function definition executes, not once per call. The resulting objects are reused by calls that omit those arguments. This is why mutable defaults can accidentally retain state across calls.
+
+Use a sentinel such as `None` when a fresh mutable object is required for each invocation. Distinguish “argument omitted” from “argument explicitly supplied as None” when the API needs that distinction; a unique sentinel object is often appropriate.
+
+## Argument unpacking
+
+- `*iterable` in a call expands an iterable into positional arguments.
+- `**mapping` expands a mapping into keyword arguments, whose keys must be strings matching accepted parameter names unless captured by `**kwargs`.
+- During a call, positional arguments must precede explicit keyword arguments in the call syntax.
+- Multiple unpackings are permitted when their resulting arguments do not cause duplicate bindings or other conflicts.
+
+Unpacking changes how values are supplied; it does not change the target callable's signature.
+
+## Annotations and runtime behavior
+
+Parameter and return annotations are metadata. Python does not automatically enforce ordinary type annotations at function-call time. Static type checkers, IDEs, frameworks, and explicit validation libraries may interpret them.
+
+Annotations therefore do not replace input validation at trust boundaries.
+
+## Signature introspection
+
+The `inspect` module exposes callable signatures:
+- `inspect.signature(callable)` returns an `inspect.Signature`.
+- Its `parameters` mapping describes each parameter and its kind/default/annotation.
+- `Signature.bind(*args, **kwargs)` checks a proposed call against the signature and returns `BoundArguments`, or raises `TypeError`.
+- `bind_partial()` permits required parameters to remain unbound, which is useful for partial-call construction.
+- `apply_defaults()` fills defaults into a `BoundArguments` mapping.
+
+Not every callable is introspectable, and some built-in or extension callables expose limited signature metadata. Treat introspection as a tool, not an absolute guarantee.
+
+## API design guidance
+
+Use positional-only parameters when parameter names should not become part of the public API or when positional calling is intentional. Use keyword-only parameters for configuration options where names improve readability and reduce call-site ambiguity. Avoid accepting arbitrary `**kwargs` unless extensibility or forwarding is a deliberate part of the API contract.
+
+Keep defaults immutable where practical, document whether `None` means “not supplied” or is a valid value, and validate external input explicitly.
+
+## Interview-ready answer (EN)
+
+“Python functions define parameters in a signature, and callers provide arguments that are bound to those parameters. Python supports five parameter kinds: positional-only, positional-or-keyword, variadic positional, keyword-only, and variadic keyword. The slash marks positional-only parameters, while the star marks the keyword-only boundary; `*args` and `**kwargs` collect additional arguments.
+
+During argument binding, positional values fill positional slots, keyword values are matched by name, defaults fill remaining optional slots, and invalid or duplicate assignments raise TypeError. Python uses object sharing: parameters refer to the objects supplied by the caller, so mutation can be observable while local rebinding is not. Defaults are evaluated once at function definition, and annotations are not automatically enforced at runtime. For API design and tooling, I use explicit parameter kinds and `inspect.Signature.bind()` when I need reliable signature-aware argument validation.”
+
+## What to remember
+
+- Parameters belong to definitions; arguments belong to calls.
+- Python has five parameter kinds.
+- `/` marks positional-only; `*` marks keyword-only.
+- `*args` collects a tuple; `**kwargs` collects a dictionary.
+- Binding errors such as missing, duplicate, or unexpected arguments raise `TypeError`.
+- Defaults are evaluated once at function definition.
+- Annotations do not automatically validate calls at runtime.
+- `inspect.Signature.bind()` can validate argument binding.
+
+## References
+
+- [Python 3.15.2 — Function definitions](https://docs.python.org/3.15/reference/compound_stmts.html#function-definitions)
+- [Python 3.15.2 — Calls](https://docs.python.org/3.15/reference/expressions.html#calls)
+- [Python 3.15.2 — Special parameters](https://docs.python.org/3.15/tutorial/controlflow.html#special-parameters)
+- [Python 3.15.2 — inspect.Signature](https://docs.python.org/3.15/library/inspect.html#introspecting-callables-with-the-signature-object)
+
+---
+
+## FU-065 — How does Python bind positional and keyword arguments, and which errors can occur? ![TYPE](https://img.shields.io/badge/TYPE-Mechanism-0ea5e9) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-1_OF_4-64748b)
+
+**Question (EN):** Explain the argument-binding process and the most common reasons a function call raises TypeError.
+
+**Explanation**
+
+Positional arguments fill positional parameter slots in order. Keyword arguments fill slots by name. Defaults fill unassigned optional parameters. A call fails when a required parameter is missing, a parameter receives multiple values, an unsupported keyword is supplied, or too many positional arguments are provided without a variadic positional parameter.
+
+**Interview answer (EN)**
+
+“Python first maps positional arguments to positional slots, then matches keyword arguments by name, and finally applies defaults to unfilled optional parameters. It raises TypeError for missing required parameters, duplicate values, unexpected keywords, or excess positional arguments. A parameter can be bound only once.”
+
+---
+
+## FU-066 — When should an API use positional-only and keyword-only parameters? ![TYPE](https://img.shields.io/badge/TYPE-Application-16a34a) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-2_OF_4-64748b)
+
+**Question (EN):** How do positional-only and keyword-only parameters improve API design?
+
+**Explanation**
+
+Positional-only parameters prevent callers from depending on parameter names and can preserve flexibility to rename those parameters later. Keyword-only parameters make configuration explicit, improve readability, and prevent callers from accidentally relying on positional order for options.
+
+**Interview answer (EN)**
+
+“I use positional-only parameters when names are implementation details or positional calling is part of the intended interface. I use keyword-only parameters for options and configuration because named arguments make call sites clearer and more robust. I choose parameter kinds deliberately as part of the public API contract.”
+
+---
+
+## FU-067 — Why are mutable defaults dangerous, and what is the role of annotations? ![TYPE](https://img.shields.io/badge/TYPE-Edge_Cases-d97706) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-3_OF_4-64748b)
+
+**Question (EN):** Why can mutable default arguments cause bugs, and do type annotations validate arguments at runtime?
+
+**Explanation**
+
+Default expressions are evaluated once when the function definition executes. A mutable object used as a default is therefore reused across calls that omit the argument. Use a sentinel and create fresh per-call state when needed.
+
+Ordinary type annotations do not automatically enforce argument types at runtime. They provide metadata for static analysis and tools; runtime validation must be implemented explicitly or delegated to a validation framework.
+
+**Interview answer (EN)**
+
+“Mutable defaults are shared because defaults are evaluated once at function definition, not on every call. I use a sentinel and create a new object inside the function when each call needs independent state. Type annotations are not runtime enforcement by themselves, so external or untrusted inputs still require explicit validation.”
+
+---
+
+## FU-068 — How do you inspect and validate callable signatures in frameworks and production tooling? ![TYPE](https://img.shields.io/badge/TYPE-Senior_Judgment-dc2626) ![SEQUENCE](https://img.shields.io/badge/SEQUENCE-4_OF_4-64748b)
+
+**Question (EN):** How would you use `inspect.Signature` to validate or adapt arguments in a framework, and what limitations would you consider?
+
+**Explanation**
+
+Use `inspect.signature()` to obtain a callable's signature and `Signature.bind()` to validate positional and keyword arguments against it. `bind_partial()` is useful when constructing partially applied calls. Apply defaults explicitly if the framework needs a complete mapping.
+
+Not every callable exposes complete introspection metadata. Decorators may affect the visible signature; `functools.wraps` and the `__wrapped__` chain help introspection tools discover the wrapped callable, but custom or extension callables may still be limited.
+
+**Interview answer (EN)**
+
+“I use inspect.signature() to obtain a callable's declared interface and Signature.bind() to validate argument mapping before dispatch. I use bind_partial() for staged or partial invocation and apply_defaults() when the framework needs defaulted values included. I account for decorated callables and incomplete metadata, and I avoid treating introspection as a substitute for domain validation or authorization.”
