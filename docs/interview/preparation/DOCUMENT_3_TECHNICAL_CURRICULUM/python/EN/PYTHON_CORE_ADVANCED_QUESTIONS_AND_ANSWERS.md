@@ -2435,3 +2435,10 @@ Avoid nested conditional expressions and compressed business logic inside lambda
 
 “My default is to optimize for clarity. I use lambda only when the expression is short and obvious at the call site. I use def for reusable or domain-specific behavior, for logic that needs documentation or annotations, and when tracebacks or tests benefit from a stable name. I also prefer built-ins or comprehensions when they express the transformation more directly. I do not treat lambda as a performance optimization.”
 
+
+
+## References — PY-019
+
+- [Python 3.15.2 Language Reference — Lambda expressions](https://docs.python.org/3.15/reference/expressions.html#lambdas)
+- [Python 3.15.2 Tutorial — Lambda Expressions](https://docs.python.org/3.15/tutorial/controlflow.html#lambda-expressions)
+- [Python 3.15.2 Functional Programming HOWTO — Small functions and the lambda expression](https://docs.python.org/3.15/howto/functional.html#small-functions-and-the-lambda-expression)
