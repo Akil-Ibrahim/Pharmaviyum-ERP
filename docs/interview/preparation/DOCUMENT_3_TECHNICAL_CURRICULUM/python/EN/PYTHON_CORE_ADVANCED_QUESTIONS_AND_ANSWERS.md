@@ -47,6 +47,8 @@ CPython also has an optional **free-threaded build**, introduced experimentally 
 
 It is not the default build. Some C extensions are not compatible and may cause the GIL to be enabled again. Free-threading does not guarantee that every application becomes faster: compatibility, synchronization, memory use, and real workload performance must be checked.
 
+For runtime verification, `sysconfig.get_config_var("Py_GIL_DISABLED")` indicates whether the interpreter was built with free-threading support, while `sys._is_gil_enabled()` reports whether the GIL is currently enabled. A free-threaded build can run with the GIL enabled through `PYTHON_GIL` or `-X gil`; importing an extension that does not declare free-threading support can also enable it.
+
 ## Interview-ready answer (EN)
 
 “The Global Interpreter Lock, or GIL, is an interpreter-level mutual-exclusion mechanism in the conventional CPython build. It allows only one thread at a time to hold the GIL and execute Python bytecode. This simplifies coordination around interpreter state and object management, but limits multi-core parallelism for CPU-bound pure-Python threads.
