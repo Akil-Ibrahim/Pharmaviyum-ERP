@@ -1,7 +1,7 @@
 #!/bin/bash
 # Integration test script
 
-echo "🧪 Testing Pharmaviyum-CRM Frontend-Backend Integration..."
+echo "🧪 Testing Pharmaviyum-ERP Frontend-Backend Integration..."
 echo ""
 
 # Colors
