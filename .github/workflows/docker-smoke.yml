@@ -6,12 +6,17 @@ on:
     branches: [main]
     paths:
       - Dockerfile
+      - .dockerignore
+      - .github/workflows/docker-smoke.yml
       - scripts/deploy.sh
       - docker-compose.yml
       - docker-compose.prod.yml
       - docker-compose.codespaces.yml
       - docker-compose.monitoring.yml
       - .devcontainer/**
+      - ansible/roles/app-backend/files/docker-compose-backend.yml
+      - deploy/otel/**
+      - docker/prometheus/**
       - pyproject.toml
       - uv.lock
       - .python-version
@@ -25,9 +30,9 @@ concurrency:
 
 jobs:
   docker-smoke:
-    name: Docker Engine and Compose Smoke Test
+    name: Docker Engine, Compose and Runtime Smoke Test
     runs-on: ubuntu-24.04
-    timeout-minutes: 20
+    timeout-minutes: 25
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -38,7 +43,7 @@ jobs:
           docker compose version
           docker info
 
-      - name: Validate development Compose configurations
+      - name: Validate Compose configurations
         env:
           GRAFANA_ADMIN_PASSWORD: smoke-test-only
         run: |
@@ -49,19 +54,40 @@ jobs:
           grep -F 'postgres_data:/var/lib/postgresql/data' docker-compose.prod.yml
           docker compose -f docker-compose.codespaces.yml config
           docker compose -f .devcontainer/docker-compose.devcontainer.yml config
+          python -m json.tool .devcontainer/devcontainer.json >/dev/null
+          grep -F 'dockerComposeFile": "docker-compose.devcontainer.yml' .devcontainer/devcontainer.json
+          grep -F 'service": "app' .devcontainer/devcontainer.json
+          grep -F 'WORKDIR /workspaces/Pharmaviyum-ERP' .devcontainer/Dockerfile
+          grep -F 'working_dir: /workspaces/Pharmaviyum-ERP' .devcontainer/docker-compose.devcontainer.yml
+          grep -F '..:/workspaces/Pharmaviyum-ERP:cached' .devcontainer/docker-compose.devcontainer.yml
+          grep -F 'PYTHONPATH: /workspaces/Pharmaviyum-ERP/src' .devcontainer/docker-compose.devcontainer.yml
+          bash -n .devcontainer/setup.sh
           docker compose -f docker-compose.monitoring.yml config
+          grep -F 'DATABASE_URL: postgresql+asyncpg://postgres:postgres@postgres:5432/pharmaviyum' docker-compose.yml
           bash -n scripts/deploy.sh
           grep -F 'VERIFIED_BACKUP_AND_ROLLBACK_PLAN' scripts/deploy.sh
 
       - name: Build application image
         run: docker build --tag pharmaviyum-erp:smoke-${GITHUB_SHA} .
 
+      - name: Build Dev Container image
+        run: docker build --file .devcontainer/Dockerfile --tag pharmaviyum-devcontainer:smoke-${GITHUB_SHA} .
+
+      - name: Verify Dev Container base image toolchain
+        run: |
+          docker run --rm --entrypoint sh pharmaviyum-devcontainer:smoke-${GITHUB_SHA} -lc '
+            test "$(id -un)" = "vscode"
+            uv --version
+            python --version
+            test -d /workspaces/Pharmaviyum-ERP
+          '
+
       - name: Start infrastructure services
         run: docker compose -f docker-compose.yml up -d postgres redis
 
       - name: Wait for infrastructure
         run: |
-          for i in {1..30}; do
+          for i in {1..45}; do
             postgres_status=$(docker inspect --format='{{.State.Health.Status}}' pharmaviyum-postgres 2>/dev/null || true)
             redis_status=$(docker inspect --format='{{.State.Health.Status}}' pharmaviyum-redis 2>/dev/null || true)
             echo "postgres=${postgres_status} redis=${redis_status}"
@@ -74,13 +100,33 @@ jobs:
           docker compose -f docker-compose.yml logs --no-color postgres redis
           exit 1
 
-      - name: Verify application image starts
+      - name: Verify application image starts and serves the frontend
         run: |
-          docker run --rm \
+          docker run -d --name pharmaviyum-api-smoke \
             --network pharmaviyum-network \
-            --entrypoint python \
-            pharmaviyum-erp:smoke-${GITHUB_SHA} \
-            -c 'import src.pharmaviyum.main; print("FastAPI import OK")'
+            -p 127.0.0.1:8000:8000 \
+            -e ENVIRONMENT=development \
+            -e DATABASE_URL=postgresql+asyncpg://postgres:postgres@postgres:5432/pharmaviyum \
+            -e PGVECTOR_DATABASE_URL=postgresql+asyncpg://postgres:postgres@postgres:5432/pharmaviyum \
+            -e REDIS_URL=redis://redis:6379/0 \
+            -e OTEL_ENABLED=false \
+            -e EMAILS_ENABLED=false \
+            pharmaviyum-erp:smoke-${GITHUB_SHA}
+          docker exec pharmaviyum-api-smoke test -s /app/static/index.html
+          for i in {1..45}; do
+            if curl --fail --silent http://127.0.0.1:8000/health; then
+              echo "API health endpoint passed."
+              break
+            fi
+            if [ "${i}" -eq 45 ]; then
+              docker logs pharmaviyum-api-smoke
+              exit 1
+            fi
+            sleep 2
+          done
+          curl --fail --silent --show-error http://127.0.0.1:8000/ -o /tmp/pharmaviyum-index.html
+          grep -qi '<html' /tmp/pharmaviyum-index.html
+          echo "Frontend index.html is served by the FastAPI container."
 
       - name: Validate Celery app configuration in the built image
         run: |
@@ -93,5 +139,7 @@ jobs:
       - name: Cleanup
         if: always()
         run: |
+          docker rm -f pharmaviyum-api-smoke || true
           docker compose -f docker-compose.yml down -v --remove-orphans
           docker image rm pharmaviyum-erp:smoke-${GITHUB_SHA} || true
+          docker image rm pharmaviyum-devcontainer:smoke-${GITHUB_SHA} || true

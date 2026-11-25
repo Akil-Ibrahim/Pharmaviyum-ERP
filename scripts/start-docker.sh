@@ -1,9 +1,9 @@
 #!/bin/bash
-# Docker start script for Pharmaviyum-CRM
+# Docker start script for Pharmaviyum-ERP
 
 set -e
 
-echo "🐳 Starting Pharmaviyum-CRM with Docker..."
+echo "🐳 Starting Pharmaviyum-ERP with Docker..."
 echo ""
 echo "Services exposed by docker-compose.yml:"
 echo "  - Web UI / API: http://localhost:8000"
