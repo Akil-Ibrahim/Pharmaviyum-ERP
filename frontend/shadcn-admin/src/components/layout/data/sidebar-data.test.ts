@@ -69,7 +69,7 @@ describe('Pharmaviyum sidebar navigation', () => {
     expect(inventoryTitles).not.toContain('Expiry Management')
   })
 
-  it('groups supplier, purchase order, and receiving workflows under Procurement', () => {
+  it('groups supplier and order workflows under Procurement', () => {
     expect(
       item('Operations', 'Procurement')?.items?.map((entry) => entry.title)
     ).toEqual(['Suppliers', 'Purchase Orders', 'Receiving'])
@@ -85,7 +85,7 @@ describe('Pharmaviyum sidebar navigation', () => {
     ])
   })
 
-  it('does not expose routes that currently render blank pages as active links', () => {
+  it('disables destinations whose routes are not ready', () => {
     const unavailableItems = [
       item('Operations', 'Dashboard'),
       item('Operations', 'POS'),
@@ -108,7 +108,7 @@ describe('Pharmaviyum sidebar navigation', () => {
     }
   })
 
-  it('keeps implemented administrative and background-task destinations enabled', () => {
+  it('keeps available admin and system destinations enabled', () => {
     expect(item('Administration', 'Users')?.disabled).toBeUndefined()
     expect(item('Administration', 'Settings')?.disabled).toBeUndefined()
     expect(item('System', 'Background Tasks')?.disabled).toBeUndefined()
