@@ -94,6 +94,7 @@ Use specialized upstream skills when available; this skill defines Pharmaviyum-s
 - Addy Osmani Frontend UI Engineering: `npx skills add addyosmani/agent-skills --skill frontend-ui-engineering` — production UI composition, responsive behavior, and design-system adherence.
 - Addy Osmani Performance Optimization: `npx skills add addyosmani/agent-skills --skill performance-optimization` — measurement-first profiling and optimization; use when performance is in scope.
 - Addy Osmani Accessibility Engineering: `npx skills add addyosmani/agent-skills --skill accessibility-engineering` — focused accessibility audits and remediation.
+- Addy Osmani Code Review and Quality: `npx skills add addyosmani/agent-skills --skill code-review-and-quality` — pre-merge review across correctness, readability, architecture, security, and performance. Review the exact PR head and use Pharmaviyum's Bun-based checks; do not apply unrelated npm/tooling assumptions blindly.
 - Google Stitch React + Vite Dashboard: `npx skills add google-labs-code/stitch-skills --skill react-vite-dashboard` — dashboard and design-to-code guidance. Adapt React Router examples to TanStack Router, ignore Web3 examples, and do not require Stitch MCP for ordinary development.
 - Google Stitch shadcn UI: `npx skills add google-labs-code/stitch-skills --skill shadcn-ui` — supplementary component guidance only; prefer official shadcn guidance and adapt Next.js/Tailwind v3 assumptions to Vite/Tailwind v4.
 
