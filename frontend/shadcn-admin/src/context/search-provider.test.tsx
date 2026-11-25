@@ -137,22 +137,28 @@ describe('SearchProvider and CommandMenu', () => {
 
     await openCommandPalette(screen)
 
-    await expect
-      .element(screen.getByRole('option', { name: 'POS' }))
-      .not.toBeInTheDocument()
-    await expect
-      .element(screen.getByRole('option', { name: 'Dashboard' }))
-      .not.toBeInTheDocument()
-    await expect
-      .element(screen.getByRole('option', { name: 'Clinical Care Patients' }))
-      .not.toBeInTheDocument()
-    await expect
-      .element(screen.getByRole('option', { name: 'Inventory Drug Catalog' }))
-      .not.toBeInTheDocument()
-    await expect
-      .element(screen.getByRole('option', { name: 'Procurement Suppliers' }))
-      .not.toBeInTheDocument()
-  });
+    const disabledDestinations = [
+      'Dashboard',
+      'POS',
+      'Mortarium AI',
+      'Clinical Care Patients',
+      'Clinical Care Prescriptions',
+      'Inventory Drug Catalog',
+      'Inventory Stock Management',
+      'Inventory Transfers',
+      'Inventory Defectura',
+      'Procurement Suppliers',
+      'Procurement Purchase Orders',
+      'Procurement Receiving',
+      'Pharmacies',
+    ]
+
+    for (const destination of disabledDestinations) {
+      await expect
+        .element(screen.getByRole('option', { name: destination }))
+        .not.toBeInTheDocument()
+    }
+  })
 
   it('applies theme and closes the palette when a theme command is chosen', async () => {
     const screen = await renderWithSearchProvider()
