@@ -111,7 +111,8 @@ function SidebarMenuLink({ item, href }: { item: NavLink; href: string }) {
   const { setOpenMobile } = useSidebar()
   const isDisabled = item.disabled || !item.url
   const isActive = !isDisabled && checkIsActive(href, item)
-  const disabledReason = item.disabledReason ?? 'This page is not available yet.'
+  const disabledReason =
+    item.disabledReason ?? 'This page is not available yet.'
 
   if (isDisabled) {
     return (
@@ -156,6 +157,7 @@ function SidebarMenuLink({ item, href }: { item: NavLink; href: string }) {
     </SidebarMenuItem>
   )
 }
+
 function SidebarMenuCollapsible({
   item,
   href,
@@ -224,7 +226,9 @@ function SidebarMenuCollapsible({
                         type='button'
                         disabled
                         title={disabledReason}
-                        aria-label={`${subItem.title}. ${disabledReason}`}
+                        aria-label={
+                          `${subItem.title}. ${disabledReason}`
+                        }
                       >
                         <NavIcon icon={subItem.icon} />
                         <span className='min-w-0 truncate text-sm font-medium'>
@@ -308,7 +312,9 @@ function SidebarMenuCollapsedDropdown({
                 disabled={isDisabled}
                 title={isDisabled ? disabledReason : undefined}
                 aria-label={
-                  isDisabled ? `${sub.title}. ${disabledReason}` : undefined
+                  isDisabled
+                    ? `${sub.title}. ${disabledReason}`
+                    : undefined
                 }
                 className={
                   isSubActive
