@@ -37,6 +37,7 @@ Upstream specialist skills may supplement the project-owned frontend skill. The 
 - TanStack Router route-tree output is generated. Never edit `src/routeTree.gen.ts` manually; use the configured route-generation script.
 - The generated API client under `src/client/` is owned by `scripts/generate-api-client.sh`. Never hand-edit generated output; update the backend contract and regenerate it.
 - Keep API transport, query keys, query functions, mutations, and UI responsibilities separated consistently with adjacent code.
+- Keep query functions read-only: do not upload/delete data, migrate persisted state, or mutate Zustand from a query function. Put writes and migrations in explicit TanStack Query mutations or user-triggered event workflows, and invalidate the relevant query after success.
 - Preserve HTTP status and structured server detail in a typed API error; do not throw plain `Error` for non-success HTTP responses.
 - Keep TanStack Query retry behavior status-aware: never retry authorization/validation 4xx responses; bound retries for transient network, timeout, rate-limit and server failures. Do not automatically retry non-idempotent mutations.
 - Ensure global query-cache and mutation error handlers recognize the same error types emitted by the active transport. Follow [Frontend API Error Contract](../../docs/development/FRONTEND_API_ERROR_CONTRACT.md).
