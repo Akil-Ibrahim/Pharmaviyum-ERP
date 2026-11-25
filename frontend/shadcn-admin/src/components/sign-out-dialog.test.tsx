@@ -5,8 +5,13 @@ import { SignOutDialog } from './sign-out-dialog'
 
 const navigate = vi.fn()
 const reset = vi.fn()
+const clear = vi.fn()
 
 const MOCK_HREF = 'https://app.test/dashboard?tab=1'
+
+vi.mock('@tanstack/react-query', () => ({
+  useQueryClient: () => ({ clear }),
+}))
 
 vi.mock('@/stores/auth-store', () => ({
   useAuthStore: () => ({
@@ -35,6 +40,7 @@ describe('SignOutDialog', () => {
 
     await userEvent.click(getByRole('button', { name: /^Sign out$/i }))
 
+    expect(clear).toHaveBeenCalledOnce()
     expect(reset).toHaveBeenCalledOnce()
     expect(navigate).toHaveBeenCalledWith({
       to: '/sign-in',
@@ -50,6 +56,7 @@ describe('SignOutDialog', () => {
 
     await userEvent.click(getByRole('button', { name: /^Cancel$/i }))
 
+    expect(clear).not.toHaveBeenCalled()
     expect(reset).not.toHaveBeenCalled()
     expect(navigate).not.toHaveBeenCalled()
   })
