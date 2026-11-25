@@ -82,6 +82,21 @@ class TestCreatePatient:
         assert "pharmacy_id" in response.text
 
     @pytest.mark.asyncio
+    async def test_create_patient_rejects_unknown_pharmacy(
+        self,
+        authenticated_client: AsyncClient,
+        sample_patient_data: dict,
+    ):
+        """Reject a tenant identifier that does not resolve to an active pharmacy."""
+        response = await authenticated_client.post(
+            "/api/v1/patients/?pharmacy_id=99999",
+            json=sample_patient_data,
+        )
+
+        assert response.status_code == 404
+        assert response.json()["detail"] == "Active pharmacy not found"
+
+    @pytest.mark.asyncio
     async def test_create_patient_unauthorized(
         self,
         client: AsyncClient,

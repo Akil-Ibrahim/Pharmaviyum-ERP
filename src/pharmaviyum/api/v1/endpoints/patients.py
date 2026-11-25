@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.pharmaviyum.core.database import get_db
 from src.pharmaviyum.models.patients import Patient
+from src.pharmaviyum.models.pharmacy import Pharmacy
 from src.pharmaviyum.models.pharmacy_membership import PharmacyMembership
 from src.pharmaviyum.models.phi_access_audit import PHIAccessAudit
 from src.pharmaviyum.modules.auth.deps import (
@@ -41,6 +42,18 @@ async def create_patient(
     current_user=Depends(get_current_active_superuser),
     pharmacy_id: int = Query(..., gt=0),
 ):
+    active_pharmacy_id = await db.scalar(
+        select(Pharmacy.id).where(
+            Pharmacy.id == pharmacy_id,
+            Pharmacy.is_active.is_(True),
+        )
+    )
+    if active_pharmacy_id is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Active pharmacy not found",
+        )
+
     try:
         scope = await resolve_pharmacy_scope(pharmacy_id, current_user, db)
         patient = await service.create_patient(
