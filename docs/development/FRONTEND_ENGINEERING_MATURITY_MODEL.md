@@ -3,7 +3,7 @@
 **Status:** Project engineering capability model and evidence-based improvement roadmap  
 **Scope:** `frontend/shadcn-admin/` and its agent/developer workflow  
 **Audience:** Frontend engineers, reviewers, technical leads and coding agents  
-**Relationship:** Extends [Frontend Engineering Standards](./FRONTEND_ENGINEERING_STANDARDS.md), [Frontend Implementation Audit](./FRONTEND_IMPLEMENTATION_AUDIT.md), and [Project Skill Integration](./FRONTEND_PROJECT_SKILL_INTEGRATION.md).
+**Relationship:** Extends [Frontend Engineering Standards](./FRONTEND_ENGINEERING_STANDARDS.md), [Frontend Implementation Audit](./FRONTEND_IMPLEMENTATION_AUDIT.md), and [Project Skill Integration](./FRONTEND_PROJECT_SKILL_INTEGRATION.md), with route-level findings in [Frontend Route Readiness Audit](./FRONTEND_ROUTE_READINESS_AUDIT.md).
 
 This model defines what high-quality frontend engineering means for Pharmaviyum and how to prove it. It is not a claim that the current application already meets every level. Maturity is assessed from observable repository evidence, CI results, runtime measurements, and reviewed workflow outcomes.
 
@@ -43,6 +43,9 @@ The initial source-inspection baseline is documented in [Frontend Implementation
 
 - **Architecture foundation:** React 19, TypeScript, Vite 8, TanStack Router, shadcn/Radix, TanStack Query and the existing Bun-based toolchain are present in the inspected application.
 - **Routing/build:** route generation and route-level code splitting are configured; generated route output must remain generator-owned.
+- **Primary routes:** both the authenticated Dashboard and POS feature entry points return `null`; route registration is not proof of a usable page.
+- **Route inventory:** 13 authenticated entity routes are explicitly disabled with `null` components while their entities remain in navigation; Sync Events, ERP Systems and Mortarium AI also have route components returning `null`. See the route-readiness audit for the exact inventory and recommended product decisions.
+- **Dashboard data provenance:** dormant chart components contain `Math.random()` demo metrics. The current Dashboard entry point returns `null`, so these charts are not evidenced as mounted; replace demo data before exposing them as production KPIs.
 - **POS:** the inspected `/pos` route is registered, but the inspected `Pos()` component returns `null`. This is a feature-critical implementation gap, not a stylistic issue.
 - **Catalog:** the inspected Products page is a basic generic product list with a fixed `limit=50`, client-side filtering and USD formatting; it does not evidence a complete medication master or batch/expiry/FEFO workflow.
 - **Accessibility:** useful primitives and form semantics exist, but the inspected Products search/table and asynchronous announcements have documented gaps. WCAG 2.2 AA conformance remains unverified.
@@ -111,11 +114,12 @@ The sequence below is based on the inspected audit's risk, not on visual polish 
 
 ### P0 — Establish correct pharmacy workflows
 
-1. Define the frontend/backend POS workflow contract: cart, product identity, price/currency, stock/batch reservation, payment state, sale confirmation, receipt and failure recovery.
-2. Implement the POS route only against approved backend contracts; do not fabricate missing endpoints or client-side transactional rules.
-3. Define medication master and inventory display contracts, including active ingredient, brand/generic identity, strength, dosage form, route, pack size, manufacturer/barcode where available, stock location, batch/lot and expiry.
-4. Establish FEFO and prescription/dispensing invariants at the backend boundary and test the UI's handling of authoritative results.
-5. Add tenant and patient-context negative tests before expanding sensitive workflows.
+1. Restore the authenticated Dashboard and POS entry points using approved data/workflow contracts; no route should silently render a blank page.
+2. Define the frontend/backend POS workflow contract: cart, product identity, price/currency, stock/batch reservation, payment state, sale confirmation, receipt and failure recovery.
+3. Implement the POS route only against approved backend contracts; do not fabricate missing endpoints or client-side transactional rules.
+4. Define medication master and inventory display contracts, including active ingredient, brand/generic identity, strength, dosage form, route, pack size, manufacturer/barcode where available, stock location, batch/lot and expiry.
+5. Establish FEFO and prescription/dispensing invariants at the backend boundary and test the UI's handling of authoritative results.
+6. Add tenant and patient-context negative tests before expanding sensitive workflows.
 
 **P0 exit:** documented contracts, working critical user journeys, backend enforcement evidence, failure-path tests and human domain/security approval. A rendered mockup alone is not completion.
 
