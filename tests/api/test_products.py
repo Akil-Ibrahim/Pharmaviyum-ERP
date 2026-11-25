@@ -28,14 +28,10 @@ def test_product_search_matches_strength_and_dosage_form(client):
     created = client.post("/api/v1/products/", json=payload)
     assert created.status_code == 201, created.text
 
-    strength_result = client.get(
-        "/api/v1/products/search", params={"q": "20 mg"}
-    )
+    strength_result = client.get("/api/v1/products/search", params={"q": "20 mg"})
     assert strength_result.status_code == 200, strength_result.text
     assert any(item["sku"] == "MED-SEARCH-001" for item in strength_result.json())
 
-    form_result = client.get(
-        "/api/v1/products/search", params={"q": "capsule"}
-    )
+    form_result = client.get("/api/v1/products/search", params={"q": "capsule"})
     assert form_result.status_code == 200, form_result.text
     assert any(item["sku"] == "MED-SEARCH-001" for item in form_result.json())
