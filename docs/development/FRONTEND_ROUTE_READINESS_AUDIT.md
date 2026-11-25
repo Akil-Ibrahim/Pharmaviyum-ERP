@@ -58,7 +58,9 @@ The following route files contain comments stating that the entity remains in th
 | `/patient-purchases` | `src/routes/_authenticated/patient-purchases.tsx` | Intentionally disabled; blank route |
 | `/drug-catalog-review` | `src/routes/_authenticated/drug-catalog-review.tsx` | Intentionally disabled; blank route |
 
-**Finding:** These routes should not be counted as implemented merely because TanStack Router registers them. The source comments indicate deliberate removal, so this audit does not classify them as accidental regressions. However, retaining visible navigation affordances to blank routes is inconsistent with a production-ready workflow.
+**Navigation confirmation:** `src/components/layout/data/sidebar-data.ts` still exposes these route destinations in the Operations navigation. `src/components/layout/data/sidebar-data.test.ts` asserts the Inventory and Procurement child labels and the Operations group order, but does not assert that each destination renders a usable page or an intentional disabled state.
+
+**Finding:** These routes should not be counted as implemented merely because TanStack Router registers them. The source comments indicate deliberate removal, so this audit does not classify them as accidental regressions. However, retaining visible navigation affordances to blank routes is inconsistent with a production-ready workflow. The current navigation test protects labels/order, not route readiness.
 
 **Required product/engineering decision for each route:**
 - restore a supported workflow;
@@ -133,14 +135,15 @@ A route is considered **implemented** only when all applicable conditions hold:
 5. Critical domain invariants are enforced by the backend and reflected accurately in UI state.
 6. Interactive controls have accessible names, semantics, keyboard behavior and status announcements.
 7. Tests cover success, failure, boundary and unauthorized behavior proportionate to risk.
-8. The page does not expose demo/random data as production facts.
+8. Navigation tests verify both information architecture and the renderability/readiness of every visible destination.
+9. The page does not expose demo/random data as production facts.
 
 A registered route, a component file, a screenshot, or a passing TypeScript build is not sufficient evidence by itself.
 
 ## 10. Limitations
 
 - The inspection is bounded to named route and feature files at the audited `main` revision.
-- Navigation visibility and permissions were not runtime-tested in a browser.
+- The sidebar source and its unit test were inspected; navigation destinations are present in source, but visibility/permissions were not runtime-tested in a browser.
 - No local build, tests, browser session, screen-reader, axe scan, API/backend audit, tenant-isolation test, or performance measurement was performed.
 - The route list is based on source search and individual inspection of identified matches; it is not a formal AST-wide static analysis.
 - No application source, backend, dependencies, lockfiles, API contracts or deployment settings were changed.
