@@ -74,6 +74,43 @@ The nine skills are selected for project use, but this document is an integratio
 
 Before vendoring or installing upstream skill content, verify the current source revision, complete companion files, license/attribution, target path, and managed-symlink behavior. Preserve complete resource directories (including references, rules, metadata and licenses). Do not overwrite the hand-authored `pharmaviyum-frontend-engineering` skill or Library Skills-managed links. If the available environment cannot run the official Skills CLI safely, document that limitation instead of claiming installation.
 
+## Controlled installation procedure
+
+Use the Vercel Skills CLI for these Git-hosted skill sources; do not use Library Skills for this task. The upstream CLI documentation currently requires Node.js 22.20 or later. Check the available Node version and CLI help before proceeding. Do not add the CLI as an application dependency solely to install agent instructions.
+
+From the repository root:
+
+1. Inspect available skills without installing them:
+   ```bash
+   npx skills add anthropics/skills --list
+   npx skills add vercel-labs/agent-skills --list
+   npx skills add shadcn-ui/ui --list
+   npx skills add addyosmani/agent-skills --list
+   ```
+2. Resolve and record a full immutable commit SHA for each upstream repository. Do not install from a moving `main` branch when committing skills to the project.
+3. Install only the approved names, targeting Codex and copying the selected skill files:
+   ```bash
+   npx skills add anthropics/skills@<ANTHROPIC_COMMIT_SHA> --skill frontend-design --agent codex --copy --yes
+   npx skills add vercel-labs/agent-skills@<VERCEL_COMMIT_SHA> --skill react-best-practices --skill composition-patterns --skill web-design-guidelines --agent codex --copy --yes
+   npx skills add shadcn-ui/ui@<SHADCN_COMMIT_SHA> --skill shadcn --agent codex --copy --yes
+   npx skills add addyosmani/agent-skills@<ADDY_COMMIT_SHA> --skill frontend-ui-engineering --skill accessibility-engineering --skill performance-optimization --skill code-review-and-quality --agent codex --copy --yes
+   ```
+   Confirm the skill slugs from each `--list` result before running these commands. If the CLI reports a different name or target, stop and inspect its help rather than guessing.
+4. Review the resulting `.agents/skills/` additions and `skills-lock.json`. Confirm that the existing hand-authored `pharmaviyum-frontend-engineering` and `library-skills` directories, the FastAPI managed symlink, and all unrelated files remain unchanged.
+5. Inspect every installed `SKILL.md`, all referenced rules/references, scripts, license files, and metadata. Apply the conflict and pharmacy-domain rules in this document. Do not execute downloaded scripts or CLI mutations merely because an upstream skill recommends them.
+6. Verify the lock and repository diff:
+   ```bash
+   npx skills list --json
+   npx skills check
+   git status --short
+   git diff --check
+   ```
+   Review that all nine skills are tracked from pinned revisions and that no unintended package, lockfile, app source, generated file, or deployment changes occurred. Run the repository's existing frontend checks after installation if the change touches tracked project files.
+
+The CLI's `--copy` option is selected deliberately to avoid introducing new symlink relationships into the repository's existing agent-skill layout. The existing Library Skills-managed FastAPI symlink must remain untouched. Library Skills discovery/checking and the Git-based Skills CLI are separate workflows; do not run a Library Skills reconciliation as a substitute for this installation.
+
+This procedure is a reviewed runbook, not evidence of completed installation. The current GitHub-only execution environment cannot run the Skills CLI or inspect the resulting working-tree state, so installation must be performed in a real repository checkout before any PR claims the nine skills are installed.
+
 ## Validation boundary
 
 This policy change is documentation-only. It does not install skills, change dependencies or lockfiles, alter frontend code, add telemetry, configure Stitch MCP, run audit scripts, or change hosting/deployment.
