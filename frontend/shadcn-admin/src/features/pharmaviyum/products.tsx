@@ -48,6 +48,7 @@ export function Products() {
   const [error, setError] = useState<string | null>(null)
   const [query, setQuery] = useState('')
   const [refreshVersion, setRefreshVersion] = useState(0)
+  const [loadedQuery, setLoadedQuery] = useState<string | null>(null)
   const normalizedQuery = query.trim()
 
   useEffect(() => {
@@ -66,7 +67,10 @@ export function Products() {
         setLoading(true)
         setError(null)
         apiFetch<Product[]>(path, { signal: controller.signal })
-          .then((result) => setProducts(result))
+          .then((result) => {
+            setProducts(result)
+            setLoadedQuery(normalizedQuery)
+          })
           .catch((err: unknown) => {
             if (controller.signal.aborted) return
             setError(
@@ -89,6 +93,7 @@ export function Products() {
   }, [normalizedQuery, refreshVersion])
 
   const displayedProducts = useMemo(() => {
+    if (loadedQuery !== normalizedQuery) return []
     if (normalizedQuery.length !== 1) return products
     const term = normalizedQuery.toLowerCase()
     return products.filter((product) =>
@@ -96,7 +101,7 @@ export function Products() {
         value.toLowerCase().includes(term)
       )
     )
-  }, [normalizedQuery, products])
+  }, [loadedQuery, normalizedQuery, products])
 
   const refresh = () => setRefreshVersion((version) => version + 1)
 
