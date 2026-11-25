@@ -42,15 +42,11 @@ export const sidebarData: SidebarData = {
           title: 'Dashboard',
           url: '/',
           icon: LayoutDashboard,
-          disabled: true,
-          disabledReason: unavailable,
         },
         {
           title: 'POS',
           url: '/pos',
           icon: ReceiptText,
-          disabled: true,
-          disabledReason: unavailable,
         },
         {
           title: 'Mortarium AI',

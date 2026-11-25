@@ -87,8 +87,6 @@ describe('Pharmaviyum sidebar navigation', () => {
 
   it('disables destinations whose routes are not ready', () => {
     const unavailableItems = [
-      item('Operations', 'Dashboard'),
-      item('Operations', 'POS'),
       item('Operations', 'Mortarium AI'),
       child('Operations', 'Clinical Care', 'Patients'),
       child('Operations', 'Clinical Care', 'Prescriptions'),
@@ -106,6 +104,11 @@ describe('Pharmaviyum sidebar navigation', () => {
       expect(entry?.disabled).toBe(true)
       expect(entry?.disabledReason).toBeTruthy()
     }
+  })
+
+  it('keeps implemented Dashboard and POS destinations enabled', () => {
+    expect(item('Operations', 'Dashboard')?.disabled).toBeUndefined()
+    expect(item('Operations', 'POS')?.disabled).toBeUndefined()
   })
 
   it('keeps available admin and system destinations enabled', () => {
