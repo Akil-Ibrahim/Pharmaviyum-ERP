@@ -16,11 +16,12 @@ Before implementation, read:
 1. Repository-root `AGENTS.md`.
 2. `frontend/shadcn-admin/AGENTS.md`.
 3. `frontend/shadcn-admin/package.json` and `components.json`.
-4. The nearest route/feature implementation and its tests.
-5. Relevant API types/services and the backend contract when data or workflow behavior changes.
-6. `src/styles/index.css` and `src/styles/theme.css` when styling or theming changes.
+4. [Frontend Engineering Standards](../../../docs/development/FRONTEND_ENGINEERING_STANDARDS.md).
+5. The nearest route/feature implementation and its tests.
+6. Relevant API types/services and the backend contract when data or workflow behavior changes.
+7. `src/styles/index.css` and `src/styles/theme.css` when styling or theming changes.
 
-Treat repository files and the committed lockfile as the source of truth. Do not assume a different framework or upgrade versions implicitly.
+Treat repository files and the committed lockfile as the source of truth. Do not assume a different framework or upgrade versions implicitly. The standards document includes proposed targets and adoption phases; distinguish documented policy from implemented tooling and measured results.
 
 ## Stack contract
 
@@ -45,6 +46,8 @@ Next.js, React Server Components, Next.js routing, and React Router patterns are
 - Inspect the actual local shadcn component source and `components.json`; upstream APIs may not match the installed version or primitive base.
 - For workflow changes, trace the full path from UI action through API client, query/mutation, backend endpoint, and response/error handling.
 - For visual changes, inspect existing theme tokens and the closest implemented screens.
+- Classify change risk (low/medium/high) based on the affected workflow. Use the high-risk path for auth, tenant/patient context, POS/dispensing, stock, batch/expiry, FEFO, prescriptions, and API contracts.
+- Create an ADR for material, long-lived architectural decisions; do not create ADRs for routine implementation details.
 
 ### 2. Design and implement
 
@@ -57,6 +60,8 @@ Next.js, React Server Components, Next.js routing, and React Router patterns are
 - Validate forms with the existing React Hook Form + Zod conventions.
 - Make responsive behavior intentional, including dense table and POS interaction states.
 - Keep all controls keyboard accessible and provide visible focus indicators and meaningful labels.
+- Target WCAG 2.2 AA and verify actual interactions; do not infer conformance from automated scan scores alone.
+- Measure before optimizing. Treat documented performance budgets as proposed until calibrated against reproducible route baselines.
 
 ### 3. Protect pharmacy workflows
 
@@ -67,6 +72,7 @@ Next.js, React Server Components, Next.js routing, and React Router patterns are
 - POS, dispensing, receiving, inventory, batch/expiry, FEFO, procurement, and transfers must follow backend contracts and transactional guarantees.
 - Do not silently retry non-idempotent actions or show success before the server confirms success.
 - Use synthetic fixtures only; never copy production patient or prescription data into tests or screenshots.
+- Do not emit patient, prescription, tenant-sensitive, credential, or raw request/response data into telemetry.
 
 ### 4. Verify
 
@@ -81,7 +87,9 @@ bun run build
 
 Run `bun run test:e2e` for affected critical journeys, auth, route behavior, responsive UI, or pharmacy workflows. E2E must use isolated test data and intercepted/mock APIs where appropriate.
 
-Do not install dependencies, change lockfiles, or alter CI quality gates to hide unrelated failures. Report checks not run.
+For medium/high-risk work, include component/integration tests and keyboard/responsive checks; high-risk workflows also require negative/boundary tests, critical E2E, contract review, and human domain/security review as applicable. Report skipped checks. Never claim an accessibility, performance, security, or compliance target is met without evidence.
+
+Do not install dependencies, change lockfiles, or alter CI quality gates to hide unrelated failures.
 
 ## Skill routing and upstream references
 
@@ -107,4 +115,6 @@ The demo deployment target is FastAPI Cloud. The React/Vite frontend is served a
 - No Next.js-only assumptions or unintended dependency changes were introduced.
 - Pharmacy data, tenant boundaries, and backend business rules remain intact.
 - Relevant tests and checks were run, with results reported accurately.
+- Accessibility, performance, privacy, and testing claims are supported by evidence.
+- Material architectural decisions and behavior changes have corresponding documentation/ADRs.
 - The diff is focused and ready for human review; no merge or deployment is performed automatically.
