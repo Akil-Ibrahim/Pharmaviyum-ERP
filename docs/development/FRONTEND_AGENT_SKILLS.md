@@ -34,6 +34,7 @@ Install selectively. The project-owned skill remains authoritative for Pharmaviy
 |---|---|---|---|
 | P0 | `pharmaviyum-frontend-engineering` | This repository | Project architecture, FastAPI Cloud deployment boundary, pharmacy workflows, privacy, and quality gates. |
 | P0 | `shadcn` | [Official shadcn skill](https://github.com/shadcn-ui/ui/tree/main/skills/shadcn) | Official component discovery, CLI, composition, theming, and project-aware shadcn guidance. |
+| P1 | `frontend-design` | [Anthropic Agent Skills](https://github.com/anthropics/skills/tree/main/skills/frontend-design) | Intentional visual direction, typography, layout, and non-generic UI decisions. Must preserve the established Pharmaviyum design system rather than inventing a new brand on every task. |
 | P0 | `react-best-practices` | [Vercel Agent Skills](https://github.com/vercel-labs/agent-skills/tree/main/skills/react-best-practices) | React rendering, performance, async, and bundle practices. Apply framework-independent guidance only; ignore Vercel deployment/runtime assumptions. |
 | P1 | `frontend-ui-engineering` | [Addy Osmani Agent Skills](https://github.com/addyosmani/agent-skills/tree/main/skills/frontend-ui-engineering) | Production UI composition, design-system adherence, responsive behavior, interaction states, and accessibility. |
 | P1 | `performance-optimization` | [Addy Osmani Agent Skills](https://github.com/addyosmani/agent-skills/tree/main/skills/performance-optimization) | Measurement-first performance investigation across browser, frontend, API, and database boundaries. Use when profiling or performance work is requested. |
@@ -49,8 +50,16 @@ Install selectively. The project-owned skill remains authoritative for Pharmaviy
 
 ### Compatibility notes
 
-The upstream skills are useful references, not drop-in project specifications:
+The upstream skills are useful references, not drop-in project specifications. A source review of the selected `SKILL.md` files was performed on 2026-11-25; this is a compatibility review, not a claim that any skill has been installed:
 
+- Anthropic `frontend-design` promotes strong, distinctive visual choices. Apply its craft guidance within Pharmaviyum's approved visual language; do not replace established tokens, typography, density, or dashboard conventions without a design-system decision.
+- Vercel `react-best-practices` contains both general React advice and Next.js/server-specific rules (including `next/dynamic`, server components/actions, and RSC-related guidance). Apply only rules that are valid for a client-rendered React 19 + Vite application; exclude Next.js, RSC, server-action, and Next runtime assumptions.
+- Vercel `composition-patterns` explicitly includes React 19 patterns. Review each rule against the installed React 19 APIs and local component conventions; composition is a tool, not a mandate to introduce compound components everywhere.
+- Vercel `web-design-guidelines` depends on its bundled `references/command.md` snapshot. The skill must be installed with that reference file intact; use its pinned snapshot rather than fetching unpinned rules at review time.
+- The official shadcn skill includes shell-enabled CLI guidance and rules that may target newer component APIs. Read `components.json` and local component implementations first. Treat `info`/`docs` as inspection; commands that add, initialize, migrate, or overwrite components require explicit task approval and diff review. Do not blindly apply generic form-layout rules to installed components that are not present locally.
+- Addy Osmani's accessibility skill suggests `npx` commands that download/run pinned audit tools. Do not execute those commands or add packages automatically; first obtain approval for tool execution and verify the local test/dependency policy. Automated output is not proof of WCAG conformance.
+- Addy's performance skill includes examples that add `web-vitals` and instrumentation. Do not add dependencies, telemetry, or send performance data without a separate approved implementation decision. Keep measurement-first guidance.
+- Addy's code-review skill is compatible as a review framework, but the project's required checks remain Bun-based and the exact PR head must be verified.
 - Google Stitch `react-vite-dashboard` describes React 18 and React Router. Pharmaviyum uses React 19 and TanStack Router. Its Web3 examples are irrelevant to this pharmacy ERP.
 - Google Stitch `shadcn-ui` includes Next.js-oriented examples and Tailwind CSS v3-era configuration. Pharmaviyum uses Vite and Tailwind CSS v4.
 - Addy Osmani's frontend UI skill is broadly applicable, but its examples and breakpoints must be reconciled with existing local components, theme tokens, and project test tooling.
@@ -62,6 +71,9 @@ The upstream skills are useful references, not drop-in project specifications:
 Run from the repository root only after reviewing the current skill source and its license. Install only the skills needed for the task; do not install every skill pack globally by default.
 
 ```bash
+# Anthropic — visual design guidance
+npx skills add anthropics/skills --skill frontend-design
+
 # Official shadcn skill
 npx skills add shadcn/ui
 
@@ -81,7 +93,13 @@ npx skills add google-labs-code/stitch-skills --skill react-vite-dashboard
 npx skills add google-labs-code/stitch-skills --skill shadcn-ui
 ```
 
-For environments using Bun, use the equivalent `bunx skills add ...` invocation supported by the installed Skills CLI. Follow the CLI's interactive review and target selection; do not use an install-all option by default. Some Stitch workflows additionally require Stitch MCP; ordinary frontend development does not.
+For environments using Bun, use the equivalent `bunx skills add ...` invocation supported by the installed Skills CLI. Follow the CLI's interactive review and target selection; do not use an install-all option by default. Some Stitch workflows additionally require Stitch MCP; ordinary frontend development does not. These are documented commands, not commands executed by this PR. Skill installation is intentionally deferred until an operator explicitly approves the selected skills and target scope. Do not run package-manager commands as part of routine documentation work.
+
+## Adoption decision
+
+Connect four upstream repositories selectively: Anthropic (`frontend-design`), Vercel (`react-best-practices`, `composition-patterns`, `web-design-guidelines`), official shadcn (`shadcn`), and Addy Osmani (`frontend-ui-engineering`, `accessibility-engineering`, `performance-optimization`, `code-review-and-quality`). Do not install every skill in each repository. Google Stitch and UI UX Pro Max remain optional later-stage design tooling; neither is part of the first adoption wave. Playwright E2E remains covered by the repository's existing Playwright Test setup; visual regression remains a project-owned future capability rather than an unverified third-party skill.
+
+No upstream skills have been installed, no dependencies or lockfiles have changed, and no Stitch MCP connection or credentials have been configured by this documentation-only change.
 
 ## What should remain project-owned
 
@@ -103,7 +121,7 @@ The following rules are specific to Pharmaviyum and must not be delegated to gen
 2. Prefer official upstream skills for generic React and shadcn guidance.
 3. Use Addy Osmani's skills for focused UI engineering, measured optimization, and accessibility reviews; avoid loading all three when the task does not need them.
 4. Use Google Stitch skills selectively for dashboard/design-to-code and supplementary shadcn guidance; do not let their framework assumptions override the repository.
-5. Do not copy upstream skill files into this repository unless there is a clear offline/reproducibility requirement and its license, attribution, and update process are documented.
+5. Do not copy upstream skill files into this repository unless there is a clear offline/reproducibility requirement and its license, attribution, and update process are documented. This audit did not vendor third-party content; license terms should be re-checked before any future vendoring.
 6. Do not install overlapping skills that prescribe conflicting frameworks, component libraries, state managers, styling systems, or package managers.
 7. Review upstream changes before updating installed skills.
 8. Keep generated route trees, generated API clients, and managed skill symlinks under their respective generators/managers.
