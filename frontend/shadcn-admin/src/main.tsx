@@ -32,6 +32,15 @@ const queryClient = new QueryClient({
     },
     mutations: {
       onError: (error) => {
+        if (getHttpStatus(error) === 401) {
+          queryClient.clear()
+          toast.error('Session expired!')
+          useAuthStore.getState().auth.reset()
+          const redirect = `${router.history.location.href}`
+          router.navigate({ to: '/sign-in', search: { redirect } })
+          return
+        }
+
         handleServerError(error)
 
         if (getHttpStatus(error) === 304) {
@@ -44,6 +53,7 @@ const queryClient = new QueryClient({
     onError: (error) => {
       const status = getHttpStatus(error)
       if (status === 401) {
+        queryClient.clear()
         toast.error('Session expired!')
         useAuthStore.getState().auth.reset()
         const redirect = `${router.history.location.href}`
