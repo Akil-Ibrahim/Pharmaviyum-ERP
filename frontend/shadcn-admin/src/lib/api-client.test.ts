@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { ApiError } from './api-error'
+import { apiFetch, apiFetchBlob } from './api-client'
 
 const resetAuth = vi.hoisted(() => vi.fn())
 
@@ -13,8 +14,6 @@ vi.mock('@/stores/auth-store', () => ({
     }),
   },
 }))
-
-import { apiFetch, apiFetchBlob } from './api-client'
 
 function response(status: number, payload: unknown = null): Response {
   return {
