@@ -16,3 +16,26 @@ def test_create_and_list_product(client):
     assert resp3.status_code == 200
     assert isinstance(resp3.json(), list)
     assert any(p["id"] == product_id for p in resp3.json())
+
+def test_product_search_matches_strength_and_dosage_form(client):
+    payload = {
+        "name": "Example Medicine",
+        "sku": "MED-SEARCH-001",
+        "dosage_strength": "20 mg",
+        "dosage_form": "capsule",
+        "price": 1.0,
+    }
+    created = client.post("/api/v1/products/", json=payload)
+    assert created.status_code == 201, created.text
+
+    strength_result = client.get(
+        "/api/v1/products/search", params={"q": "20 mg"}
+    )
+    assert strength_result.status_code == 200, strength_result.text
+    assert any(item["sku"] == "MED-SEARCH-001" for item in strength_result.json())
+
+    form_result = client.get(
+        "/api/v1/products/search", params={"q": "capsule"}
+    )
+    assert form_result.status_code == 200, form_result.text
+    assert any(item["sku"] == "MED-SEARCH-001" for item in form_result.json())
