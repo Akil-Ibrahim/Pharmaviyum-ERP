@@ -40,7 +40,7 @@ Upstream specialist skills may supplement the project-owned frontend skill. The 
 - Keep query functions read-only: do not upload/delete data, migrate persisted state, or mutate Zustand from a query function. Put writes and migrations in explicit TanStack Query mutations or user-triggered event workflows, and invalidate the relevant query after success.
 - Preserve HTTP status and structured server detail in a typed API error; do not throw plain `Error` for non-success HTTP responses.
 - Keep TanStack Query retry behavior status-aware: never retry authorization/validation 4xx responses; bound retries for transient network, timeout, rate-limit and server failures. Do not automatically retry non-idempotent mutations.
-- Ensure global query-cache and mutation error handlers recognize the same error types emitted by the active transport. Follow [Frontend API Error Contract](../../docs/development/FRONTEND_API_ERROR_CONTRACT.md).
+- Ensure global query-cache and mutation error handlers recognize the same error types emitted by the active transport. On logout or session expiry, clear TanStack Query caches before another account can use the application. Follow [Frontend API Error Contract](../../docs/development/FRONTEND_API_ERROR_CONTRACT.md).
 - Avoid adding dependencies when the existing stack already provides the capability.
 - Record material, long-lived architecture decisions as ADRs under `docs/architecture/decisions/`; routine implementation details do not need an ADR.
 
