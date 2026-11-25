@@ -215,7 +215,7 @@ async def update_patient(
     db: AsyncSession = Depends(get_db),
     service: PatientService = Depends(get_patient_service),
     current_user=Depends(get_current_active_superuser),
-    pharmacy_id: int | None = Query(None, gt=0),
+    pharmacy_id: int = Query(..., gt=0),
 ):
     try:
         scope = await resolve_pharmacy_scope(pharmacy_id, current_user, db)
@@ -235,7 +235,7 @@ async def delete_patient(
     db: AsyncSession = Depends(get_db),
     service: PatientService = Depends(get_patient_service),
     current_user=Depends(get_current_active_superuser),
-    pharmacy_id: int | None = Query(None, gt=0),
+    pharmacy_id: int = Query(..., gt=0),
 ):
     scope = await resolve_pharmacy_scope(pharmacy_id, current_user, db)
     deleted = await service.delete_patient(
