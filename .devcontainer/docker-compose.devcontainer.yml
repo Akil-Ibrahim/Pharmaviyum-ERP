@@ -7,14 +7,14 @@ services:
       dockerfile: .devcontainer/Dockerfile
     init: true
     tty: true
-    working_dir: /workspaces/Pharmaviyum-CRM
+    working_dir: /workspaces/Pharmaviyum-ERP
     volumes:
-      - ..:/workspaces/Pharmaviyum-CRM:cached
+      - ..:/workspaces/Pharmaviyum-ERP:cached
       - pip_cache:/home/vscode/.cache/pip
       - npm_cache:/home/vscode/.npm
     command: sleep infinity
     environment:
-      PYTHONPATH: /workspaces/Pharmaviyum-CRM/src
+      PYTHONPATH: /workspaces/Pharmaviyum-ERP/src
       ENVIRONMENT: development
       DEBUG: "true"
       DATABASE_URL: postgresql+asyncpg://postgres:postgres@postgres:5432/pharmaviyum
