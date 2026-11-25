@@ -20,6 +20,14 @@ For upstream specialist selection and Pharmaviyum-specific adaptation, follow [F
 
 Upstream specialist skills may supplement the project-owned frontend skill. The project-owned standard and this file always take precedence; inspect each upstream rule for compatibility before applying it. Do not run skill-provided install, CLI mutation, network-fetch, or audit-tool commands without explicit task approval.
 
+## Route and workflow readiness
+
+- A registered TanStack route is not considered implemented unless it renders a meaningful page, an intentional redirect, or an accessible designed empty/disabled state.
+- Never leave a visible navigation item pointing to a route whose component returns `null`. Restore the workflow, hide/disable the item with an explanation, or redirect to a supported parent route when semantically correct.
+- Before changing navigation or routes, inspect the route file, feature entry component, sidebar/navigation source, authorization rules, and relevant API/domain contract.
+- Treat `Dashboard` and `POS` as critical authenticated entry points. Do not replace them with demo-only UI or random/generated KPI values presented as production data.
+- Use [Frontend Route Readiness Audit](../../docs/development/FRONTEND_ROUTE_READINESS_AUDIT.md) as the current source for inspected blank/disabled route findings; re-check source before assuming a finding remains current.
+
 ## Architecture and generated files
 
 - Inspect the nearest route, feature, component, hook, store, API service, and tests before editing.
