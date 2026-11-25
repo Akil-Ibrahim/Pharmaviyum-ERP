@@ -17,7 +17,7 @@ environment_counts = {
 # 6-space nested name). Each approved environment is bound to one exact
 # workflow so validation credentials cannot leak into deployment workflows.
 environment_name = re.compile(
-    r"^ {4}environment:[ \\t]*\\n^ {6}name:[ \\t]*([A-Za-z0-9_.-]+)[ \\t]*$",
+    r"^ {4}environment:[ \t]*\n^ {6}name:[ \t]*([A-Za-z0-9_.-]+)[ \t]*$",
     re.MULTILINE,
 )
 approved_workflows = {
