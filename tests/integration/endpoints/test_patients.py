@@ -104,7 +104,7 @@ class TestCreatePatient:
     ):
         """Test creation requires authentication"""
         response = await client.post(
-            "/api/v1/patients/",
+            "/api/v1/patients/?pharmacy_id=1",
             json=sample_patient_data,
         )
 
