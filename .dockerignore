@@ -55,6 +55,7 @@ tests/
 
 # Docker
 Dockerfile
+!.devcontainer/Dockerfile
 docker-compose.yml
 .dockerignore
 
