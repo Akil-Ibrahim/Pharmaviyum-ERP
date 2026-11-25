@@ -293,7 +293,6 @@ class TestUpdatePatient:
 
         assert response.status_code == 404
 
-
     @pytest.mark.asyncio
     async def test_update_patient_requires_explicit_pharmacy_scope(
         self,
@@ -317,6 +316,7 @@ class TestUpdatePatient:
 
         assert response.status_code == 422
         assert "pharmacy_id" in response.text
+
 
 class TestDeletePatient:
     """Tests for DELETE /api/v1/patients/{id}"""
