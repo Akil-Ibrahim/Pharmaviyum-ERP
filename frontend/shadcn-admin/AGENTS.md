@@ -18,6 +18,8 @@ Before relying on any version-specific API, inspect the installed package versio
 
 For architecture, accessibility, performance, observability, testing strategy, localization, and design-system governance, follow [Frontend Engineering Standards](../../docs/development/FRONTEND_ENGINEERING_STANDARDS.md). That document defines targets and adoption phases; do not claim a target is implemented until repository evidence exists.
 
+Upstream specialist skills may supplement the project-owned frontend skill. The project-owned standard and this file always take precedence; inspect each upstream rule for compatibility before applying it. Do not run skill-provided install, CLI mutation, network-fetch, or audit-tool commands without explicit task approval.
+
 ## Architecture and generated files
 
 - Inspect the nearest route, feature, component, hook, store, API service, and tests before editing.
