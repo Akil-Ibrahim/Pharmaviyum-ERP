@@ -6,12 +6,12 @@
 
 ## 1. Problem statement
 
-The frontend uses native `fetch()` in `src/lib/api-client.ts`, while the global TanStack Query configuration previously recognized HTTP failures primarily through Axios' `AxiosError`. The fetch client threw plain `Error` objects, losing the HTTP status and structured response payload.
+The frontend uses native `fetch()` in `src/lib/api-client.ts`, while the global TanStack Query configuration previously recognized HTTP failures primarily through Axios' `AxiosError`. The fetch client threw plain `Error` objects, losing the HTTP status and structured response payload. This mismatch is exercised by the active profile-avatar query: `useProfileAvatar` calls `fetchProfileAvatar`, which calls `apiFetchBlob`, inside TanStack Query.
 
 That mismatch meant:
-- HTTP 401/403 errors from fetch were not excluded by the Axios-only retry predicate.
-- Query-cache global handling did not recognize fetch-originated 401/500 responses.
-- Mutation toast handling could not reliably show the backend's `detail` message for fetch errors.
+- HTTP 401/403 errors from the profile-avatar fetch query were not excluded by the Axios-only retry predicate.
+- Query-cache global handling did not recognize fetch-originated 401/500 responses from that query.
+- The default mutation error handler also could not reliably show backend `detail` messages if a fetch-based mutation used it.
 
 ## 2. Implemented contract
 
