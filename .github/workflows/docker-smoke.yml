@@ -72,6 +72,15 @@ jobs:
       - name: Build Dev Container image
         run: docker build --file .devcontainer/Dockerfile --tag pharmaviyum-devcontainer:smoke-${GITHUB_SHA} .
 
+      - name: Verify Dev Container base image toolchain
+        run: |
+          docker run --rm --entrypoint sh pharmaviyum-devcontainer:smoke-${GITHUB_SHA} -lc '
+            test "$(id -un)" = "vscode"
+            uv --version
+            python --version
+            test -d /workspaces/Pharmaviyum-ERP
+          '
+
       - name: Start infrastructure services
         run: docker compose -f docker-compose.yml up -d postgres redis
 
