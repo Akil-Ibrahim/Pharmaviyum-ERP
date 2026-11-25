@@ -14,7 +14,7 @@ from src.pharmaviyum.services.catalog_exclusions import (
     is_excluded_catalog_entry,
 )
 
-router = APIRouter(prefix="/products", tags=["Products"])
+router = APIRouter(prefix="/api/v1/products", tags=["Products"])
 
 
 async def _validate_product_exclusion(
@@ -94,6 +94,8 @@ async def search_products(
                 Product.name.ilike(term),
                 Product.sku.ilike(term),
                 Product.inn_name.ilike(term),
+                Product.dosage_strength.ilike(term),
+                Product.dosage_form.ilike(term),
                 Product.manufacturer.ilike(term),
                 Product.regulatory_id.ilike(term),
                 Product.gtin.ilike(term),
