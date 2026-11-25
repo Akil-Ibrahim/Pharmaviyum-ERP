@@ -18,7 +18,7 @@ Before implementation, read:
 3. `frontend/shadcn-admin/package.json` and `components.json`.
 4. [Frontend Engineering Standards](../../../docs/development/FRONTEND_ENGINEERING_STANDARDS.md).
 5. [Frontend Engineering Maturity Model](../../../docs/development/FRONTEND_ENGINEERING_MATURITY_MODEL.md).
-5. The nearest route/feature implementation and its tests.
+6. The nearest route/feature implementation and its tests.
 7. Relevant API types/services and the backend contract when data or workflow behavior changes.
 8. `src/styles/index.css` and `src/styles/theme.css` when styling or theming changes.
 
