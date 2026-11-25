@@ -4,7 +4,7 @@
 
 # Pharmaviyum — Pharmacy ERP/CRM
 
-![Demo](https://img.shields.io/badge/Demo-Safe-green) ![NDA](https://img.shields.io/badge/NDA-Yes-blue) ![Python](https://img.shields.io/badge/Python-3.15.0-blue) ![FastAPI](https://img.shields.io/badge/FastAPI-0.164.0-009688) ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-18-dev%2FCI-blue) ![React](https://img.shields.io/badge/React-19.3.1-61DAFB) ![Vite](https://img.shields.io/badge/Vite-8.3.8-646CFF)
+![Demo](https://img.shields.io/badge/Demo-Safe-green) ![NDA](https://img.shields.io/badge/NDA-Yes-blue) ![Python](https://img.shields.io/badge/Python-3.15.0-blue) ![FastAPI](https://img.shields.io/badge/FastAPI-0.164.0-009688) ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-18-blue) ![React](https://img.shields.io/badge/React-19.3.1-61DAFB) ![Vite](https://img.shields.io/badge/Vite-8.3.8-646CFF)
 
 [English](README.md) · [Русский](README.ru.md)
 
