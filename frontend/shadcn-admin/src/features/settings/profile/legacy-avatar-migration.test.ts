@@ -8,6 +8,16 @@ import { migrateLegacyAvatarOnce } from './legacy-avatar-migration'
 
 const validPngDataUrl = 'data:image/png;base64,dGVzdA=='
 
+function stubImageFetch(blob: Blob) {
+  vi.stubGlobal(
+    'fetch',
+    vi.fn().mockResolvedValue({
+      ok: true,
+      blob: vi.fn().mockResolvedValue(blob),
+    } as unknown as Response)
+  )
+}
+
 beforeEach(() => {
   vi.clearAllMocks()
 })
@@ -18,12 +28,7 @@ afterEach(() => {
 
 describe('migrateLegacyAvatarOnce', () => {
   it('uploads a valid legacy image as a File', async () => {
-    vi.stubGlobal(
-      'fetch',
-      vi.fn().mockResolvedValue(
-        new Response(new Blob(['image-bytes'], { type: 'image/png' }))
-      )
-    )
+    stubImageFetch(new Blob(['image-bytes'], { type: 'image/png' }))
     uploadProfileAvatar.mockResolvedValue(undefined)
 
     await expect(
@@ -38,12 +43,7 @@ describe('migrateLegacyAvatarOnce', () => {
   })
 
   it('does not upload unsupported image formats', async () => {
-    vi.stubGlobal(
-      'fetch',
-      vi.fn().mockResolvedValue(
-        new Response(new Blob(['image-bytes'], { type: 'image/gif' }))
-      )
-    )
+    stubImageFetch(new Blob(['image-bytes'], { type: 'image/gif' }))
 
     await expect(
       migrateLegacyAvatarOnce('account-2', 'data:image/gif;base64,dGVzdA==')
@@ -57,10 +57,7 @@ describe('migrateLegacyAvatarOnce', () => {
       [new Uint8Array(2 * 1024 * 1024 + 1)],
       { type: 'image/png' }
     )
-    vi.stubGlobal(
-      'fetch',
-      vi.fn().mockResolvedValue(new Response(oversizedImage))
-    )
+    stubImageFetch(oversizedImage)
 
     await expect(
       migrateLegacyAvatarOnce('account-3', validPngDataUrl)
@@ -70,12 +67,7 @@ describe('migrateLegacyAvatarOnce', () => {
   })
 
   it('allows a later retry after an upload failure', async () => {
-    vi.stubGlobal(
-      'fetch',
-      vi.fn().mockResolvedValue(
-        new Response(new Blob(['image-bytes'], { type: 'image/png' }))
-      )
-    )
+    stubImageFetch(new Blob(['image-bytes'], { type: 'image/png' }))
     uploadProfileAvatar
       .mockRejectedValueOnce(new Error('Upload failed'))
       .mockResolvedValueOnce(undefined)
@@ -92,26 +84,25 @@ describe('migrateLegacyAvatarOnce', () => {
   })
 
   it('shares one in-flight upload between consumers of the same account', async () => {
-    vi.stubGlobal(
-      'fetch',
-      vi.fn().mockResolvedValue(
-        new Response(new Blob(['image-bytes'], { type: 'image/png' }))
-      )
-    )
+    stubImageFetch(new Blob(['image-bytes'], { type: 'image/png' }))
 
     let finishUpload!: () => void
-    uploadProfileAvatar.mockReturnValue(
-      new Promise<void>((resolve) => {
-        finishUpload = resolve
-      })
+    let markUploadStarted!: () => void
+    const uploadStarted = new Promise<void>((resolve) => {
+      markUploadStarted = resolve
+    })
+    uploadProfileAvatar.mockImplementation(
+      () =>
+        new Promise<void>((resolve) => {
+          finishUpload = resolve
+          markUploadStarted()
+        })
     )
 
     const first = migrateLegacyAvatarOnce('account-4', validPngDataUrl)
     const second = migrateLegacyAvatarOnce('account-4', validPngDataUrl)
 
-    await Promise.resolve()
-    await Promise.resolve()
-    await Promise.resolve()
+    await uploadStarted
     expect(uploadProfileAvatar).toHaveBeenCalledTimes(1)
 
     finishUpload()
