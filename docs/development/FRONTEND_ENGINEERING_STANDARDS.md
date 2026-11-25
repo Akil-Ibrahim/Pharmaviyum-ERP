@@ -66,6 +66,7 @@ Do not introduce Next.js, React Server Components, React Router, another package
 - Feature modules may depend on shared UI primitives and approved platform services; shared primitives must not import feature-specific business logic.
 - Keep API transport and generated types separate from presentation components.
 - Keep server state in TanStack Query, local interaction state in components, URL state for shareable navigation/filter state, and Zustand only for genuinely cross-route client state.
+- Keep query functions read-only. Perform uploads, deletes, migrations, and client-store writes through explicit mutation/event workflows, then invalidate affected queries. Deduplicate migrations shared by multiple mounted consumers.
 - Preserve HTTP status and safe server error details in a typed transport error. Query retry policy must recognize the error type emitted by the active transport, never retry authorization/validation failures, and bound retries for transient failures. Do not automatically retry non-idempotent mutations; see [Frontend API Error Contract](./FRONTEND_API_ERROR_CONTRACT.md).
 - Avoid duplicated sources of truth. Derived state should be computed, not synchronized through effects without a demonstrated need.
 - Prevent circular dependencies and deep imports across feature internals. Promote a public feature API only when cross-feature reuse is real.
