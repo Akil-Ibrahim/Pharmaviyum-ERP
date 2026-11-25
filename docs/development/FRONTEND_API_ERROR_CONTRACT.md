@@ -30,6 +30,15 @@ Both `apiFetch` and `apiFetchBlob` throw `ApiError` for non-success HTTP respons
 
 Network failures from `fetch` remain native transport errors because no HTTP response/status exists.
 
+### Query purity and profile-avatar migration
+
+- The profile-avatar query is read-only and only fetches the server-owned blob.
+- Legacy local-avatar migration runs through a TanStack Query mutation after the read query succeeds and confirms that no server avatar exists.
+- The migration validates file size and MIME type before upload, preserves the local fallback on unsupported/failed migration, and clears the persisted legacy value only after a successful upload or when a server avatar already exists.
+- An in-flight migration is shared by header and profile consumers for the same account to avoid duplicate uploads.
+- Successful migration invalidates the profile-avatar query so the UI switches to the server-owned blob.
+
+
 ### Query retry policy
 
 `src/lib/query-error-policy.ts` is the shared policy for both `ApiError` and legacy `AxiosError` instances:
