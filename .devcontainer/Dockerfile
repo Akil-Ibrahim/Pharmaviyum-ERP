@@ -12,6 +12,6 @@ RUN apt-get update \
 
 RUN useradd --create-home --shell /bin/bash vscode
 
-WORKDIR /workspaces/Pharmaviyum-CRM
+WORKDIR /workspaces/Pharmaviyum-ERP
 
 USER vscode
