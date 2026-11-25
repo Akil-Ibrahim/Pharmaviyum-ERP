@@ -4,6 +4,8 @@
 
 This document defines the recommended agent-skill setup for the active frontend at `frontend/shadcn-admin/`. It is aligned with the repository's actual stack and deployment model, not generic React/Next.js or Vercel-hosted templates.
 
+The project-owned [Frontend Engineering Standards](./FRONTEND_ENGINEERING_STANDARDS.md) is the normative companion for architecture decisions, risk classification, design-system governance, WCAG 2.2 AA, performance measurement, privacy-safe observability, testing strategy, localization, and adoption. It defines proposed targets separately from implemented capabilities.
+
 ## Repository findings
 
 The active frontend currently uses:
@@ -22,7 +24,7 @@ The active frontend currently uses:
 
 The frontend is part of the FastAPI application and is served with the backend from the same application/domain. The demo deployment target is **FastAPI Cloud**. Vercel skills are considered only as framework-independent React/frontend guidance; no Vercel hosting, edge runtime, deployment, or platform configuration is implied.
 
-The repository already has a root `AGENTS.md` and a Library Skills management guide under `.agents/skills/library-skills/`. This PR adds a frontend-specific `AGENTS.md` and a Pharmaviyum frontend engineering skill.
+The repository already has a root `AGENTS.md` and a Library Skills management guide under `.agents/skills/library-skills/`. The frontend agent layer consists of a frontend-local `AGENTS.md`, the Pharmaviyum frontend engineering skill, and the engineering standards document.
 
 ## Recommended skills
 
@@ -93,8 +95,7 @@ The following rules are specific to Pharmaviyum and must not be delegated to gen
 - Patient-data privacy, tenant isolation, and authorization boundaries.
 - API client generation and OpenAPI contract consistency.
 - The repository's lint, format, test, build, and Playwright commands.
-
-These constraints live in `frontend/shadcn-admin/AGENTS.md` and `.agents/skills/pharmaviyum-frontend-engineering/SKILL.md`.
+- Engineering governance and quality targets documented in [Frontend Engineering Standards](./FRONTEND_ENGINEERING_STANDARDS.md).
 
 ## Installation and maintenance policy
 
@@ -107,9 +108,11 @@ These constraints live in `frontend/shadcn-admin/AGENTS.md` and `.agents/skills/
 7. Review upstream changes before updating installed skills.
 8. Keep generated route trees, generated API clients, and managed skill symlinks under their respective generators/managers.
 9. Validate skill installation with the Skills CLI or the existing Library Skills workflow; do not hand-edit managed symlinks.
+10. Keep policy, roadmap, and implementation status distinct; update standards when project evidence or approved architecture changes.
 
 ## Audit references
 
+- [Frontend Engineering Standards](./FRONTEND_ENGINEERING_STANDARDS.md)
 - [Official shadcn Skills documentation](https://ui.shadcn.com/docs/skills)
 - [Official shadcn skill source](https://github.com/shadcn-ui/ui/tree/main/skills/shadcn)
 - [Vercel Agent Skills](https://github.com/vercel-labs/agent-skills)

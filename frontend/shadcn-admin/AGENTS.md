@@ -16,6 +16,8 @@ These instructions apply to `frontend/shadcn-admin/` and all files below it.
 
 Before relying on any version-specific API, inspect the installed package version and the local implementation. Do not assume current online documentation matches the lockfile.
 
+For architecture, accessibility, performance, observability, testing strategy, localization, and design-system governance, follow [Frontend Engineering Standards](../../docs/development/FRONTEND_ENGINEERING_STANDARDS.md). That document defines targets and adoption phases; do not claim a target is implemented until repository evidence exists.
+
 ## Architecture and generated files
 
 - Inspect the nearest route, feature, component, hook, store, API service, and tests before editing.
@@ -26,6 +28,7 @@ Before relying on any version-specific API, inspect the installed package versio
 - The generated API client under `src/client/` is owned by `scripts/generate-api-client.sh`. Never hand-edit generated output; update the backend contract and regenerate it.
 - Keep API transport, query keys, query functions, mutations, and UI responsibilities separated consistently with adjacent code.
 - Avoid adding dependencies when the existing stack already provides the capability.
+- Record material, long-lived architecture decisions as ADRs under `docs/architecture/decisions/`; routine implementation details do not need an ADR.
 
 ## Design-system rules
 
@@ -38,6 +41,7 @@ Before relying on any version-specific API, inspect the installed package versio
 - Support light and dark themes and narrow viewports. Avoid horizontal overflow; dense data tables may use an intentional responsive overflow container.
 - Use semantic HTML, accessible labels, keyboard-operable controls, visible focus states, and appropriate ARIA attributes.
 - Do not use color alone to communicate medication, stock, expiry, or workflow status.
+- Target WCAG 2.2 AA. Automated accessibility scans do not replace keyboard, focus, zoom/reflow, contrast, and appropriate assistive-technology checks.
 
 ## Pharmacy-domain correctness
 
@@ -76,11 +80,14 @@ Run from `frontend/shadcn-admin/` using Bun and the committed lockfile:
 
 Use focused tests first, then the broadest practical suite. E2E tests must use mocks or isolated test services, never production credentials or live production patient data. Do not claim checks passed unless they were executed and the result was observed.
 
+Choose verification depth by risk, not diff size. Auth, tenant isolation, patient context, POS/dispensing, inventory, batch/expiry, FEFO, prescription, and API contract changes require negative/boundary tests and appropriate integration/E2E plus human domain/security review. Follow the test matrix in the Frontend Engineering Standards.
+
 ## Change discipline
 
 1. State a concise plan for multi-file changes.
 2. Keep the diff focused and preserve unrelated work.
 3. Do not modify backend contracts, auth, tenant boundaries, dispensing, inventory, or generated files as a side effect of frontend styling work.
 4. Add or update tests for changed behavior, including failure and boundary states.
-5. Report changed files, commands actually run, results, and remaining risks.
-6. Follow the root Git workflow: feature branch, focused PR, no direct commits to `main`, no automatic merge or deployment.
+5. Update docs and ADRs in the same PR when architecture, user-visible behavior, accessibility exceptions, performance budgets, or operational policy changes.
+6. Report changed files, commands actually run, results, and remaining risks. Do not report proposed budgets or roadmap phases as implemented capabilities.
+7. Follow the root Git workflow: feature branch, focused PR, no direct commits to `main`, no automatic merge or deployment.
