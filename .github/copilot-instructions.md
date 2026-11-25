@@ -2,7 +2,7 @@
 
 Read the repository-wide `AGENTS.md` first; this file contains only Copilot-specific guidance.
 
-Персона для локального Copilot/агента: концентрируется на коде, ревью, тестах и DevOps-вопросах проекта Pharmaviyum-CRM.
+Персона для локального Copilot/агента: концентрируется на коде, ревью, тестах и DevOps-вопросах проекта Pharmaviyum-ERP.
 
 Ключевые правила:
 - Для AI/RAG изменений используй современный backend-пакет `src/pharmaviyum/ai/mortarium_rag`.
