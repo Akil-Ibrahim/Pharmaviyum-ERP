@@ -22,6 +22,7 @@ Before implementation, read:
 7. The nearest route/feature implementation and its tests.
 8. Relevant API types/services and the backend contract when data or workflow behavior changes.
 9. `src/styles/index.css` and `src/styles/theme.css` when styling or theming changes.
+10. [Frontend API Error Contract](../../../docs/development/FRONTEND_API_ERROR_CONTRACT.md) when implementing transport, queries, mutations, retries, or error states.
 
 Treat repository files and the committed lockfile as the source of truth. Do not assume a different framework or upgrade versions implicitly. The standards document includes proposed targets and adoption phases; distinguish documented policy from implemented tooling and measured results.
 
@@ -61,6 +62,7 @@ Next.js, React Server Components, Next.js routing, and React Router patterns are
 - Use explicit TypeScript types. Avoid `any`, duplicate API contracts, and unsafe assumptions.
 - Keep server state in TanStack Query, transient UI state local, and shared client state in Zustand only when justified.
 - Use stable query keys, mutation invalidation, and explicit loading/error/empty/success states.
+- Preserve HTTP status and safe server detail in a typed error. Keep transport error types aligned with query retry and global error handling; never retry 401/403 or validation errors, and do not automatically retry non-idempotent mutations.
 - Validate forms with the existing React Hook Form + Zod conventions.
 - Make responsive behavior intentional, including dense table and POS interaction states.
 - Keep all controls keyboard accessible and provide visible focus indicators and meaningful labels.
