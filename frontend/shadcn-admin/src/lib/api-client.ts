@@ -1,3 +1,4 @@
+import { ApiError } from '@/lib/api-error'
 import { useAuthStore } from '@/stores/auth-store'
 
 const apiBaseUrl = (import.meta.env.VITE_API_URL ?? '').replace(/\/$/, '')
@@ -31,12 +32,15 @@ export async function apiFetch<T>(
   }
 
   if (!response.ok) {
-    const payload = await response.json().catch(() => null)
+    const payload: unknown = await response.json().catch(() => null)
     const detail =
-      payload && typeof payload.detail === 'string'
+      payload &&
+      typeof payload === 'object' &&
+      'detail' in payload &&
+      typeof payload.detail === 'string'
         ? payload.detail
         : `API request failed with status ${response.status}`
-    throw new Error(detail)
+    throw new ApiError(response.status, detail, payload)
   }
 
   if (response.status === 204) {
@@ -68,12 +72,15 @@ export async function apiFetchBlob(path: string): Promise<Blob | null> {
   }
 
   if (!response.ok) {
-    const payload = await response.json().catch(() => null)
+    const payload: unknown = await response.json().catch(() => null)
     const detail =
-      payload && typeof payload.detail === 'string'
+      payload &&
+      typeof payload === 'object' &&
+      'detail' in payload &&
+      typeof payload.detail === 'string'
         ? payload.detail
         : `API request failed with status ${response.status}`
-    throw new Error(detail)
+    throw new ApiError(response.status, detail, payload)
   }
 
   return response.blob()
