@@ -13,6 +13,7 @@ type Product = {
   description: string | null
   dosage_strength: string | null
   dosage_form: string | null
+  units_per_pack: number
   manufacturer: string | null
   inn_name: string | null
   gtin: string | null
@@ -32,6 +33,7 @@ function searchableFields(product: Product) {
     product.description ?? '',
     product.dosage_strength ?? '',
     product.dosage_form ?? '',
+    String(product.units_per_pack),
     product.manufacturer ?? '',
     product.inn_name ?? '',
     product.gtin ?? '',
@@ -45,6 +47,7 @@ export function Products() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [query, setQuery] = useState('')
+  const [refreshVersion, setRefreshVersion] = useState(0)
   const normalizedQuery = query.trim()
 
   useEffect(() => {
@@ -79,35 +82,19 @@ export function Products() {
       window.clearTimeout(timer)
       controller.abort()
     }
-  }, [normalizedQuery])
+  }, [normalizedQuery, refreshVersion])
 
   const displayedProducts = useMemo(() => {
     if (normalizedQuery.length !== 1) return products
-    const term = normalizedQuery.toLocaleLowerCase()
+    const term = normalizedQuery.toLowerCase()
     return products.filter((product) =>
       searchableFields(product).some((value) =>
-        value.toLocaleLowerCase().includes(term)
+        value.toLowerCase().includes(term)
       )
     )
   }, [normalizedQuery, products])
 
-  const refresh = () => {
-    const controller = new AbortController()
-    setLoading(true)
-    setError(null)
-    const search = normalizedQuery.length >= SEARCH_MIN_LENGTH
-    const path = search
-      ? `/api/v1/products/search?q=${encodeURIComponent(normalizedQuery)}&limit=${SEARCH_LIMIT}`
-      : '/api/v1/products/?limit=50'
-    apiFetch<Product[]>(path, { signal: controller.signal })
-      .then(setProducts)
-      .catch((err: unknown) =>
-        setError(
-          err instanceof Error ? err.message : 'Unable to load the product catalog'
-        )
-      )
-      .finally(() => setLoading(false))
-  }
+  const refresh = () => setRefreshVersion((version) => version + 1)
 
   return (
     <div className='pharmacy-data-page pharmacy-products-page space-y-6 p-6'>
@@ -186,9 +173,10 @@ export function Products() {
                     <th scope='col' className='p-3'>Active ingredient</th>
                     <th scope='col' className='p-3'>Strength</th>
                     <th scope='col' className='p-3'>Dosage form</th>
+                    <th scope='col' className='p-3'>Pack</th>
                     <th scope='col' className='p-3'>Manufacturer</th>
                     <th scope='col' className='p-3'>Identifiers</th>
-                    <th scope='col' className='p-3'>Status</th>
+                    <th scope='col' className='p-3'>Catalog link</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -206,6 +194,7 @@ export function Products() {
                       <td className='p-3'>{product.inn_name || '—'}</td>
                       <td className='p-3'>{product.dosage_strength || '—'}</td>
                       <td className='p-3'>{product.dosage_form || '—'}</td>
+                      <td className='p-3 tabular-nums'>{product.units_per_pack}</td>
                       <td className='p-3'>{product.manufacturer || '—'}</td>
                       <td className='p-3'>
                         <div>{product.barcode || product.gtin || '—'}</div>
@@ -216,15 +205,8 @@ export function Products() {
                         )}
                       </td>
                       <td className='p-3'>
-                        <Badge
-                          variant='outline'
-                          className={
-                            product.is_active
-                              ? 'bg-green-500/15 text-green-700 dark:text-green-300'
-                              : 'bg-muted text-muted-foreground'
-                          }
-                        >
-                          {product.is_active ? 'Active' : 'Inactive'}
+                        <Badge variant='outline'>
+                          {product.medicinal_product_id ? 'Linked' : 'Local product'}
                         </Badge>
                       </td>
                     </tr>
