@@ -89,6 +89,7 @@ describe('migrateLegacyAvatarOnce', () => {
 
     await Promise.resolve()
     await Promise.resolve()
+    await Promise.resolve()
     expect(uploadProfileAvatar).toHaveBeenCalledTimes(1)
 
     finishUpload()
