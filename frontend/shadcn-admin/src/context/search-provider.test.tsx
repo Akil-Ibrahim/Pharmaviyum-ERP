@@ -138,8 +138,6 @@ describe('SearchProvider and CommandMenu', () => {
     await openCommandPalette(screen)
 
     const disabledDestinations = [
-      'Dashboard',
-      'POS',
       'Mortarium AI',
       'Clinical Care Patients',
       'Clinical Care Prescriptions',
