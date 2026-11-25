@@ -17,6 +17,7 @@ def test_create_and_list_product(client):
     assert isinstance(resp3.json(), list)
     assert any(p["id"] == product_id for p in resp3.json())
 
+
 def test_product_search_matches_strength_and_dosage_form(client):
     payload = {
         "name": "Example Medicine",
