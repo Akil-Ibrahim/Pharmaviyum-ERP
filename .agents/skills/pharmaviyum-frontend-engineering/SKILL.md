@@ -62,6 +62,7 @@ Next.js, React Server Components, Next.js routing, and React Router patterns are
 - Use explicit TypeScript types. Avoid `any`, duplicate API contracts, and unsafe assumptions.
 - Keep server state in TanStack Query, transient UI state local, and shared client state in Zustand only when justified.
 - Use stable query keys, mutation invalidation, and explicit loading/error/empty/success states.
+- Keep query functions read-only. Put uploads, deletes, migrations, and client-store writes in explicit mutation/event workflows; invalidate affected queries after successful writes. Deduplicate migrations shared by multiple mounted consumers.
 - Preserve HTTP status and safe server detail in a typed error. Keep transport error types aligned with query retry and global error handling; never retry 401/403 or validation errors, and do not automatically retry non-idempotent mutations.
 - Validate forms with the existing React Hook Form + Zod conventions.
 - Make responsive behavior intentional, including dense table and POS interaction states.
