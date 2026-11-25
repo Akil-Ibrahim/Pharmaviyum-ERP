@@ -36,6 +36,7 @@ Install selectively. The project-owned skill remains authoritative for Pharmaviy
 | P1 | `frontend-ui-engineering` | [Addy Osmani Agent Skills](https://github.com/addyosmani/agent-skills/tree/main/skills/frontend-ui-engineering) | Production UI composition, design-system adherence, responsive behavior, interaction states, and accessibility. |
 | P1 | `performance-optimization` | [Addy Osmani Agent Skills](https://github.com/addyosmani/agent-skills/tree/main/skills/performance-optimization) | Measurement-first performance investigation across browser, frontend, API, and database boundaries. Use when profiling or performance work is requested. |
 | P1 | `accessibility-engineering` | [Addy Osmani Agent Skills](https://github.com/addyosmani/agent-skills/tree/main/skills/accessibility-engineering) | Structured accessibility audits and remediation. Complements, rather than replaces, automated and manual testing. |
+| P1 | `code-review-and-quality` | [Addy Osmani Agent Skills](https://github.com/addyosmani/agent-skills/tree/main/skills/code-review-and-quality) | Pre-merge review across correctness, readability, architecture, security, and performance. Apply the repository's actual commands and verify the reviewed PR head; do not blindly follow unrelated tooling examples. |
 | P1 | `composition-patterns` | [Vercel Agent Skills](https://github.com/vercel-labs/agent-skills/tree/main/skills/composition-patterns) | Compound components and maintainable component APIs. |
 | P1 | `web-design-guidelines` | [Vercel Agent Skills](https://github.com/vercel-labs/agent-skills/tree/main/skills/web-design-guidelines) | Accessibility and web-interface quality review. Avoid duplicating the Addy accessibility skill in every task; select the more relevant reviewer. |
 | P1 | `react-vite-dashboard` | [Google Stitch Skills](https://github.com/google-labs-code/stitch-skills/tree/main/plugins/stitch-build/skills/react-vite-dashboard) | Dashboard layout and design-to-React workflow, TanStack Query patterns, and design-token mapping. Adapt React Router examples to TanStack Router; remove Web3-specific material. Stitch MCP is optional and not required for normal development. |
@@ -71,6 +72,7 @@ npx skills add vercel-labs/agent-skills --skill web-design-guidelines
 npx skills add addyosmani/agent-skills --skill frontend-ui-engineering
 npx skills add addyosmani/agent-skills --skill performance-optimization
 npx skills add addyosmani/agent-skills --skill accessibility-engineering
+npx skills add addyosmani/agent-skills --skill code-review-and-quality
 
 # Google Stitch — Vite dashboard and shadcn supplementary guidance
 npx skills add google-labs-code/stitch-skills --skill react-vite-dashboard
@@ -118,6 +120,7 @@ These constraints live in `frontend/shadcn-admin/AGENTS.md` and `.agents/skills/
 - [Addy Frontend UI Engineering](https://github.com/addyosmani/agent-skills/tree/main/skills/frontend-ui-engineering)
 - [Addy Performance Optimization](https://github.com/addyosmani/agent-skills/tree/main/skills/performance-optimization)
 - [Addy Accessibility Engineering](https://github.com/addyosmani/agent-skills/tree/main/skills/accessibility-engineering)
+- [Addy Code Review and Quality](https://github.com/addyosmani/agent-skills/tree/main/skills/code-review-and-quality)
 - [Google Stitch Skills](https://github.com/google-labs-code/stitch-skills)
 - [Google Stitch React + Vite Dashboard](https://github.com/google-labs-code/stitch-skills/tree/main/plugins/stitch-build/skills/react-vite-dashboard)
 - [Google Stitch shadcn/ui](https://github.com/google-labs-code/stitch-skills/tree/main/plugins/stitch-build/skills/shadcn-ui)
