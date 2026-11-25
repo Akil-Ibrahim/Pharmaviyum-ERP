@@ -125,6 +125,10 @@ Required next validation:
 - Existing PR #425 CI success applies to its documentation branch head and is not evidence that this audit's source-level recommendations are implemented. PR #426 had no check runs at the time of this snapshot.
 - Do not interpret this report as a security certification, clinical validation, WCAG conformance statement, or production-readiness approval.
 
-## 6. Next audit slice
+## 6. Follow-up route-readiness audit
+
+A subsequent route-focused inspection is documented in [Frontend Route Readiness Audit](./FRONTEND_ROUTE_READINESS_AUDIT.md). It expands the baseline with the empty Dashboard entry point, intentionally disabled authenticated routes, additional empty route components, and dormant dashboard demo charts using random values. Treat the route audit as a separate, bounded source snapshot; do not infer that these additional routes were assessed in this original pass.
+
+## 7. Next audit slice
 
 Continue with route-by-route inspection of the authenticated workspace, medication/catalog API client contracts, inventory and batch/expiry flows, and the root layout's skip-link target. Then convert confirmed gaps into a sequenced implementation plan before making application-code changes.

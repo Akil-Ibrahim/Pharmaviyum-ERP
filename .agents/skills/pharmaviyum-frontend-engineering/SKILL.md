@@ -18,9 +18,10 @@ Before implementation, read:
 3. `frontend/shadcn-admin/package.json` and `components.json`.
 4. [Frontend Engineering Standards](../../../docs/development/FRONTEND_ENGINEERING_STANDARDS.md).
 5. [Frontend Engineering Maturity Model](../../../docs/development/FRONTEND_ENGINEERING_MATURITY_MODEL.md).
-6. The nearest route/feature implementation and its tests.
-7. Relevant API types/services and the backend contract when data or workflow behavior changes.
-8. `src/styles/index.css` and `src/styles/theme.css` when styling or theming changes.
+6. [Frontend Route Readiness Audit](../../../docs/development/FRONTEND_ROUTE_READINESS_AUDIT.md).
+7. The nearest route/feature implementation and its tests.
+8. Relevant API types/services and the backend contract when data or workflow behavior changes.
+9. `src/styles/index.css` and `src/styles/theme.css` when styling or theming changes.
 
 Treat repository files and the committed lockfile as the source of truth. Do not assume a different framework or upgrade versions implicitly. The standards document includes proposed targets and adoption phases; distinguish documented policy from implemented tooling and measured results.
 
@@ -43,10 +44,12 @@ Next.js, React Server Components, Next.js routing, and React Router patterns are
 ### 1. Understand before changing
 
 - Identify the route, feature owner, current component composition, data source, and state ownership.
+- Verify that the route renders a meaningful state; inspect for `return null`, empty route components, and visible navigation links to disabled pages. Apply the route-readiness decision rules before treating a route as complete.
 - Search for reusable components, hooks, query patterns, schemas, and tests before creating new abstractions.
 - Inspect the actual local shadcn component source and `components.json`; upstream APIs may not match the installed version or primitive base.
 - For workflow changes, trace the full path from UI action through API client, query/mutation, backend endpoint, and response/error handling.
 - For visual changes, inspect existing theme tokens and the closest implemented screens.
+- Never present `Math.random()` or hard-coded demo fixtures as real pharmacy, sales, inventory, or patient metrics; label demo mode explicitly and replace it with an authoritative typed API contract before production use.
 - Classify change risk (low/medium/high) based on the affected workflow. Use the high-risk path for auth, tenant/patient context, POS/dispensing, stock, batch/expiry, FEFO, prescriptions, and API contracts.
 - Create an ADR for material, long-lived architectural decisions; do not create ADRs for routine implementation details.
 
