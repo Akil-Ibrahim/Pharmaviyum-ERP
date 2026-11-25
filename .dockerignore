@@ -32,10 +32,11 @@ ENV/
 .git
 .gitignore
 
-# Environment files
-.env
-.env.local
-.env.*.local
+# Environment files and secrets must never enter the Docker build context.
+.env*
+**/.env*
+secrets/
+**/secrets/
 
 # Testing & coverage
 .pytest_cache/
