@@ -69,6 +69,28 @@ describe('migrateLegacyAvatarOnce', () => {
     expect(uploadProfileAvatar).not.toHaveBeenCalled()
   })
 
+  it('allows a later retry after an upload failure', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(
+        new Response(new Blob(['image-bytes'], { type: 'image/png' }))
+      )
+    )
+    uploadProfileAvatar
+      .mockRejectedValueOnce(new Error('Upload failed'))
+      .mockResolvedValueOnce(undefined)
+
+    await expect(
+      migrateLegacyAvatarOnce('account-retry', validPngDataUrl)
+    ).rejects.toThrow('Upload failed')
+
+    await expect(
+      migrateLegacyAvatarOnce('account-retry', validPngDataUrl)
+    ).resolves.toBe(true)
+
+    expect(uploadProfileAvatar).toHaveBeenCalledTimes(2)
+  })
+
   it('shares one in-flight upload between consumers of the same account', async () => {
     vi.stubGlobal(
       'fetch',
