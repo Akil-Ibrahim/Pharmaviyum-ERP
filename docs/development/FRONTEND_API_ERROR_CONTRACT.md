@@ -57,7 +57,8 @@ The policy is intentionally conservative for client errors. A retry is not a sub
 ### Global and mutation handling
 
 - Query-cache handling recognizes both typed fetch errors and Axios errors by HTTP status.
-- 401 clears the session and redirects to sign-in while preserving the current location as the redirect target.
+- 401 from either a query or mutation clears the TanStack Query cache, clears the session and redirects to sign-in while preserving the current location as the redirect target.
+- Explicit sign-out clears query and mutation caches before navigating away, preventing cached account-scoped data from remaining available to a subsequent session.
 - 5xx query failures show the global server-error notification and navigate to the error route in production.
 - Mutation error notifications display a validated server title/detail where available; otherwise they use the typed error message or a generic fallback.
 - 403 remains an authorization failure; it is not silently converted into sign-out.
