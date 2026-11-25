@@ -85,15 +85,19 @@ Do not install dependencies, change lockfiles, or alter CI quality gates to hide
 
 ## Skill routing and upstream references
 
-Use specialized upstream skills when available; this skill defines Pharmaviyum-specific constraints and does not replace their detailed guidance.
+Use specialized upstream skills when available; this skill defines Pharmaviyum-specific constraints and does not replace their detailed guidance. Load only the specialist relevant to the task.
 
-- Official shadcn skill: `npx skills add shadcn/ui` — component discovery, composition, CLI, registries, theming, and project-aware shadcn guidance.
-- Vercel React Best Practices: `npx skills add vercel-labs/agent-skills --skill react-best-practices` — React performance and rendering patterns.
+- Official shadcn skill: `npx skills add shadcn/ui` — primary source for component discovery, composition, CLI, registries, and theming.
+- Vercel React Best Practices: `npx skills add vercel-labs/agent-skills --skill react-best-practices` — React rendering, async, and bundle performance. Apply React guidance only; this does not make Vercel a hosting target.
 - Vercel Composition Patterns: `npx skills add vercel-labs/agent-skills --skill composition-patterns` — scalable component APIs and composition.
-- Vercel Web Design Guidelines: `npx skills add vercel-labs/agent-skills --skill web-design-guidelines` — accessibility and web interface review.
-- Anthropic Frontend Design: `npx skills add anthropics/skills --skill frontend-design` — visual design direction and interface craft, where the current upstream skill exists and is compatible.
+- Vercel Web Design Guidelines: `npx skills add vercel-labs/agent-skills --skill web-design-guidelines` — interface quality and accessibility review.
+- Addy Osmani Frontend UI Engineering: `npx skills add addyosmani/agent-skills --skill frontend-ui-engineering` — production UI composition, responsive behavior, and design-system adherence.
+- Addy Osmani Performance Optimization: `npx skills add addyosmani/agent-skills --skill performance-optimization` — measurement-first profiling and optimization; use when performance is in scope.
+- Addy Osmani Accessibility Engineering: `npx skills add addyosmani/agent-skills --skill accessibility-engineering` — focused accessibility audits and remediation.
+- Google Stitch React + Vite Dashboard: `npx skills add google-labs-code/stitch-skills --skill react-vite-dashboard` — dashboard and design-to-code guidance. Adapt React Router examples to TanStack Router, ignore Web3 examples, and do not require Stitch MCP for ordinary development.
+- Google Stitch shadcn UI: `npx skills add google-labs-code/stitch-skills --skill shadcn-ui` — supplementary component guidance only; prefer official shadcn guidance and adapt Next.js/Tailwind v3 assumptions to Vite/Tailwind v4.
 
-Use the project's Bun runner when installing from the terminal if that is the environment's supported invocation. Review the proposed skill source and license before vendoring third-party files. Do not duplicate large upstream skill bodies in this repository; keep upstream skills updateable and this skill focused on Pharmaviyum-specific rules.
+The demo deployment target is FastAPI Cloud. The React/Vite frontend is served as part of the FastAPI application; do not add Vercel hosting, edge-runtime, or deployment assumptions. Use the project's Bun runner when installing from the terminal if that is the environment's supported invocation. Review source and license before vendoring third-party files. Keep upstream skills updateable and this skill focused on Pharmaviyum-specific rules.
 
 ## Definition of done
 
