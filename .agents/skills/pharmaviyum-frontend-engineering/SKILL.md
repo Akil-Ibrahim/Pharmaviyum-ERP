@@ -93,7 +93,7 @@ Do not install dependencies, change lockfiles, or alter CI quality gates to hide
 
 ## Skill routing and upstream references
 
-Use specialized upstream skills when available; this skill defines Pharmaviyum-specific constraints and does not replace their detailed guidance. Load only the specialist relevant to the task.
+Use specialized upstream skills when available; this skill defines Pharmaviyum-specific constraints and does not replace their detailed guidance. Load only the specialist relevant to the task. Apply the [Pharmaviyum Frontend Project Skill Integration Contract](../../../docs/development/FRONTEND_PROJECT_SKILL_INTEGRATION.md) for skill routing, precedence, framework filtering, pharmacy-domain review, and installation safeguards.
 
 - Anthropic Frontend Design: `npx skills add anthropics/skills --skill frontend-design` — visual craft, typography, layout, and art direction. Preserve Pharmaviyum's approved design system; do not reinterpret the brand for every screen.
 - Official shadcn skill: `npx skills add shadcn/ui` — primary source for component discovery, composition, CLI, registries, and theming.
