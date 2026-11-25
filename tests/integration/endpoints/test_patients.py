@@ -22,10 +22,11 @@ class TestCreatePatient:
         self,
         authenticated_client: AsyncClient,
         sample_patient_data: dict,
+        test_pharmacy,
     ):
-        """Test successful patient creation"""
+        """Test successful patient creation inside an explicit pharmacy tenant."""
         response = await authenticated_client.post(
-            "/api/v1/patients/",
+            f"/api/v1/patients/?pharmacy_id={test_pharmacy.id}",
             json=sample_patient_data,
         )
 
@@ -50,21 +51,35 @@ class TestCreatePatient:
         authenticated_client: AsyncClient,
         test_db: AsyncSession,
         sample_patient_data: dict,
+        test_pharmacy,
     ):
-        """Test creation fails with duplicate phone"""
-        await authenticated_client.post(
-            "/api/v1/patients/",
-            json=sample_patient_data,
-        )
+        """Test creation fails with duplicate phone within the same tenant."""
+        url = f"/api/v1/patients/?pharmacy_id={test_pharmacy.id}"
+        await authenticated_client.post(url, json=sample_patient_data)
 
         response = await authenticated_client.post(
-            "/api/v1/patients/",
+            url,
             json=sample_patient_data,
         )
 
         assert response.status_code == 409
         data = response.json()
         assert "already exists" in data["detail"]
+
+    @pytest.mark.asyncio
+    async def test_create_patient_requires_explicit_pharmacy_scope(
+        self,
+        authenticated_client: AsyncClient,
+        sample_patient_data: dict,
+    ):
+        """Reject unassigned patient creation even for a platform superuser."""
+        response = await authenticated_client.post(
+            "/api/v1/patients/",
+            json=sample_patient_data,
+        )
+
+        assert response.status_code == 422
+        assert "pharmacy_id" in response.text
 
     @pytest.mark.asyncio
     async def test_create_patient_unauthorized(
