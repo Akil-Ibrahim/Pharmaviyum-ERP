@@ -118,7 +118,7 @@ function SidebarMenuLink({ item, href }: { item: NavLink; href: string }) {
       <SidebarMenuItem>
         <SidebarMenuButton
           disabled
-          aria-label={\`${item.title}. ${disabledReason}\`}
+          aria-label={`${item.title}. ${disabledReason}`}
           title={disabledReason}
           tooltip={item.title}
           className='h-10 gap-2.5 rounded-xl px-3 opacity-60'
@@ -145,7 +145,7 @@ function SidebarMenuLink({ item, href }: { item: NavLink; href: string }) {
             : inactiveNavItemClassName,
         ].join(' ')}
       >
-        <Link to={item.url} onClick={() => setOpenMobile(false)}>
+        <Link to={item.url!} onClick={() => setOpenMobile(false)}>
           <NavIcon icon={item.icon} active={isActive} />
           <span className='min-w-0 truncate text-sm font-medium text-[#0F172A] group-data-[collapsible=icon]:hidden'>
             {item.title}
@@ -224,7 +224,7 @@ function SidebarMenuCollapsible({
                         type='button'
                         disabled
                         title={disabledReason}
-                        aria-label={\`${subItem.title}. ${disabledReason}\`}
+                        aria-label={`${subItem.title}. ${disabledReason}`}
                       >
                         <NavIcon icon={subItem.icon} />
                         <span className='min-w-0 truncate text-sm font-medium'>
@@ -233,7 +233,7 @@ function SidebarMenuCollapsible({
                       </button>
                     ) : (
                       <Link
-                        to={subItem.url}
+                        to={subItem.url!}
                         onClick={() => setOpenMobile(false)}
                       >
                         <NavIcon icon={subItem.icon} active={isSubActive} />
@@ -303,12 +303,12 @@ function SidebarMenuCollapsedDropdown({
 
             return (
               <DropdownMenuItem
-                key={\`${sub.title}-${sub.url ?? 'unavailable'}\`}
+                key={`${sub.title}-${sub.url ?? 'unavailable'}`}
                 asChild={!isDisabled}
                 disabled={isDisabled}
                 title={isDisabled ? disabledReason : undefined}
                 aria-label={
-                  isDisabled ? \`${sub.title}. ${disabledReason}\` : undefined
+                  isDisabled ? `${sub.title}. ${disabledReason}` : undefined
                 }
                 className={
                   isSubActive
@@ -324,7 +324,7 @@ function SidebarMenuCollapsedDropdown({
                     </span>
                   </span>
                 ) : (
-                  <Link to={sub.url} className='gap-2.5'>
+                  <Link to={sub.url!} className='gap-2.5'>
                     <NavIcon icon={sub.icon} active={isSubActive} />
                     <span className='max-w-52 truncate text-sm font-medium text-[#0F172A]'>
                       {sub.title}
