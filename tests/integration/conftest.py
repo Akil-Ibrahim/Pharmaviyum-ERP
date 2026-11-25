@@ -19,6 +19,7 @@ from src.pharmaviyum.core.oauth2 import create_access_token
 from src.pharmaviyum.database import Base
 from src.pharmaviyum.main import app
 from src.pharmaviyum.models.patients import Patient
+from src.pharmaviyum.models.pharmacy import Pharmacy
 from src.pharmaviyum.models.user import User
 from src.pharmaviyum.shared.core.database import get_session
 
@@ -119,6 +120,20 @@ class PatientFactory:
         self.session.add(patient)
         await self.session.flush()
         return patient
+
+
+@pytest.fixture
+async def test_pharmacy(test_db: AsyncSession) -> Pharmacy:
+    """Create the explicit tenant required by patient-create API tests."""
+    pharmacy = Pharmacy(
+        name="Test Pharmacy",
+        code="test-pharmacy",
+        timezone="UTC",
+        is_active=True,
+    )
+    test_db.add(pharmacy)
+    await test_db.flush()
+    return pharmacy
 
 
 @pytest.fixture

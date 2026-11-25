@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.pharmaviyum.core.database import get_db
 from src.pharmaviyum.models.patients import Patient
+from src.pharmaviyum.models.pharmacy import Pharmacy
 from src.pharmaviyum.models.pharmacy_membership import PharmacyMembership
 from src.pharmaviyum.models.phi_access_audit import PHIAccessAudit
 from src.pharmaviyum.modules.auth.deps import (
@@ -39,8 +40,20 @@ async def create_patient(
     db: AsyncSession = Depends(get_db),
     service: PatientService = Depends(get_patient_service),
     current_user=Depends(get_current_active_superuser),
-    pharmacy_id: int | None = Query(None, gt=0),
+    pharmacy_id: int = Query(..., gt=0),
 ):
+    active_pharmacy_id = await db.scalar(
+        select(Pharmacy.id).where(
+            Pharmacy.id == pharmacy_id,
+            Pharmacy.is_active.is_(True),
+        )
+    )
+    if active_pharmacy_id is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Active pharmacy not found",
+        )
+
     try:
         scope = await resolve_pharmacy_scope(pharmacy_id, current_user, db)
         patient = await service.create_patient(
@@ -202,7 +215,7 @@ async def update_patient(
     db: AsyncSession = Depends(get_db),
     service: PatientService = Depends(get_patient_service),
     current_user=Depends(get_current_active_superuser),
-    pharmacy_id: int | None = Query(None, gt=0),
+    pharmacy_id: int = Query(..., gt=0),
 ):
     try:
         scope = await resolve_pharmacy_scope(pharmacy_id, current_user, db)
@@ -222,7 +235,7 @@ async def delete_patient(
     db: AsyncSession = Depends(get_db),
     service: PatientService = Depends(get_patient_service),
     current_user=Depends(get_current_active_superuser),
-    pharmacy_id: int | None = Query(None, gt=0),
+    pharmacy_id: int = Query(..., gt=0),
 ):
     scope = await resolve_pharmacy_scope(pharmacy_id, current_user, db)
     deleted = await service.delete_patient(

@@ -22,10 +22,11 @@ class TestCreatePatient:
         self,
         authenticated_client: AsyncClient,
         sample_patient_data: dict,
+        test_pharmacy,
     ):
-        """Test successful patient creation"""
+        """Test successful patient creation inside an explicit pharmacy tenant."""
         response = await authenticated_client.post(
-            "/api/v1/patients/",
+            f"/api/v1/patients/?pharmacy_id={test_pharmacy.id}",
             json=sample_patient_data,
         )
 
@@ -50,21 +51,50 @@ class TestCreatePatient:
         authenticated_client: AsyncClient,
         test_db: AsyncSession,
         sample_patient_data: dict,
+        test_pharmacy,
     ):
-        """Test creation fails with duplicate phone"""
-        await authenticated_client.post(
-            "/api/v1/patients/",
-            json=sample_patient_data,
-        )
+        """Test creation fails with duplicate phone within the same tenant."""
+        url = f"/api/v1/patients/?pharmacy_id={test_pharmacy.id}"
+        await authenticated_client.post(url, json=sample_patient_data)
 
         response = await authenticated_client.post(
-            "/api/v1/patients/",
+            url,
             json=sample_patient_data,
         )
 
         assert response.status_code == 409
         data = response.json()
         assert "already exists" in data["detail"]
+
+    @pytest.mark.asyncio
+    async def test_create_patient_requires_explicit_pharmacy_scope(
+        self,
+        authenticated_client: AsyncClient,
+        sample_patient_data: dict,
+    ):
+        """Reject unassigned patient creation even for a platform superuser."""
+        response = await authenticated_client.post(
+            "/api/v1/patients/",
+            json=sample_patient_data,
+        )
+
+        assert response.status_code == 422
+        assert "pharmacy_id" in response.text
+
+    @pytest.mark.asyncio
+    async def test_create_patient_rejects_unknown_pharmacy(
+        self,
+        authenticated_client: AsyncClient,
+        sample_patient_data: dict,
+    ):
+        """Reject a tenant identifier that does not resolve to an active pharmacy."""
+        response = await authenticated_client.post(
+            "/api/v1/patients/?pharmacy_id=99999",
+            json=sample_patient_data,
+        )
+
+        assert response.status_code == 404
+        assert response.json()["detail"] == "Active pharmacy not found"
 
     @pytest.mark.asyncio
     async def test_create_patient_unauthorized(
@@ -74,7 +104,7 @@ class TestCreatePatient:
     ):
         """Test creation requires authentication"""
         response = await client.post(
-            "/api/v1/patients/",
+            "/api/v1/patients/?pharmacy_id=1",
             json=sample_patient_data,
         )
 
@@ -225,12 +255,13 @@ class TestUpdatePatient:
         test_db: AsyncSession,
         patient_factory,
         sample_patient_update_data: dict,
+        test_pharmacy,
     ):
-        """Test successful patient update"""
-        patient = await patient_factory.create()
+        """Test successful patient update within an explicit pharmacy tenant."""
+        patient = await patient_factory.create(pharmacy_id=test_pharmacy.id)
 
         response = await authenticated_client.put(
-            f"/api/v1/patients/{patient.id}",
+            f"/api/v1/patients/{patient.id}?pharmacy_id={test_pharmacy.id}",
             json=sample_patient_update_data,
         )
 
@@ -252,14 +283,39 @@ class TestUpdatePatient:
         self,
         authenticated_client: AsyncClient,
         sample_patient_update_data: dict,
+        test_pharmacy,
     ):
         """Test update returns 404 for non-existent patient"""
+        response = await authenticated_client.put(
+            f"/api/v1/patients/99999?pharmacy_id={test_pharmacy.id}",
+            json=sample_patient_update_data,
+        )
+
+        assert response.status_code == 404
+
+    @pytest.mark.asyncio
+    async def test_update_patient_requires_explicit_pharmacy_scope(
+        self,
+        authenticated_client: AsyncClient,
+        sample_patient_update_data: dict,
+    ):
         response = await authenticated_client.put(
             "/api/v1/patients/99999",
             json=sample_patient_update_data,
         )
 
-        assert response.status_code == 404
+        assert response.status_code == 422
+        assert "pharmacy_id" in response.text
+
+    @pytest.mark.asyncio
+    async def test_delete_patient_requires_explicit_pharmacy_scope(
+        self,
+        authenticated_client: AsyncClient,
+    ):
+        response = await authenticated_client.delete("/api/v1/patients/99999")
+
+        assert response.status_code == 422
+        assert "pharmacy_id" in response.text
 
 
 class TestDeletePatient:
@@ -271,11 +327,14 @@ class TestDeletePatient:
         authenticated_client: AsyncClient,
         test_db: AsyncSession,
         patient_factory,
+        test_pharmacy,
     ):
-        """Test successful patient deletion (soft delete)"""
-        patient = await patient_factory.create()
+        """Test successful patient deletion (soft delete) within a tenant."""
+        patient = await patient_factory.create(pharmacy_id=test_pharmacy.id)
 
-        response = await authenticated_client.delete(f"/api/v1/patients/{patient.id}")
+        response = await authenticated_client.delete(
+            f"/api/v1/patients/{patient.id}?pharmacy_id={test_pharmacy.id}"
+        )
 
         assert response.status_code == 204
 

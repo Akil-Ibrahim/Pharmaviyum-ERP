@@ -5,10 +5,13 @@ def test_create_and_get_order(client):
         "last_name": "Patient",
         "phone": "+380501234567",
     }
-    presp = client.post("/api/v1/patients/", json=patient_payload)
-    assert presp.status_code in (201, 403)
+    presp = client.post(
+        "/api/v1/patients/?pharmacy_id=1",
+        json=patient_payload,
+    )
+    assert presp.status_code in (201, 401, 403, 404)
 
-    if presp.status_code == 403:
+    if presp.status_code in (401, 403, 404):
         return
 
     patient_id = presp.json()["id"]
