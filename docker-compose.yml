@@ -129,6 +129,7 @@ services:
       SMTP_TIMEOUT_SECONDS: ${SMTP_TIMEOUT_SECONDS:-10}
       EMAILS_FROM: ${EMAILS_FROM:-noreply@pharmaviyum.local}
       REDIS_URL: redis://redis:6379/0
+      DATABASE_URL: postgresql+asyncpg://postgres:postgres@postgres:5432/pharmaviyum
       PGVECTOR_DATABASE_URL: postgresql+asyncpg://postgres:postgres@postgres:5432/pharmaviyum
       OLLAMA_BASE_URL: http://ollama:11434
       OLLAMA_FAST_MODEL: ${OLLAMA_FAST_MODEL:-qwen3.5:9b}
