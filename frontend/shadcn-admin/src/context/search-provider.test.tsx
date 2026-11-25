@@ -75,7 +75,6 @@ describe('SearchProvider and CommandMenu', () => {
     await expect
       .element(getByRole('option', { name: 'System' }))
       .toBeInTheDocument()
-    await expect.element(getByText('Dashboard')).toBeInTheDocument()
   })
 
   it('does not show the dialog content when search is closed', async () => {
@@ -134,22 +133,25 @@ describe('SearchProvider and CommandMenu', () => {
   })
 
   it('does not expose disabled sidebar destinations in command search', async () => {
-    const screen = await renderWithSearchProvider();
+    const screen = await renderWithSearchProvider()
 
-    await openCommandPalette(screen);
+    await openCommandPalette(screen)
 
     await expect
       .element(screen.getByRole('option', { name: 'POS' }))
-      .not.toBeInTheDocument();
+      .not.toBeInTheDocument()
+    await expect
+      .element(screen.getByRole('option', { name: 'Dashboard' }))
+      .not.toBeInTheDocument()
     await expect
       .element(screen.getByRole('option', { name: 'Clinical Care Patients' }))
-      .not.toBeInTheDocument();
+      .not.toBeInTheDocument()
     await expect
       .element(screen.getByRole('option', { name: 'Inventory Drug Catalog' }))
-      .not.toBeInTheDocument();
+      .not.toBeInTheDocument()
     await expect
       .element(screen.getByRole('option', { name: 'Procurement Suppliers' }))
-      .not.toBeInTheDocument();
+      .not.toBeInTheDocument()
   });
 
   it('applies theme and closes the palette when a theme command is chosen', async () => {
