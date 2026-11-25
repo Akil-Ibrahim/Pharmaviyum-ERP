@@ -4,6 +4,8 @@
 
 This document defines the recommended agent-skill setup for the active frontend at `frontend/shadcn-admin/`. It is aligned with the repository's actual stack and deployment model, not generic React/Next.js or Vercel-hosted templates.
 
+The project-owned [Frontend Engineering Standards](./FRONTEND_ENGINEERING_STANDARDS.md) is the normative companion for architecture decisions, risk classification, design-system governance, WCAG 2.2 AA, performance measurement, privacy-safe observability, testing strategy, localization, and adoption. It defines proposed targets separately from implemented capabilities.
+
 ## Repository findings
 
 The active frontend currently uses:
@@ -22,7 +24,7 @@ The active frontend currently uses:
 
 The frontend is part of the FastAPI application and is served with the backend from the same application/domain. The demo deployment target is **FastAPI Cloud**. Vercel skills are considered only as framework-independent React/frontend guidance; no Vercel hosting, edge runtime, deployment, or platform configuration is implied.
 
-The repository already has a root `AGENTS.md` and a Library Skills management guide under `.agents/skills/library-skills/`. This PR adds a frontend-specific `AGENTS.md` and a Pharmaviyum frontend engineering skill.
+The repository already has a root `AGENTS.md` and a Library Skills management guide under `.agents/skills/library-skills/`. The frontend agent layer consists of a frontend-local `AGENTS.md`, the Pharmaviyum frontend engineering skill, and the engineering standards document.
 
 ## Recommended skills
 
@@ -32,6 +34,7 @@ Install selectively. The project-owned skill remains authoritative for Pharmaviy
 |---|---|---|---|
 | P0 | `pharmaviyum-frontend-engineering` | This repository | Project architecture, FastAPI Cloud deployment boundary, pharmacy workflows, privacy, and quality gates. |
 | P0 | `shadcn` | [Official shadcn skill](https://github.com/shadcn-ui/ui/tree/main/skills/shadcn) | Official component discovery, CLI, composition, theming, and project-aware shadcn guidance. |
+| P1 | `frontend-design` | [Anthropic Agent Skills](https://github.com/anthropics/skills/tree/main/skills/frontend-design) | Intentional visual direction, typography, layout, and non-generic UI decisions. Must preserve the established Pharmaviyum design system rather than inventing a new brand on every task. |
 | P0 | `react-best-practices` | [Vercel Agent Skills](https://github.com/vercel-labs/agent-skills/tree/main/skills/react-best-practices) | React rendering, performance, async, and bundle practices. Apply framework-independent guidance only; ignore Vercel deployment/runtime assumptions. |
 | P1 | `frontend-ui-engineering` | [Addy Osmani Agent Skills](https://github.com/addyosmani/agent-skills/tree/main/skills/frontend-ui-engineering) | Production UI composition, design-system adherence, responsive behavior, interaction states, and accessibility. |
 | P1 | `performance-optimization` | [Addy Osmani Agent Skills](https://github.com/addyosmani/agent-skills/tree/main/skills/performance-optimization) | Measurement-first performance investigation across browser, frontend, API, and database boundaries. Use when profiling or performance work is requested. |
@@ -47,19 +50,54 @@ Install selectively. The project-owned skill remains authoritative for Pharmaviy
 
 ### Compatibility notes
 
-The upstream skills are useful references, not drop-in project specifications:
+The upstream skills are useful references, not drop-in project specifications. A source review of the selected `SKILL.md` files was performed on 2026-11-25; this is a compatibility review, not a claim that any skill has been installed:
 
+- Anthropic `frontend-design` promotes strong, distinctive visual choices. Apply its craft guidance within Pharmaviyum's approved visual language; do not replace established tokens, typography, density, or dashboard conventions without a design-system decision.
+- Vercel `react-best-practices` contains both general React advice and Next.js/server-specific rules (including `next/dynamic`, server components/actions, and RSC-related guidance). Apply only rules that are valid for a client-rendered React 19 + Vite application; exclude Next.js, RSC, server-action, and Next runtime assumptions.
+- Vercel `composition-patterns` explicitly includes React 19 patterns. Review each rule against the installed React 19 APIs and local component conventions; composition is a tool, not a mandate to introduce compound components everywhere.
+- Vercel `web-design-guidelines` depends on its bundled `references/command.md` snapshot. The skill must be installed with that reference file intact; use its pinned snapshot rather than fetching unpinned rules at review time.
+- The official shadcn skill includes shell-enabled CLI guidance and rules that may target newer component APIs. Read `components.json` and local component implementations first. Treat `info`/`docs` as inspection; commands that add, initialize, migrate, or overwrite components require explicit task approval and diff review. Do not blindly apply generic form-layout rules to installed components that are not present locally.
+- Addy Osmani's accessibility skill suggests `npx` commands that download/run pinned audit tools. Do not execute those commands or add packages automatically; first obtain approval for tool execution and verify the local test/dependency policy. Automated output is not proof of WCAG conformance.
+- Addy's performance skill includes examples that add `web-vitals` and instrumentation. Do not add dependencies, telemetry, or send performance data without a separate approved implementation decision. Keep measurement-first guidance.
+- Addy's code-review skill is compatible as a review framework, but the project's required checks remain Bun-based and the exact PR head must be verified.
 - Google Stitch `react-vite-dashboard` describes React 18 and React Router. Pharmaviyum uses React 19 and TanStack Router. Its Web3 examples are irrelevant to this pharmacy ERP.
 - Google Stitch `shadcn-ui` includes Next.js-oriented examples and Tailwind CSS v3-era configuration. Pharmaviyum uses Vite and Tailwind CSS v4.
 - Addy Osmani's frontend UI skill is broadly applicable, but its examples and breakpoints must be reconciled with existing local components, theme tokens, and project test tooling.
 - Addy's performance skill is measurement-first. Do not add instrumentation or dependencies just because a skill example mentions them.
 - Vercel skills are not deployment instructions. FastAPI Cloud remains the target hosting platform; frontend build/serving stays integrated with FastAPI.
 
+### Package completeness and license review
+
+A skill is not necessarily a single `SKILL.md` file. If the Skills CLI installs one of these skills, preserve its complete skill directory and relative resource paths; do not copy only the entry-point Markdown file:
+
+| Source | Required companion content observed in upstream tree | License evidence |
+|---|---|---|
+| Anthropic `frontend-design` | `SKILL.md` and its adjacent `LICENSE.txt` | The skill directory includes Apache License 2.0 terms. Preserve the license when redistributing or vendoring. |
+| Vercel `react-best-practices` | `SKILL.md`, `AGENTS.md`, `README.md`, `metadata.json`, and the complete `rules/` directory | Skill metadata declares MIT. The repository API did not expose a root license file; re-check the exact upstream skill metadata and applicable terms before vendoring. |
+| Vercel `composition-patterns` | `SKILL.md`, `AGENTS.md`, `README.md`, `metadata.json`, and the complete `rules/` directory | Skill metadata declares MIT. Re-check applicable terms before vendoring. |
+| Vercel `web-design-guidelines` | `SKILL.md` and `references/command.md` | Skill metadata declares MIT. Keep the bundled, pinned reference snapshot; do not replace it with an unpinned network fetch. |
+| shadcn `shadcn` | Complete `skills/shadcn/` directory, including rule docs, CLI/design-system references, assets, and scripts | The shadcn/ui repository declares MIT. Preserve the license notice when redistributing or vendoring. |
+| Addy Osmani selected skills | Complete skill directories, including references; accessibility also includes `scripts/audit-a11y.sh` | The repository declares MIT. Preserve the license notice when redistributing or vendoring. |
+
+The upstream source tree was inspected on 2026-11-25. This is an inventory snapshot, not a vendoring operation. Re-check licenses and source revisions immediately before any distribution or update.
+
+### Additional framework-specific filtering
+
+- In Vercel React Best Practices, the `client-swr-dedup` example must not introduce SWR; Pharmaviyum already uses TanStack Query. Apply the underlying request-deduplication principle through existing query keys and query-client behavior.
+- The `bundle-dynamic-imports` rule references `next/dynamic`; use Vite-compatible dynamic `import()` and the project's existing lazy-route/component patterns instead.
+- Exclude Vercel's server, RSC, Next.js API-route, server-action, and hydration-specific rules from this client-rendered Vite frontend unless a separately verified SSR architecture is introduced.
+- The React 19 composition skill's `use()` guidance is not a mandate to replace every `useContext()`; use the API that fits the actual component and context contract.
+- Addy's accessibility audit skill includes a shell script that invokes pinned external tools. Treat the script as executable code: inspect it and obtain approval before running it. It is not part of ordinary lint/test verification.
+- Addy's performance skill discusses RUM, `web-vitals`, and generic bundle budgets. These are not approved telemetry or performance-budget changes. Measure the current application first and separately approve any instrumentation, data collection, or budget adoption.
+
 ### Suggested installation commands
 
 Run from the repository root only after reviewing the current skill source and its license. Install only the skills needed for the task; do not install every skill pack globally by default.
 
 ```bash
+# Anthropic — visual design guidance
+npx skills add anthropics/skills --skill frontend-design
+
 # Official shadcn skill
 npx skills add shadcn/ui
 
@@ -79,7 +117,13 @@ npx skills add google-labs-code/stitch-skills --skill react-vite-dashboard
 npx skills add google-labs-code/stitch-skills --skill shadcn-ui
 ```
 
-For environments using Bun, use the equivalent `bunx skills add ...` invocation supported by the installed Skills CLI. Follow the CLI's interactive review and target selection; do not use an install-all option by default. Some Stitch workflows additionally require Stitch MCP; ordinary frontend development does not.
+For environments using Bun, use the equivalent `bunx skills add ...` invocation supported by the installed Skills CLI. Follow the CLI's interactive review and target selection; do not use an install-all option by default. Some Stitch workflows additionally require Stitch MCP; ordinary frontend development does not. These are documented commands, not commands executed by this PR. Skill installation is intentionally deferred until an operator explicitly approves the selected skills and target scope. Do not run package-manager commands as part of routine documentation work.
+
+## Adoption decision
+
+Connect four upstream repositories selectively: Anthropic (`frontend-design`), Vercel (`react-best-practices`, `composition-patterns`, `web-design-guidelines`), official shadcn (`shadcn`), and Addy Osmani (`frontend-ui-engineering`, `accessibility-engineering`, `performance-optimization`, `code-review-and-quality`). Do not install every skill in each repository. Google Stitch and UI UX Pro Max remain optional later-stage design tooling; neither is part of the first adoption wave. Playwright E2E remains covered by the repository's existing Playwright Test setup; visual regression remains a project-owned future capability rather than an unverified third-party skill.
+
+No upstream skills have been installed, no dependencies or lockfiles have changed, and no Stitch MCP connection or credentials have been configured by this documentation-only change.
 
 ## What should remain project-owned
 
@@ -93,8 +137,7 @@ The following rules are specific to Pharmaviyum and must not be delegated to gen
 - Patient-data privacy, tenant isolation, and authorization boundaries.
 - API client generation and OpenAPI contract consistency.
 - The repository's lint, format, test, build, and Playwright commands.
-
-These constraints live in `frontend/shadcn-admin/AGENTS.md` and `.agents/skills/pharmaviyum-frontend-engineering/SKILL.md`.
+- Engineering governance and quality targets documented in [Frontend Engineering Standards](./FRONTEND_ENGINEERING_STANDARDS.md).
 
 ## Installation and maintenance policy
 
@@ -102,14 +145,16 @@ These constraints live in `frontend/shadcn-admin/AGENTS.md` and `.agents/skills/
 2. Prefer official upstream skills for generic React and shadcn guidance.
 3. Use Addy Osmani's skills for focused UI engineering, measured optimization, and accessibility reviews; avoid loading all three when the task does not need them.
 4. Use Google Stitch skills selectively for dashboard/design-to-code and supplementary shadcn guidance; do not let their framework assumptions override the repository.
-5. Do not copy upstream skill files into this repository unless there is a clear offline/reproducibility requirement and its license, attribution, and update process are documented.
+5. Do not copy upstream skill files into this repository unless there is a clear offline/reproducibility requirement and its license, attribution, and update process are documented. This audit did not vendor third-party content; license terms should be re-checked before any future vendoring.
 6. Do not install overlapping skills that prescribe conflicting frameworks, component libraries, state managers, styling systems, or package managers.
 7. Review upstream changes before updating installed skills.
 8. Keep generated route trees, generated API clients, and managed skill symlinks under their respective generators/managers.
 9. Validate skill installation with the Skills CLI or the existing Library Skills workflow; do not hand-edit managed symlinks.
+10. Keep policy, roadmap, and implementation status distinct; update standards when project evidence or approved architecture changes.
 
 ## Audit references
 
+- [Frontend Engineering Standards](./FRONTEND_ENGINEERING_STANDARDS.md)
 - [Official shadcn Skills documentation](https://ui.shadcn.com/docs/skills)
 - [Official shadcn skill source](https://github.com/shadcn-ui/ui/tree/main/skills/shadcn)
 - [Vercel Agent Skills](https://github.com/vercel-labs/agent-skills)

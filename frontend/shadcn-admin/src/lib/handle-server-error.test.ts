@@ -1,5 +1,6 @@
 import { AxiosError } from 'axios'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { ApiError } from './api-error'
 import { handleServerError } from './handle-server-error'
 
 const toastError = vi.hoisted(() => vi.fn())
@@ -19,6 +20,27 @@ describe('handleServerError', () => {
     handleServerError(new Error('network'))
 
     expect(toastError).toHaveBeenCalledWith('Something went wrong!')
+  })
+
+  it('shows the server detail from a typed fetch API error', () => {
+    handleServerError(
+      new ApiError(422, 'Insufficient stock', {
+        detail: 'Insufficient stock',
+      })
+    )
+
+    expect(toastError).toHaveBeenCalledWith('Insufficient stock')
+  })
+
+  it('prefers the server title from a typed fetch API error', () => {
+    handleServerError(
+      new ApiError(422, 'Validation failed', {
+        title: 'Checkout rejected',
+        detail: 'Validation failed',
+      })
+    )
+
+    expect(toastError).toHaveBeenCalledWith('Checkout rejected')
   })
 
   it('maps a plain object with status 204 to the no-content message', () => {

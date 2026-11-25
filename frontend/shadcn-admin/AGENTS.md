@@ -16,6 +16,18 @@ These instructions apply to `frontend/shadcn-admin/` and all files below it.
 
 Before relying on any version-specific API, inspect the installed package version and the local implementation. Do not assume current online documentation matches the lockfile.
 
+For upstream specialist selection and Pharmaviyum-specific adaptation, follow [Frontend Project Skill Integration](../../docs/development/FRONTEND_PROJECT_SKILL_INTEGRATION.md). For architecture, accessibility, performance, observability, testing strategy, localization, and design-system governance, follow [Frontend Engineering Standards](../../docs/development/FRONTEND_ENGINEERING_STANDARDS.md) and assess progress against the [Frontend Engineering Maturity Model](../../docs/development/FRONTEND_ENGINEERING_MATURITY_MODEL.md). That document defines targets and adoption phases; do not claim a target is implemented until repository evidence exists.
+
+Upstream specialist skills may supplement the project-owned frontend skill. The project-owned standard and this file always take precedence; inspect each upstream rule for compatibility before applying it. Do not run skill-provided install, CLI mutation, network-fetch, or audit-tool commands without explicit task approval.
+
+## Route and workflow readiness
+
+- A registered TanStack route is not considered implemented unless it renders a meaningful page, an intentional redirect, or an accessible designed empty/disabled state.
+- Never leave a visible navigation item pointing to a route whose component returns `null`. Restore the workflow, hide/disable the item with an explanation, or redirect to a supported parent route when semantically correct.
+- Before changing navigation or routes, inspect the route file, feature entry component, sidebar/navigation source, authorization rules, and relevant API/domain contract.
+- Treat `Dashboard` and `POS` as critical authenticated entry points. Do not replace them with demo-only UI or random/generated KPI values presented as production data.
+- Use [Frontend Route Readiness Audit](../../docs/development/FRONTEND_ROUTE_READINESS_AUDIT.md) as the current source for inspected blank/disabled route findings; re-check source before assuming a finding remains current.
+
 ## Architecture and generated files
 
 - Inspect the nearest route, feature, component, hook, store, API service, and tests before editing.
@@ -25,7 +37,12 @@ Before relying on any version-specific API, inspect the installed package versio
 - TanStack Router route-tree output is generated. Never edit `src/routeTree.gen.ts` manually; use the configured route-generation script.
 - The generated API client under `src/client/` is owned by `scripts/generate-api-client.sh`. Never hand-edit generated output; update the backend contract and regenerate it.
 - Keep API transport, query keys, query functions, mutations, and UI responsibilities separated consistently with adjacent code.
+- Keep query functions read-only: do not upload/delete data, migrate persisted state, or mutate Zustand from a query function. Put writes and migrations in explicit TanStack Query mutations or user-triggered event workflows, and invalidate the relevant query after success.
+- Preserve HTTP status and structured server detail in a typed API error; do not throw plain `Error` for non-success HTTP responses.
+- Keep TanStack Query retry behavior status-aware: never retry authorization/validation 4xx responses; bound retries for transient network, timeout, rate-limit and server failures. Do not automatically retry non-idempotent mutations.
+- Ensure global query-cache and mutation error handlers recognize the same error types emitted by the active transport. Follow [Frontend API Error Contract](../../docs/development/FRONTEND_API_ERROR_CONTRACT.md).
 - Avoid adding dependencies when the existing stack already provides the capability.
+- Record material, long-lived architecture decisions as ADRs under `docs/architecture/decisions/`; routine implementation details do not need an ADR.
 
 ## Design-system rules
 
@@ -38,6 +55,7 @@ Before relying on any version-specific API, inspect the installed package versio
 - Support light and dark themes and narrow viewports. Avoid horizontal overflow; dense data tables may use an intentional responsive overflow container.
 - Use semantic HTML, accessible labels, keyboard-operable controls, visible focus states, and appropriate ARIA attributes.
 - Do not use color alone to communicate medication, stock, expiry, or workflow status.
+- Target WCAG 2.2 AA. Automated accessibility scans do not replace keyboard, focus, zoom/reflow, contrast, and appropriate assistive-technology checks.
 
 ## Pharmacy-domain correctness
 
@@ -76,11 +94,14 @@ Run from `frontend/shadcn-admin/` using Bun and the committed lockfile:
 
 Use focused tests first, then the broadest practical suite. E2E tests must use mocks or isolated test services, never production credentials or live production patient data. Do not claim checks passed unless they were executed and the result was observed.
 
+Choose verification depth by risk, not diff size. Auth, tenant isolation, patient context, POS/dispensing, inventory, batch/expiry, FEFO, prescription, and API contract changes require negative/boundary tests and appropriate integration/E2E plus human domain/security review. Follow the test matrix in the Frontend Engineering Standards.
+
 ## Change discipline
 
 1. State a concise plan for multi-file changes.
 2. Keep the diff focused and preserve unrelated work.
 3. Do not modify backend contracts, auth, tenant boundaries, dispensing, inventory, or generated files as a side effect of frontend styling work.
 4. Add or update tests for changed behavior, including failure and boundary states.
-5. Report changed files, commands actually run, results, and remaining risks.
-6. Follow the root Git workflow: feature branch, focused PR, no direct commits to `main`, no automatic merge or deployment.
+5. Update docs and ADRs in the same PR when architecture, user-visible behavior, accessibility exceptions, performance budgets, or operational policy changes.
+6. Report changed files, commands actually run, results, and remaining risks. Do not report proposed budgets or roadmap phases as implemented capabilities.
+7. Follow the root Git workflow: feature branch, focused PR, no direct commits to `main`, no automatic merge or deployment.
