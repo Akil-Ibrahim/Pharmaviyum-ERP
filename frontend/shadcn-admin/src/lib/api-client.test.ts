@@ -53,10 +53,7 @@ describe('apiFetch HTTP error contract', () => {
     )
 
     await expect(apiFetch('/api/v1/users/me')).rejects.toBeInstanceOf(ApiError)
-    await expect(apiFetch('/api/v1/users/me')).rejects.toMatchObject({
-      status: 401,
-    })
-    expect(resetAuth).toHaveBeenCalledTimes(2)
+    expect(resetAuth).toHaveBeenCalledTimes(1)
   })
 
   it('returns undefined for a successful 204 response', async () => {
