@@ -75,7 +75,6 @@ describe('SearchProvider and CommandMenu', () => {
     await expect
       .element(getByRole('option', { name: 'System' }))
       .toBeInTheDocument()
-    await expect.element(getByText('Dashboard')).toBeInTheDocument()
   })
 
   it('does not show the dialog content when search is closed', async () => {
@@ -119,18 +118,44 @@ describe('SearchProvider and CommandMenu', () => {
       .not.toBeInTheDocument()
   })
 
-  it('navigates for nested sidebar items (group with sub-items)', async () => {
+  it('navigates for a direct sidebar item', async () => {
     const screen = await renderWithSearchProvider()
     const { getByPlaceholder, getByRole } = screen
 
     await openCommandPalette(screen)
 
-    await userEvent.click(getByRole('option', { name: 'Settings Profile' }))
+    await userEvent.click(getByRole('option', { name: 'Settings' }))
 
     expect(mocks.navigate).toHaveBeenCalledWith({ to: '/settings' })
     await expect
       .element(getByPlaceholder(COMMAND_MENU_PLACEHOLDER))
       .not.toBeInTheDocument()
+  })
+
+  it('does not expose disabled sidebar destinations in command search', async () => {
+    const screen = await renderWithSearchProvider()
+
+    await openCommandPalette(screen)
+
+    const disabledDestinations = [
+      'Mortarium AI',
+      'Clinical Care Patients',
+      'Clinical Care Prescriptions',
+      'Inventory Drug Catalog',
+      'Inventory Stock Management',
+      'Inventory Transfers',
+      'Inventory Defectura',
+      'Procurement Suppliers',
+      'Procurement Purchase Orders',
+      'Procurement Receiving',
+      'Pharmacies',
+    ]
+
+    for (const destination of disabledDestinations) {
+      await expect
+        .element(screen.getByRole('option', { name: destination }))
+        .not.toBeInTheDocument()
+    }
   })
 
   it('applies theme and closes the palette when a theme command is chosen', async () => {

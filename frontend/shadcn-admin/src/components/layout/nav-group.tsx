@@ -109,7 +109,30 @@ function NavIcon({
 
 function SidebarMenuLink({ item, href }: { item: NavLink; href: string }) {
   const { setOpenMobile } = useSidebar()
-  const isActive = checkIsActive(href, item)
+  const isDisabled = item.disabled || !item.url
+  const isActive = !isDisabled && checkIsActive(href, item)
+  const disabledReason =
+    item.disabledReason ?? 'This page is not available yet.'
+
+  if (isDisabled) {
+    return (
+      <SidebarMenuItem>
+        <SidebarMenuButton
+          disabled
+          aria-label={`${item.title}. ${disabledReason}`}
+          title={disabledReason}
+          tooltip={item.title}
+          className='h-10 gap-2.5 rounded-xl px-3 opacity-60'
+        >
+          <NavIcon icon={item.icon} />
+          <span className='min-w-0 truncate text-sm font-medium'>
+            {item.title}
+          </span>
+        </SidebarMenuButton>
+      </SidebarMenuItem>
+    )
+  }
+
   return (
     <SidebarMenuItem>
       <SidebarMenuButton
@@ -123,7 +146,7 @@ function SidebarMenuLink({ item, href }: { item: NavLink; href: string }) {
             : inactiveNavItemClassName,
         ].join(' ')}
       >
-        <Link to={item.url} onClick={() => setOpenMobile(false)}>
+        <Link to={item.url!} onClick={() => setOpenMobile(false)}>
           <NavIcon icon={item.icon} active={isActive} />
           <span className='min-w-0 truncate text-sm font-medium text-[#0F172A] group-data-[collapsible=icon]:hidden'>
             {item.title}
@@ -177,26 +200,53 @@ function SidebarMenuCollapsible({
         <CollapsibleContent className='CollapsibleContent'>
           <SidebarMenuSub className='ms-5 mt-1 gap-1 border-sidebar-border/80 py-1 ps-3'>
             {item.items.map((subItem) => {
-              const isSubActive = checkIsActive(href, subItem)
+              const isDisabled = subItem.disabled || !subItem.url
+              const isSubActive =
+                !isDisabled && checkIsActive(href, subItem)
+              const disabledReason =
+                subItem.disabledReason ?? 'This page is not available yet.'
+
               return (
                 <SidebarMenuSubItem key={subItem.title}>
                   <SidebarMenuSubButton
                     asChild
                     isActive={isSubActive}
+                    aria-disabled={isDisabled || undefined}
                     className={[
                       'h-10 gap-2.5 rounded-xl px-3 transition-colors',
-                      isSubActive
-                        ? 'bg-transparent text-[#0F172A]'
-                        : inactiveNavItemClassName,
+                      isDisabled
+                        ? 'cursor-not-allowed opacity-60'
+                        : isSubActive
+                          ? 'bg-transparent text-[#0F172A]'
+                          : inactiveNavItemClassName,
                     ].join(' ')}
                   >
-                    <Link to={subItem.url} onClick={() => setOpenMobile(false)}>
-                      <NavIcon icon={subItem.icon} active={isSubActive} />
-                      <span className='min-w-0 truncate text-sm font-medium text-[#0F172A]'>
-                        {subItem.title}
-                      </span>
-                      {subItem.badge && <NavBadge>{subItem.badge}</NavBadge>}
-                    </Link>
+                    {isDisabled ? (
+                      <button
+                        type='button'
+                        disabled
+                        title={disabledReason}
+                        aria-label={
+                          `${subItem.title}. ${disabledReason}`
+                        }
+                      >
+                        <NavIcon icon={subItem.icon} />
+                        <span className='min-w-0 truncate text-sm font-medium'>
+                          {subItem.title}
+                        </span>
+                      </button>
+                    ) : (
+                      <Link
+                        to={subItem.url!}
+                        onClick={() => setOpenMobile(false)}
+                      >
+                        <NavIcon icon={subItem.icon} active={isSubActive} />
+                        <span className='min-w-0 truncate text-sm font-medium text-[#0F172A]'>
+                          {subItem.title}
+                        </span>
+                        {subItem.badge && <NavBadge>{subItem.badge}</NavBadge>}
+                      </Link>
+                    )}
                   </SidebarMenuSubButton>
                 </SidebarMenuSubItem>
               )
@@ -250,27 +300,46 @@ function SidebarMenuCollapsedDropdown({
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
           {item.items.map((sub) => {
-            const isSubActive = checkIsActive(href, sub)
+            const isDisabled = sub.disabled || !sub.url
+            const isSubActive = !isDisabled && checkIsActive(href, sub)
+            const disabledReason =
+              sub.disabledReason ?? 'This page is not available yet.'
 
             return (
               <DropdownMenuItem
-                key={`${sub.title}-${sub.url}`}
-                asChild
+                key={`${sub.title}-${sub.url ?? 'unavailable'}`}
+                asChild={!isDisabled}
+                disabled={isDisabled}
+                title={isDisabled ? disabledReason : undefined}
+                aria-label={
+                  isDisabled
+                    ? `${sub.title}. ${disabledReason}`
+                    : undefined
+                }
                 className={
                   isSubActive
                     ? 'rounded-lg bg-[#F1F5F9] text-[#0F172A]'
                     : 'rounded-lg text-[#0F172A]'
                 }
               >
-                <Link to={sub.url} className='gap-2.5'>
-                  <NavIcon icon={sub.icon} active={isSubActive} />
-                  <span className='max-w-52 truncate text-sm font-medium text-[#0F172A]'>
-                    {sub.title}
+                {isDisabled ? (
+                  <span className='flex items-center gap-2.5'>
+                    <NavIcon icon={sub.icon} />
+                    <span className='max-w-52 truncate text-sm font-medium'>
+                      {sub.title}
+                    </span>
                   </span>
-                  {sub.badge && (
-                    <span className='ms-auto text-xs'>{sub.badge}</span>
-                  )}
-                </Link>
+                ) : (
+                  <Link to={sub.url!} className='gap-2.5'>
+                    <NavIcon icon={sub.icon} active={isSubActive} />
+                    <span className='max-w-52 truncate text-sm font-medium text-[#0F172A]'>
+                      {sub.title}
+                    </span>
+                    {sub.badge && (
+                      <span className='ms-auto text-xs'>{sub.badge}</span>
+                    )}
+                  </Link>
+                )}
               </DropdownMenuItem>
             )
           })}

@@ -1,28 +1,25 @@
 import {
   ArrowLeftRight,
-  Bell,
   BookOpenCheck,
   Bot,
   Boxes,
-  CalendarClock,
-  ClipboardCheck,
   ClipboardList,
-  Code2,
   FileText,
   LayoutDashboard,
   ListChecks,
   PackageCheck,
-  Palette,
   ReceiptText,
   Settings,
   ShoppingCart,
+  Stethoscope,
   Store,
   Truck,
-  UserCog,
   UserRound,
   UsersRound,
 } from 'lucide-react'
 import { type SidebarData } from '../types'
+
+const unavailable = 'Page is being prepared.'
 
 export const sidebarData: SidebarData = {
   user: {
@@ -41,11 +38,43 @@ export const sidebarData: SidebarData = {
     {
       title: 'Operations',
       items: [
-        { title: 'Dashboard', url: '/', icon: LayoutDashboard },
-        { title: 'POS', url: '/pos', icon: ReceiptText },
-        { title: 'Mortarium AI', url: '/mortarium-ai', icon: Bot },
-        { title: 'Patients', url: '/patients', icon: UserRound },
-        { title: 'Prescriptions', url: '/prescriptions', icon: FileText },
+        {
+          title: 'Dashboard',
+          url: '/',
+          icon: LayoutDashboard,
+        },
+        {
+          title: 'POS',
+          url: '/pos',
+          icon: ReceiptText,
+        },
+        {
+          title: 'Mortarium AI',
+          url: '/mortarium-ai',
+          icon: Bot,
+          disabled: true,
+          disabledReason: unavailable,
+        },
+        {
+          title: 'Clinical Care',
+          icon: Stethoscope,
+          items: [
+            {
+              title: 'Patients',
+              url: '/patients',
+              icon: UserRound,
+              disabled: true,
+              disabledReason: unavailable,
+            },
+            {
+              title: 'Prescriptions',
+              url: '/prescriptions',
+              icon: FileText,
+              disabled: true,
+              disabledReason: unavailable,
+            },
+          ],
+        },
         {
           title: 'Inventory',
           icon: Boxes,
@@ -54,60 +83,72 @@ export const sidebarData: SidebarData = {
               title: 'Drug Catalog',
               url: '/drug-reference',
               icon: BookOpenCheck,
+              disabled: true,
+              disabledReason: unavailable,
             },
             {
-              title: 'Catalog Review',
-              url: '/drug-catalog-review',
-              icon: ClipboardCheck,
+              title: 'Stock Management',
+              url: '/inventory',
+              icon: PackageCheck,
+              disabled: true,
+              disabledReason: unavailable,
             },
-            { title: 'Stock Overview', url: '/inventory', icon: Boxes },
-            { title: 'Batches', url: '/batches', icon: PackageCheck },
             {
-              title: 'Expiry Management',
-              url: '/expiry-control',
-              icon: CalendarClock,
+              title: 'Transfers',
+              url: '/transfers',
+              icon: ArrowLeftRight,
+              disabled: true,
+              disabledReason: unavailable,
             },
-            { title: 'Transfers', url: '/transfers', icon: ArrowLeftRight },
+            {
+              title: 'Defectura',
+              icon: ClipboardList,
+              disabled: true,
+              disabledReason: unavailable,
+            },
           ],
         },
         {
           title: 'Procurement',
           icon: ShoppingCart,
           items: [
-            { title: 'Suppliers', url: '/suppliers', icon: Truck },
-            { title: 'Purchase Orders', url: '/orders', icon: ClipboardList },
-            { title: 'Receiving', url: '/procurement', icon: PackageCheck },
+            {
+              title: 'Suppliers',
+              url: '/suppliers',
+              icon: Truck,
+              disabled: true,
+              disabledReason: unavailable,
+            },
+            {
+              title: 'Purchase Orders',
+              url: '/orders',
+              icon: ClipboardList,
+              disabled: true,
+              disabledReason: unavailable,
+            },
+            {
+              title: 'Receiving',
+              url: '/procurement',
+              icon: PackageCheck,
+              disabled: true,
+              disabledReason: unavailable,
+            },
           ],
         },
-        { title: 'Pharmacies', url: '/pharmacies', icon: Store },
+        {
+          title: 'Pharmacies',
+          url: '/pharmacies',
+          icon: Store,
+          disabled: true,
+          disabledReason: unavailable,
+        },
       ],
     },
     {
       title: 'Administration',
       items: [
         { title: 'Users', url: '/users', icon: UsersRound },
-        {
-          title: 'Settings',
-          icon: Settings,
-          items: [
-            { title: 'Profile', url: '/settings', icon: UserCog },
-            {
-              title: 'Appearance',
-              url: '/settings/appearance',
-              icon: Palette,
-            },
-            {
-              title: 'Notifications',
-              url: '/settings/notifications',
-              icon: Bell,
-            },
-            {
-              title: 'Developer Settings',
-              url: '/settings/developer',
-              icon: Code2,
-            },
-          ],
-        },
+        { title: 'Settings', url: '/settings', icon: Settings },
       ],
     },
     {

@@ -5,74 +5,115 @@ describe('Pharmaviyum sidebar navigation', () => {
   const group = (title: string) =>
     sidebarData.navGroups.find((item) => item.title === title)
 
-  const itemTitles = (title: string) =>
-    group(title)?.items.map((item) => item.title)
+  const item = (groupTitle: string, itemTitle: string) =>
+    group(groupTitle)?.items.find((entry) => entry.title === itemTitle)
 
-  it('keeps the compact operational navigation in the agreed order', () => {
+  const child = (
+    groupTitle: string,
+    parentTitle: string,
+    childTitle: string
+  ) =>
+    item(groupTitle, parentTitle)?.items?.find(
+      (entry) => entry.title === childTitle
+    )
+
+  const itemTitles = (title: string) =>
+    group(title)?.items.map((entry) => entry.title)
+
+  it('keeps the approved Operations hierarchy and order', () => {
     expect(itemTitles('Operations')).toEqual([
       'Dashboard',
       'POS',
       'Mortarium AI',
-      'Patients',
-      'Prescriptions',
+      'Clinical Care',
       'Inventory',
       'Procurement',
       'Pharmacies',
     ])
   })
 
-  it('groups inventory capabilities under Inventory', () => {
-    const inventory = group('Operations')?.items.find(
-      (item) => item.title === 'Inventory'
-    )
+  it('groups patient and prescription workflows under Clinical Care', () => {
+    expect(
+      item('Operations', 'Clinical Care')?.items?.map((entry) => entry.title)
+    ).toEqual(['Patients', 'Prescriptions'])
+  })
 
-    expect(inventory?.items?.map((item) => item.title)).toEqual([
+  it('keeps Inventory focused on its four agreed capabilities', () => {
+    expect(
+      item('Operations', 'Inventory')?.items?.map((entry) => entry.title)
+    ).toEqual([
       'Drug Catalog',
-      'Catalog Review',
-      'Stock Overview',
-      'Batches',
-      'Expiry Management',
+      'Stock Management',
       'Transfers',
+      'Defectura',
     ])
   })
 
-  it('groups procurement capabilities under Procurement', () => {
-    const procurement = group('Operations')?.items.find(
-      (item) => item.title === 'Procurement'
-    )
+  it('keeps Defectura as one destination without inventing a route', () => {
+    const defectura = child('Operations', 'Inventory', 'Defectura')
 
-    expect(procurement?.items?.map((item) => item.title)).toEqual([
-      'Suppliers',
-      'Purchase Orders',
-      'Receiving',
-    ])
+    expect(defectura).toMatchObject({
+      title: 'Defectura',
+      disabled: true,
+    })
+    expect(defectura?.url).toBeUndefined()
   })
 
-  it('keeps Developer Settings under Administration', () => {
-    const settings = group('Administration')?.items.find(
-      (item) => item.title === 'Settings'
-    )
-    const developer = settings?.items?.find(
-      (item) => item.title === 'Developer Settings'
-    )
+  it('keeps Catalog Review and stock sub-capabilities out of the sidebar', () => {
+    const inventoryTitles =
+      item('Operations', 'Inventory')?.items?.map((entry) => entry.title)
 
-    expect(developer?.url).toBe('/settings/developer')
+    expect(inventoryTitles).not.toContain('Catalog Review')
+    expect(inventoryTitles).not.toContain('Stock Overview')
+    expect(inventoryTitles).not.toContain('Batches')
+    expect(inventoryTitles).not.toContain('Expiry Management')
   })
 
-  it('keeps Background Tasks in the System group', () => {
+  it('groups supplier and order workflows under Procurement', () => {
+    expect(
+      item('Operations', 'Procurement')?.items?.map((entry) => entry.title)
+    ).toEqual(['Suppliers', 'Purchase Orders', 'Receiving'])
+  })
+
+  it('keeps Administration and System navigation compact', () => {
+    expect(itemTitles('Administration')).toEqual(['Users', 'Settings'])
     expect(itemTitles('System')).toEqual(['Background Tasks'])
-  })
-
-  it('preserves Mortarium AI and navigation group order', () => {
-    const mortarium = group('Operations')?.items.find(
-      (item) => item.title === 'Mortarium AI'
-    )
-
-    expect(mortarium?.url).toBe('/mortarium-ai')
-    expect(sidebarData.navGroups.map((item) => item.title)).toEqual([
+    expect(sidebarData.navGroups.map((entry) => entry.title)).toEqual([
       'Operations',
       'Administration',
       'System',
     ])
+  })
+
+  it('disables destinations whose routes are not ready', () => {
+    const unavailableItems = [
+      item('Operations', 'Mortarium AI'),
+      child('Operations', 'Clinical Care', 'Patients'),
+      child('Operations', 'Clinical Care', 'Prescriptions'),
+      child('Operations', 'Inventory', 'Drug Catalog'),
+      child('Operations', 'Inventory', 'Stock Management'),
+      child('Operations', 'Inventory', 'Transfers'),
+      child('Operations', 'Inventory', 'Defectura'),
+      child('Operations', 'Procurement', 'Suppliers'),
+      child('Operations', 'Procurement', 'Purchase Orders'),
+      child('Operations', 'Procurement', 'Receiving'),
+      item('Operations', 'Pharmacies'),
+    ]
+
+    for (const entry of unavailableItems) {
+      expect(entry?.disabled).toBe(true)
+      expect(entry?.disabledReason).toBeTruthy()
+    }
+  })
+
+  it('keeps implemented Dashboard and POS destinations enabled', () => {
+    expect(item('Operations', 'Dashboard')?.disabled).toBeUndefined()
+    expect(item('Operations', 'POS')?.disabled).toBeUndefined()
+  })
+
+  it('keeps available admin and system destinations enabled', () => {
+    expect(item('Administration', 'Users')?.disabled).toBeUndefined()
+    expect(item('Administration', 'Settings')?.disabled).toBeUndefined()
+    expect(item('System', 'Background Tasks')?.disabled).toBeUndefined()
   })
 })

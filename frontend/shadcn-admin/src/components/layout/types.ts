@@ -16,15 +16,25 @@ type BaseNavItem = {
   title: string
   badge?: string
   icon?: React.ElementType
+  disabled?: boolean
+  disabledReason?: string
 }
 
-type NavLink = BaseNavItem & {
-  url: LinkProps['to'] | (string & {})
-  items?: never
-}
+type NavLink = BaseNavItem &
+  (
+    | {
+        url: LinkProps['to'] | (string & {})
+        items?: never
+      }
+    | {
+        url?: never
+        disabled: true
+        items?: never
+      }
+  )
 
 type NavCollapsible = BaseNavItem & {
-  items: (BaseNavItem & { url: LinkProps['to'] | (string & {}) })[]
+  items: NavLink[]
   url?: never
 }
 
