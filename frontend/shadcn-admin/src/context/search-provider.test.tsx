@@ -119,19 +119,38 @@ describe('SearchProvider and CommandMenu', () => {
       .not.toBeInTheDocument()
   })
 
-  it('navigates for nested sidebar items (group with sub-items)', async () => {
+  it('navigates for a direct sidebar item', async () => {
     const screen = await renderWithSearchProvider()
     const { getByPlaceholder, getByRole } = screen
 
     await openCommandPalette(screen)
 
-    await userEvent.click(getByRole('option', { name: 'Settings Profile' }))
+    await userEvent.click(getByRole('option', { name: 'Settings' }))
 
     expect(mocks.navigate).toHaveBeenCalledWith({ to: '/settings' })
     await expect
       .element(getByPlaceholder(COMMAND_MENU_PLACEHOLDER))
       .not.toBeInTheDocument()
   })
+
+  it('does not expose disabled sidebar destinations in command search', async () => {
+    const screen = await renderWithSearchProvider();
+
+    await openCommandPalette(screen);
+
+    await expect
+      .element(screen.getByRole('option', { name: 'POS' }))
+      .not.toBeInTheDocument();
+    await expect
+      .element(screen.getByRole('option', { name: 'Clinical Care Patients' }))
+      .not.toBeInTheDocument();
+    await expect
+      .element(screen.getByRole('option', { name: 'Inventory Drug Catalog' }))
+      .not.toBeInTheDocument();
+    await expect
+      .element(screen.getByRole('option', { name: 'Procurement Suppliers' }))
+      .not.toBeInTheDocument();
+  });
 
   it('applies theme and closes the palette when a theme command is chosen', async () => {
     const screen = await renderWithSearchProvider()
