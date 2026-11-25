@@ -58,10 +58,6 @@ export function Products() {
       ? `/api/v1/products/search?q=${encodeURIComponent(normalizedQuery)}&limit=${SEARCH_LIMIT}`
       : '/api/v1/products/?limit=50'
 
-    setLoading(true)
-    setError(null)
-    if (search) setProducts([])
-
     const timer = window.setTimeout(
       () => {
         setLoading(true)
@@ -154,7 +150,7 @@ export function Products() {
                 : 'Recently available products'}
             </span>
             <span aria-live='polite' aria-atomic='true'>
-              {loading
+              {loading || loadedQuery !== normalizedQuery
                 ? 'Loading products...'
                 : `${displayedProducts.length} shown`}
             </span>
