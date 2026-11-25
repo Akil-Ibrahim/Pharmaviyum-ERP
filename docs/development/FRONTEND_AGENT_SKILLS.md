@@ -66,6 +66,30 @@ The upstream skills are useful references, not drop-in project specifications. A
 - Addy's performance skill is measurement-first. Do not add instrumentation or dependencies just because a skill example mentions them.
 - Vercel skills are not deployment instructions. FastAPI Cloud remains the target hosting platform; frontend build/serving stays integrated with FastAPI.
 
+### Package completeness and license review
+
+A skill is not necessarily a single `SKILL.md` file. If the Skills CLI installs one of these skills, preserve its complete skill directory and relative resource paths; do not copy only the entry-point Markdown file:
+
+| Source | Required companion content observed in upstream tree | License evidence |
+|---|---|---|
+| Anthropic `frontend-design` | `SKILL.md` and its adjacent `LICENSE.txt` | The skill directory includes Apache License 2.0 terms. Preserve the license when redistributing or vendoring. |
+| Vercel `react-best-practices` | `SKILL.md`, `AGENTS.md`, `README.md`, `metadata.json`, and the complete `rules/` directory | Skill metadata declares MIT. The repository API did not expose a root license file; re-check the exact upstream skill metadata and applicable terms before vendoring. |
+| Vercel `composition-patterns` | `SKILL.md`, `AGENTS.md`, `README.md`, `metadata.json`, and the complete `rules/` directory | Skill metadata declares MIT. Re-check applicable terms before vendoring. |
+| Vercel `web-design-guidelines` | `SKILL.md` and `references/command.md` | Skill metadata declares MIT. Keep the bundled, pinned reference snapshot; do not replace it with an unpinned network fetch. |
+| shadcn `shadcn` | Complete `skills/shadcn/` directory, including rule docs, CLI/design-system references, assets, and scripts | The shadcn/ui repository declares MIT. Preserve the license notice when redistributing or vendoring. |
+| Addy Osmani selected skills | Complete skill directories, including references; accessibility also includes `scripts/audit-a11y.sh` | The repository declares MIT. Preserve the license notice when redistributing or vendoring. |
+
+The upstream source tree was inspected on 2026-11-25. This is an inventory snapshot, not a vendoring operation. Re-check licenses and source revisions immediately before any distribution or update.
+
+### Additional framework-specific filtering
+
+- In Vercel React Best Practices, the `client-swr-dedup` example must not introduce SWR; Pharmaviyum already uses TanStack Query. Apply the underlying request-deduplication principle through existing query keys and query-client behavior.
+- The `bundle-dynamic-imports` rule references `next/dynamic`; use Vite-compatible dynamic `import()` and the project's existing lazy-route/component patterns instead.
+- Exclude Vercel's server, RSC, Next.js API-route, server-action, and hydration-specific rules from this client-rendered Vite frontend unless a separately verified SSR architecture is introduced.
+- The React 19 composition skill's `use()` guidance is not a mandate to replace every `useContext()`; use the API that fits the actual component and context contract.
+- Addy's accessibility audit skill includes a shell script that invokes pinned external tools. Treat the script as executable code: inspect it and obtain approval before running it. It is not part of ordinary lint/test verification.
+- Addy's performance skill discusses RUM, `web-vitals`, and generic bundle budgets. These are not approved telemetry or performance-budget changes. Measure the current application first and separately approve any instrumentation, data collection, or budget adoption.
+
 ### Suggested installation commands
 
 Run from the repository root only after reviewing the current skill source and its license. Install only the skills needed for the task; do not install every skill pack globally by default.
