@@ -24,7 +24,9 @@ describe('handleServerError', () => {
 
   it('shows the server detail from a typed fetch API error', () => {
     handleServerError(
-      new ApiError(422, 'Insufficient stock', { detail: 'Insufficient stock' })
+      new ApiError(422, 'Insufficient stock', {
+        detail: 'Insufficient stock',
+      })
     )
 
     expect(toastError).toHaveBeenCalledWith('Insufficient stock')
