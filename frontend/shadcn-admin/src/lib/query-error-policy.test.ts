@@ -20,7 +20,7 @@ describe('query HTTP error policy', () => {
   it.each([408, 429])(
     'retries transient HTTP %i errors within the retry limit',
     (status) => {
-    const error = new ApiError(status, 'Transient response', null)
+      const error = new ApiError(status, 'Transient response', null)
 
       expect(shouldRetryQuery(0, error, false)).toBe(true)
       expect(shouldRetryQuery(2, error, false)).toBe(true)
