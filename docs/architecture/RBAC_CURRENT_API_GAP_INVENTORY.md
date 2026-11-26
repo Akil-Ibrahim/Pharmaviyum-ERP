@@ -1196,3 +1196,85 @@ Before enabling clinical-answer use of imported or uploaded reference material, 
 10. Retrieval score is not presented as calibrated clinical confidence.
 
 No application source changes, database operations, migrations, CI runs or deployments were performed as part of this review.
+
+
+## 11. RAG evaluation implementation and clinical quality assurance
+
+Source baseline: static review of `RagasEvaluationAdapter`, `clinical_metrics.py`, their unit tests, the golden-dataset tests, `pyproject.toml` and the `rag-evaluation` CI job. No test suite, Ragas judge model, benchmark, retrieval workload or clinical validation run was executed during this review.
+
+### 11.1 Positive controls
+
+- Ragas 0.4.3 is isolated in the optional `eval` dependency group and loaded lazily by the adapter; it is not required by the production request path.
+- The adapter exposes Faithfulness and AnswerRelevancy, and conditionally ContextPrecisionWithReference and ContextRecall when a reference answer is supplied.
+- Missing contexts and missing reference answers are represented as unavailable scores rather than silently converted to zero.
+- AnswerRelevancy accepts its documented negative cosine-similarity range; normalized metrics are range-checked.
+- Project-specific evaluators exist for citation support, medication name/strength/form F1, negation polarity, clinical hallucination rate, patient-context isolation and Russian/English gold-source recall.
+- The CI workflow contains a dedicated RAG evaluation job, installs the `eval` group, checks the Ragas Collections imports and invokes the evaluator unit tests and golden-dataset schema tests.
+
+### 11.2 P1 — Patient-isolation evaluator exempts tenant-local public sources from pharmacy matching
+
+`patient_context_isolation()` immediately skips every source whose `access_level` is `public`, before checking its `pharmacy_id`. The documented storage/retrieval contract says that the current `public` class remains pharmacy-keyed (tenant-local), not globally shared.
+
+A source marked `public` with another pharmacy's ID can therefore pass this evaluator without a scope violation. This creates a false negative in a security regression metric.
+
+**Required correction:** enforce the expected pharmacy scope for every source under the current tenant-keyed contract, regardless of `access_level`. If a future global reference corpus is introduced, represent it with an explicit global scope/type and a separately tested authorization rule; do not overload tenant-local `public`. Add tests for same-tenant public, cross-tenant public, pharmacy-private and exact-patient sources.
+
+### 11.3 P1 — Clinical metric functions are not wired into an evaluation runner
+
+The targeted repository search found the pharmaceutical metric functions referenced by their definitions and unit tests, but did not identify a benchmark/evaluation runner that invokes them for a dataset of generated LangGraph RAG responses. Likewise, the Ragas adapter is exercised by isolated unit tests; the existing golden-dataset tests validate dataset structure and the legacy benchmark tests use mocked harness/evaluator responses.
+
+The CI job therefore provides dependency/API and deterministic contract coverage, not evidence that the active RAG pipeline has been evaluated end to end with Ragas or the clinical metrics.
+
+**Required correction:** implement a separate offline evaluation command/runner that:
+1. loads a versioned synthetic or de-identified dataset;
+2. invokes the same retrieval and answer-generation path used by the target application, under a controlled evaluation configuration;
+3. preserves retrieved source IDs, metadata, language and jurisdiction;
+4. supplies independent pharmacist-reviewed reference labels and a separately configured judge;
+5. runs Ragas and all applicable domain metrics;
+6. emits per-case results plus aggregate metrics, dataset/model/prompt/embedding/index versions and reproducible artifacts;
+7. fails the run on missing required metrics or security-critical violations rather than treating missing values as passes.
+
+Do not send live patient data or PHI to external judge models.
+
+### 11.4 P1 — Citation correctness is sentence-split, not atomic claim-to-evidence evaluation
+
+The current evaluator splits text on sentence-ending punctuation and treats each resulting non-empty sentence as a factual claim. It then accepts the sentence if at least one citation ID resolves to a supplied source and at least one cited source passes the entailment judge.
+
+This does not reliably isolate atomic claims. A sentence containing multiple clinical propositions can pass when the source supports only one proposition. A sentence with multiple citations can also pass when only one cited source supports the claim, leaving other attached citations unchecked. Sentence splitting is not robust to abbreviations, structured lists or other answer formatting.
+
+**Required correction:** evaluate atomic factual/clinical claims, preserve each claim's exact citation associations, validate every citation reference, and record claim-level entailment outcomes. Add adversarial tests for two claims in one sentence, one citation supporting only one claim, unsupported extra citations, fabricated IDs, bullet lists, abbreviations and uncited clinical clauses. Keep the judge unavailable state explicit.
+
+### 11.5 P2 — Negation and medication metrics depend on externally prepared predictions
+
+The negation evaluator compares two booleans supplied in `NegationExpectation`; it does not extract proposition polarity from the generated answer. Medication accuracy compares pre-structured `MedicationEntity` triples; it does not extract medication entities from the generated answer. This is valid as a scoring primitive, but the inspected unit tests do not establish the upstream annotation/extraction pipeline or its independence from the answer under evaluation.
+
+The medication tuple currently covers exact name, strength and dosage form only. It does not independently score active ingredient, concentration, dose, route, frequency or duration.
+
+**Required correction:** define and test an independent, reproducible annotation/extraction stage with pharmacist-reviewed gold labels, explicit normalization/equivalence rules and adjudication. Report name, strength, dosage form and other clinically material fields separately; a correct name must not compensate for an incorrect strength, dose or route.
+
+### 11.6 P2 — Russian/English metric measures only gold-source recall
+
+`multilingual_retrieval()` calculates recall over supplied expected and retrieved source IDs, with the language passed as an argument. It does not verify the language of the query, retrieved document, answer or reference, and it does not measure language-specific context precision, answer relevancy, faithfulness or medication terminology quality.
+
+The unit tests demonstrate arithmetic for labels `ru` and `en`, not that production ingestion and retrieval support Russian content end to end.
+
+**Required correction:** build balanced pharmacist-reviewed RU/EN datasets; validate language labels and cross-language cases; report retrieval Recall@K/MRR/nDCG and context precision/recall per language; evaluate answer faithfulness, citation support, medication terminology and safe abstention per language. Keep ingestion/retrieval language support as a separately verified capability.
+
+### 11.7 P2 — Current tests prove contracts, not clinical quality thresholds
+
+The Ragas adapter test replaces all Ragas metric classes with a fake metric returning a fixed score. The CI import check validates that the pinned Ragas API is importable, but does not execute a real evaluator LLM/embedding pair. Golden-dataset tests check that cases exist and required fields are present; they do not establish expert-reviewed coverage, dataset balance, statistical confidence or clinically justified release thresholds.
+
+**Required correction:** retain fast mocked unit tests, and add a separately scheduled/manual judge-backed evaluation against a versioned pharmacist-reviewed dataset. Record raw per-case outcomes, sample size, confidence intervals where appropriate, judge/model versions and reproducibility metadata. Clinical thresholds must be set by qualified reviewers; do not invent universal pass percentages. Patient isolation, wrong medication strength/form, negation loss and unsupported high-risk claims must remain non-compensatory release blockers.
+
+### 11.8 Evaluation status
+
+- Ragas dependency isolation: **implemented in configuration; CI execution not re-run in this audit**.
+- Ragas adapter: **implemented; unit tests mock the metric classes**.
+- Pharmaceutical metric primitives: **implemented; end-to-end runner integration not established**.
+- Golden dataset: **present and structurally tested; pharmacist review and clinical representativeness not established**.
+- Real judge-backed Ragas/clinical benchmark: **not measured in this audit**.
+- Russian production retrieval quality: **not established by source-ID arithmetic tests**.
+- Patient isolation evaluator: **contains the tenant-local public-source false-negative described above**.
+- Clinical release thresholds: **not established by measured, expert-reviewed evidence**.
+
+No application source changes, database operations, migrations, CI runs or deployments were performed as part of this review.
