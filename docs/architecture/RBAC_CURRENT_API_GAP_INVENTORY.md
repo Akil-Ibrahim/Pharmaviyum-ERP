@@ -1908,3 +1908,149 @@ ObservabilityTracer initializes a LangSmith client when a key is available and p
 - Active metadata-only LangSmith call sites: **not established**.
 
 No application source changes, test executions, CI runs, migrations, database operations or deployments were performed as part of this review.
+
+## 18. AI Execution Reliability & Resilience
+
+Scope: static review of active main implementations for LLM construction, AgentHarness sync/stream execution, PharmacistAgent LangGraph loop and executor, LangGraphRAG deadlines/concurrency/token budgeting, MCPClient retries/circuit breaker, ToolCallingLayer and Qwen demo provider policy. No runtime fault injection, load test, provider outage simulation, test execution or deployment inspection was performed.
+
+### 18.1 Positive controls confirmed
+
+- Cloud LLM adapters configure finite provider request timeouts: QwenCloud 30 seconds with retries explicitly disabled, Gemini 30 seconds and Groq 30 seconds. These are provider-call timeouts, not end-to-end request deadlines.
+- MCPClient wraps each registry tool invocation in asyncio.wait_for with a finite 30-second default timeout.
+- MCPClient disables automatic retries for tools whose metadata execution_class is write, explicitly acknowledging that a write may have succeeded even when its response timed out.
+- MCP read-tool calls have bounded retry attempts and exponential fixed delays; the MCP client has a per-tool circuit-breaker mechanism.
+- LangGraphRAG.run wraps the entire RAG graph invocation in asyncio.timeout, defaulting to 90 seconds, and configures an explicit recursion limit derived from the bounded rewrite count.
+- RAG retrieval and document grading each use per-invocation asyncio.Semaphore limits (defaults 6 and 4 respectively).
+- RAG token budgeting checks the combined generation prompt before the generation LLM call and returns a controlled warning rather than silently truncating clinical evidence.
+- RAG graph node wrappers explicitly mark and re-raise asyncio.CancelledError. AgentHarness.astream ends its span in a finally block and marks incomplete streams as cancelled.
+- PharmacistAgent bounds graph iteration at five and truncates each planner tool-call batch to ten calls. Executor calls are sequential in the active path inspected.
+- The Qwen demo profile explicitly documents that automatic provider fallback and provider circuit breaker are not implemented, and disables provider retries to avoid accidental quota consumption.
+
+### 18.2 P1 — No end-to-end deadline covers AgentHarness and PharmacistAgent execution
+
+LangGraphRAG.run has its own 90-second execution timeout, but AgentHarness.run(), AgentHarness._astream_events() and PharmacistAgent.run() do not apply a shared request deadline around memory load, guardrails, model routing, agent graph, reviewer, post-processing, memory save and cache operations.
+
+AgentSettings.streaming_timeout_seconds is declared with a 60-second default, but no active use of this setting was found in the inspected request execution path. The RAG timeout does not bound the full pharmacist-agent request.
+
+**Impact:** a request may spend up to the RAG deadline and then continue through planner/tool execution/reviewer and persistence. Streaming can remain open beyond the configured streaming timeout value because that setting is not enforced in the inspected path.
+
+**Required correction:** define one request-level monotonic deadline at the API boundary and propagate remaining time through AgentHarness, PharmacistAgent, RAG and MCP. Each downstream operation must receive min(component timeout, remaining request budget). Enforce cancellation on deadline, return a controlled timeout response and test sync/stream paths including disconnects and cleanup.
+
+### 18.3 P1 — MCP retries can multiply a tool call to a long latency and are not bounded by an agent-wide budget
+
+MCPClient defaults to max_retries=3 and timeout_seconds=30. For a read tool, the initial call plus three retries can consume up to four 30-second attempts. Between attempts it sleeps 1, 2 and 4 seconds. This is a theoretical upper bound of 127 seconds for one exhausted read-tool call, excluding local overhead.
+
+PharmacistAgent.executor_node processes tool calls sequentially and accepts up to ten calls per planner iteration. The graph permits up to five iterations. There is no shared tool-call deadline or total retry/time budget across the agent execution.
+
+**Impact:** repeated tool failures can cause very long agent execution times even though each individual tool call is nominally bounded. The per-call timeout does not provide a useful end-to-end latency guarantee.
+
+**Required correction:** use a shared request deadline and a cumulative tool budget (count, elapsed time and retry attempts). Reduce retries when the remaining deadline cannot accommodate another attempt. Set a strict per-request maximum tool count and test worst-case timeout composition.
+
+### 18.4 P1 — Ollama timeout configuration is not passed to ChatOllama
+
+OllamaSettings.timeout_seconds defaults to 60 seconds, but dependencies._build_llm() constructs ChatOllama with model, base_url, temperature and num_predict only. The configured timeout is not passed to the client in the inspected constructor call.
+
+Cloud providers receive configured timeout values, but the local Ollama path does not consume its corresponding setting in this factory.
+
+**Impact:** the application configuration advertises a bounded Ollama timeout that is not established by the inspected construction path. Actual Ollama request timeout behavior is delegated to library/transport defaults and remains unverified.
+
+**Required correction:** wire the supported ChatOllama request timeout explicitly, verify the installed LangChain Ollama integration's accepted parameter, and add a test that proves a stalled Ollama request is cancelled within the configured bound.
+
+### 18.5 P1 — MCP circuit breaker state is process-local and lacks a controlled half-open probe
+
+MCPClient stores circuit state in an in-memory dictionary keyed by tool name. After five failed call cycles it opens the circuit for 60 seconds. Once the cooldown elapses, _is_circuit_open deletes the state and immediately permits calls; there is no half-open state or single-probe lock.
+
+This state is not shared between application replicas and is lost on process restart. Concurrent requests after cooldown can all pass through and hit a still-failing dependency.
+
+**Impact:** the breaker cannot coordinate outage protection across FastAPI replicas, and recovery traffic can produce a thundering herd.
+
+**Required correction:** use a shared circuit state or explicitly accept/document per-process isolation; implement closed/open/half-open states with one controlled probe, bounded concurrent in-flight calls, recovery thresholds and observable transitions. Test concurrent callers, multiple replicas and process restart behavior.
+
+### 18.6 P2 — MCP retry loop retries broad exception classes without transient-error classification or jitter
+
+MCPClient retries every generic Exception except PermissionError, in addition to timeout errors. The retry loop does not distinguish transient network/provider failures from permanent validation, configuration, dependency-health or application errors. Backoff is deterministic min(2**attempt, 10) with no jitter.
+
+This can retry failures that cannot succeed on another attempt and synchronize retries from multiple replicas during an outage.
+
+**Required correction:** classify retryable errors explicitly; do not retry authorization, validation, unsupported operation, configuration or other permanent failures. Add bounded exponential backoff with jitter and honor Retry-After where supported. Keep write tools non-retryable unless an explicit idempotency key and authoritative deduplication contract exist.
+
+### 18.7 P2 — MCPSettings retry and circuit-breaker values are not wired into MCPClient construction
+
+MCPSettings declares tool_timeout_seconds, max_retries, circuit_breaker_threshold and circuit_breaker_timeout. The active dependency module creates a module-level MCPClient() without passing these settings. MCPClient therefore uses its own constructor defaults (30 seconds, 3 retries, threshold 5, cooldown 60 seconds) regardless of the MCPSettings values.
+
+The defaults currently match, but environment overrides to MCPSettings do not control the instantiated client.
+
+**Required correction:** construct MCPClient from the settings explicitly and validate all bounds. Add configuration tests proving environment overrides change the effective client policy.
+
+### 18.8 P2 — RAG concurrency limits are per request, not global admission control
+
+LangGraphRAG.retrieve_node and grade_documents_node instantiate new semaphores for each graph invocation. They limit concurrent retrieval variants to six and grading calls to four within one RAG request, but do not cap aggregate concurrency across simultaneous requests or worker replicas.
+
+No global AI admission semaphore, bounded request queue or provider-wide concurrency limiter was established in the inspected active API/AI dependency path.
+
+**Impact:** per-request bounds do not prevent aggregate provider/database saturation under concurrent user load. N simultaneous requests can each create their own bounded set of retrieval and grading operations.
+
+**Required correction:** introduce shared per-process and, where required, distributed concurrency/admission controls for expensive model, embedding, vector retrieval and external tool calls. Define queue limits, overload response (429/503), fairness and backpressure. Load-test across multiple replicas and verify that cancellation releases permits.
+
+### 18.9 P2 — Token budget is enforced for RAG generation, not the complete agent prompt lifecycle
+
+TokenBudgetManager is constructed and injected into LangGraphRAG. Its check_input call is in the RAG generate node and checks the combined RAG system and evidence prompt before the generation LLM call.
+
+The inspected PharmacistAgent planner and reviewer calls invoke their models directly without a corresponding TokenBudgetManager preflight. The planner prompt includes conversation history, memory, retrieved evidence and tool results; reviewer prompt includes the draft, question, tool results and RAG sources.
+
+**Impact:** the RAG generation budget does not establish a bound for all LLM calls in the overall agent. Planner/reviewer contexts can exceed their provider/model context windows or incur unbounded prompt cost relative to the RAG budget.
+
+**Required correction:** define per-model input/output budgets for router, planner, RAG transform/grading/compression/generation, reviewer and memory summarization. Preflight each complete prompt with the selected model tokenizer or clearly marked conservative estimate; never silently drop clinical evidence, dosage, negation or warnings.
+
+### 18.10 P2 — ModelRouter fallback is a model alias, not provider failover
+
+AIComponents constructs ModelRouter with fast, main and complex models and assigns fallback to get_llm_main(). The router's _get_model fallback behavior only selects a configured dictionary entry/default when a key is missing; it does not catch an invocation failure and retry against another provider.
+
+The Qwen demo documentation explicitly states that automatic LLM fallback is intentionally disabled and provider circuit breaker/cooldown is planned, not implemented.
+
+**Impact:** model routing selects a model by complexity but does not provide resilience to an unavailable provider. A failed QwenCloud call does not automatically switch to Ollama, Gemini, Groq or another configured backend.
+
+**Required correction:** keep demo free-quota policy explicit. If provider failover is later approved, classify errors and define a safe provider/model compatibility matrix, jurisdiction/privacy policy, embedding independence, quota/cost controls and clinical quality gates. Never silently send clinical/patient context to another provider or paid endpoint.
+
+### 18.11 P2 — ToolCallingLayer resilience features are not on the active PharmacistAgent execution path
+
+ToolCallingLayer implements parallel execution, fallback chains, result validation and a separate in-memory circuit breaker. However, the active AI dependency setup constructs PharmacistAgent with MCPClient directly, and PharmacistAgent.executor_node calls MCPClient.call_tool directly. No active production construction/injection of ToolCallingLayer was established in the inspected call graph.
+
+The active executor is sequential, uses MCPClient's own retries/breaker and truncates calls to ten. ToolCallingLayer's ToolSpec.timeout_seconds is not the timeout governing these direct calls.
+
+**Impact:** documented/declared ToolCallingLayer capabilities must not be counted as active production controls. Its parallelism, fallback chain, schema validation and second breaker do not protect the inspected active agent path.
+
+**Required correction:** either integrate a single supported orchestration layer into PharmacistAgent with trusted context propagation and one shared budget, or remove/mark unused duplicate abstractions. Avoid stacking independent retry and circuit-breaker layers.
+
+### 18.12 P2 — Cancellation is partly handled correctly, but whole-agent deadline/cancellation behavior is not verified
+
+RAG traced nodes explicitly catch asyncio.CancelledError and re-raise it. AgentHarness.astream uses a finally block to end its span and mark an incomplete stream as cancelled. MCP calls use asyncio.wait_for, which cancels the awaited coroutine on timeout. PharmacistAgent executor's broad except Exception does not normally swallow asyncio.CancelledError on supported modern Python versions.
+
+However, there is no request-wide deadline in the active AgentHarness/PharmacistAgent path and no executed integration test proving cancellation propagates through graph nodes, MCP tool operations, reviewer, memory/cache persistence and API streaming disconnect.
+
+**Required correction:** preserve cancellation as a control signal throughout the complete graph; never convert it to a normal tool failure or retry. Define behavior for operations that may have external side effects, use idempotency/operation status for writes, and test disconnect/timeout at every stage with cleanup and checkpoint consistency assertions.
+
+### 18.13 Execution reliability readiness summary
+
+- Per-provider finite cloud LLM request timeouts: **configured for QwenCloud, Gemini and Groq**.
+- Ollama configured timeout passed to client: **not implemented in inspected factory**.
+- End-to-end AgentHarness/PharmacistAgent deadline: **not implemented in inspected path**.
+- RAG graph deadline: **implemented, 90-second default**.
+- Streaming timeout setting: **declared but not wired in inspected path**.
+- MCP per-call timeout: **implemented, 30-second default**.
+- MCP read retries: **implemented, three retries with deterministic backoff and no jitter**.
+- MCP write retries: **disabled by execution class**.
+- MCP error classification: **not implemented; generic exceptions are retried**.
+- MCP circuit breaker: **implemented in-memory per process/tool, without controlled half-open probe**.
+- Provider circuit breaker/fallback: **not implemented; Qwen demo fallback intentionally disabled**.
+- RAG retrieval/grading concurrency: **bounded per request, not globally**.
+- Global AI admission/backpressure: **not established**.
+- Agent loop/tool-call count bounds: **implemented (five iterations, up to ten calls per iteration)**.
+- Shared total tool/time budget: **not implemented**.
+- RAG generation token budget: **implemented**.
+- Full agent prompt token budget: **not established**.
+- ToolCallingLayer parallel/fallback features in active agent path: **not established; active PharmacistAgent calls MCPClient directly**.
+- Cancellation propagation: **some explicit safeguards implemented; full end-to-end behavior not demonstrated**.
+- Runtime fault-injection/load tests: **not executed in this audit**.
+
+No application source changes, test executions, CI runs, migrations, database operations or deployments were performed as part of this review.
