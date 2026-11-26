@@ -1104,3 +1104,95 @@ Before treating document lifecycle as production-safe, add database-backed tests
 9. Reindex and deletion isolation across two pharmacies.
 
 No application source changes, database operations, migrations, CI runs or deployments were performed as part of this review.
+
+
+## 10. RAG retrieval security and clinical source governance
+
+Source baseline: targeted static review of `main`, including `LangGraphRAG`, the compatibility `RAGPipeline`, `PgVectorStore`, canonical schemas, active Celery ingestion, PDF/HTML loaders, chunk metadata propagation and targeted security/citation tests. No clinical validation, live retrieval, database query or application test run was performed.
+
+### 10.1 Positive retrieval controls
+
+The active LangGraph retrieval path has meaningful baseline controls:
+- It constructs pharmacy-scoped filters from the immutable `QueryContext`.
+- It searches public, pharmacy and (only when selected) exact-patient access-level filter sets.
+- It includes a country equality filter when `QueryContext.country` is present.
+- Vector and BM25 queries use the same metadata filter clause; hybrid search fuses those scoped result sets.
+- The SQL filter builder validates metadata key identifiers and binds filter values as parameters.
+- Retrieval failures are surfaced as a partial-retrieval warning; no unscoped retry path was identified in the inspected node.
+
+These controls reduce tenant and query-scope risks. They do not establish that a retrieved document is clinically authoritative, current, approved or legally applicable.
+
+### 10.2 Missing country must fail closed for jurisdiction-sensitive questions
+
+`LangGraphRAG._build_filters()` adds `country` only when `QueryContext.country` is truthy. When country is absent, retrieval continues with pharmacy/access-level filters but without a jurisdiction predicate. The compatibility `RAGPipeline` always places the optional country value into its filter dictionary; a null value becomes SQL equality against NULL and ordinarily returns no matching rows, which is safer than silently omitting the filter but is not a consistent contract between the two pipelines.
+
+The active Celery worker's `_stamp_tenant_metadata()` sets canonical `country` from worker config. If the config omits country, the stamped value is null even though the PDF and HTML loaders currently default their Document country to `VN`; the worker's explicit metadata update overrides that loader default. Therefore loader defaults do not guarantee a jurisdiction for active ingestion.
+
+**Risk:** a country-unspecified request can retrieve documents from multiple jurisdictions within the same tenant. This is especially material for prescribing information, controlled medicines, contraindications, market authorizations and regulatory guidance.
+
+**Required controls:** require a trusted pharmacy jurisdiction or explicit user-selected jurisdiction for jurisdiction-sensitive retrieval; do not infer it from language, user IP or model output. If jurisdiction is unknown, block jurisdiction-dependent conclusions or return a clarification/no-answer response. Define a reviewed exception policy for genuinely jurisdiction-neutral sources. Add tests for missing, mismatched and cross-jurisdiction country values in both LangGraph and compatibility pipelines.
+
+### 10.3 Effective dates are schema fields, not retrieval enforcement
+
+`CanonicalMetadata` defines `effective_from` and `effective_to` and validates that the end is not earlier than the start. The active worker stamps those values from ingestion config. However, the reviewed LangGraph filter builder does not include an effective-date predicate, and `PgVectorStore` applies only the filters it receives. No mandatory current-validity condition was identified in vector, BM25 or hybrid retrieval.
+
+A document may therefore be retrieved after its stated end date, or before its effective start date, unless another caller supplies date filters. The schema also permits both dates to be absent. There is no reviewed policy defining whether undated sources are allowed for clinical use.
+
+**Required controls:** define the business meaning of effective dates (including timezone and inclusive/exclusive boundaries); require dates where source type/regulation requires them; filter to the request's trusted effective date; and separate historical lookup from current clinical guidance. Test start boundary, end boundary, expired, future and undated documents. Historical documents must remain available only through an explicit historical-use path and be visibly labelled as historical.
+
+### 10.4 No source approval or authority gate before generation
+
+The relevance grader in `LangGraphRAG._grade_one()` asks an LLM whether a chunk is relevant to the question and returns YES/NO. It does not evaluate publisher authority, source approval, evidence quality, jurisdiction, supersession, publication date or clinical review status.
+
+The canonical metadata schema contains source, version, effective dates, access level, country, language, category and document type, but no required `approval_status`, `reviewed_by`, `reviewed_at`, `publisher`, `evidence_grade` or `superseded_by` contract. The active worker stamps source and tenant context but does not establish source authenticity or clinical approval.
+
+**Risk:** a syntactically valid, tenant-scoped and relevant document can still be an unreviewed upload, outdated webpage, unofficial summary or source from the wrong regulatory authority. Retrieval relevance is not evidence quality.
+
+**Required controls:** introduce a controlled source-governance registry and lifecycle (for example: submitted, quarantined, under_review, approved, superseded, withdrawn, rejected). Define source-type-specific authority rules and clinical review ownership. Only approved and currently effective material should be eligible for clinical-answer retrieval by default. Quarantined/unreviewed sources may be searchable only in a separately labelled administrative review workflow, never silently mixed into pharmacist answers. Approval and withdrawal actions require actor, timestamp, rationale and audit trail.
+
+### 10.5 Citation ID validation is not claim-to-evidence validation
+
+Positive control: the LangGraph pipeline validates that cited `[src-UUID]` identifiers belong to the retrieved source set. If there are no sources or the answer has missing/fabricated citation IDs, the inspected validation path returns a fail-closed response and warning. The `RAGResponse` schema also constructs citation objects tied to chunk/document UUIDs.
+
+Limitations:
+1. `_validate_answer_citations()` accepts the answer when at least one citation is present and every detected citation ID is in the allowed set. It does not establish that every factual/clinical claim has a citation.
+2. It does not verify that a cited chunk entails or supports the specific adjacent claim, dosage, strength, contraindication or regulatory statement.
+3. `SourceCitation` standardizes source name, document/chunk IDs, optional version and retrieval score, but not a required resolvable source URL, publisher, page/section locator, jurisdiction or effective date. Some loaders preserve page/URL in arbitrary metadata, but there is no mandatory typed citation locator contract.
+4. Citation validation confirms membership in retrieved results, not source approval, freshness or clinical correctness.
+5. The compatibility `RAGPipeline` builds prompt citations but does not call the LangGraph `_validate_answer_citations()` method in its inspected query/query_stream path. Its optional guardrail behavior is not equivalent to the LangGraph citation gate.
+
+**Required controls:** use structured claim/evidence associations; require every clinical claim to map to one or more exact evidence spans; verify source authority and current validity before citation acceptance; expose a resolvable source/version/page/section locator; and ensure sync, streaming, compatibility and agent-harness paths share one citation-validation contract. Citation validation failure must not stream an unvalidated clinical answer to the user.
+
+### 10.6 Retrieval confidence is not clinical confidence
+
+The compatibility pipeline computes confidence as the arithmetic mean of retrieval scores. The LangGraph pipeline returns a state confidence value, but the inspected retrieval/relevance path does not establish a calibrated clinical confidence model. Similarity, BM25 and relevance-grader outputs indicate retrieval relevance, not truth, source quality or patient-specific safety.
+
+**Required controls:** do not label retrieval similarity as clinical confidence. Keep retrieval score, source-quality assessment, evidence sufficiency and answer-validation status as separate fields. Calibrate any user-facing confidence only against reviewed clinical evaluation datasets and use conservative abstention rules.
+
+### 10.7 Source provenance and page anchors
+
+PDF loading captures page number and document metadata; HTML loading captures URL and title; the chunker copies document metadata into chunk metadata. This is a useful start. However, those fields remain loosely typed arbitrary metadata, and the standard `SourceCitation` does not require a stable locator. A local file path or mutable web URL alone does not prove immutable source identity or exact version.
+
+**Required controls:** retain immutable source identity and content digest, publisher/issuing authority, canonical URL or repository identifier, retrieved-at timestamp, published/revised date, jurisdiction, language, effective interval, document version and page/section/span locator. Store the original source snapshot or a controlled immutable reference where licensing permits. A citation must resolve to the exact source revision used for generation, not merely the current page at the same URL.
+
+### 10.8 Public access label does not mean globally shared source
+
+The retrieval filter sets include `access_level="public"`, but still carry the authenticated `pharmacy_id`; canonical metadata requires a positive pharmacy ID for all access levels. Thus the current implementation does not establish a globally shared public corpus. The word `public` describes an access class within the current tenant-keyed storage contract, not proof of cross-tenant public visibility.
+
+**Required decision:** either document this as tenant-local public material, or design a separate explicitly global reference-source scope with its own provenance, authorization and storage constraints. Do not remove pharmacy filters or treat public metadata as a bypass. Add tests that prove the chosen semantics.
+
+### 10.9 Required clinical source-governance tests
+
+Before enabling clinical-answer use of imported or uploaded reference material, add deterministic tests for:
+1. Missing jurisdiction on a jurisdiction-sensitive query fails closed or requests clarification.
+2. A UA request cannot retrieve VN-only or other jurisdiction-specific guidance unless an approved cross-jurisdiction rule explicitly permits it.
+3. Future-effective and expired documents are excluded from current guidance; historical lookup is separately labelled.
+4. Unreviewed, quarantined, rejected, withdrawn and superseded documents cannot enter the default clinical evidence set.
+5. An approved source is traceable to publisher, exact version/digest, jurisdiction, effective dates and review decision.
+6. Each clinical claim is linked to evidence that supports that claim; a single valid citation cannot legitimize unrelated uncited claims.
+7. Fabricated IDs, wrong-source IDs, stale-source IDs and unresolved locators fail closed.
+8. PDF page and HTML URL citations resolve to the exact ingested snapshot/revision.
+9. LangGraph, compatibility pipeline, streaming and agent harness enforce equivalent citation and source-eligibility rules.
+10. Retrieval score is not presented as calibrated clinical confidence.
+
+No application source changes, database operations, migrations, CI runs or deployments were performed as part of this review.
