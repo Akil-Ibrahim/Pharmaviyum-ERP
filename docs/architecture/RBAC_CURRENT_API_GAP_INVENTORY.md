@@ -1367,3 +1367,92 @@ Report per-language and cross-language Recall@K, MRR/nDCG, context precision/rec
 - Clinical-grade Russian support: **not established**.
 
 No application source changes, database operations, migrations, CI runs or deployments were performed as part of this review.
+
+
+## 13. Document parsing, OCR, pharmaceutical chunking and compression
+
+Source baseline: static inspection of the active Celery ingestion path, `TextNormalizer`, `MedicalChunker`, PDF/DOCX/HTML loaders, RAG schemas, LangGraph compression node and `ContextualCompressor`, plus existing unit tests and chunking design documentation. No PDF/DOCX ingestion, OCR engine, external LLM, embedding, database operation or benchmark was executed.
+
+### 13.1 P1 — Preprocessing removes line boundaries required by medical section detection
+
+`TextNormalizer.WHITESPACE_PATTERN` matches all whitespace, including newlines, and `normalize()` replaces those sequences with a single space before attempting the `"- \\n"` hyphenated-line-break repair and newline collapsing. Consequently, the later newline-specific operations cannot recover the original line/paragraph boundaries.
+
+The active ingestion path runs `DocumentPreprocessor.process()` before `MedicalChunker.chunk()`. The medical chunker detects section headings by iterating over `document.content.split("\\n")`; it also ignores candidate heading lines longer than 100 characters. After preprocessing has flattened line breaks, a multi-section document is likely to be treated as one long line and the section heading detector will not recognize its headings.
+
+**Impact:** the default `medical` strategy may silently degrade into generic splitting; headings and the relationship between section labels and their content are not reliably preserved.
+
+**Required correction:** normalize whitespace while preserving paragraph and line boundaries; repair hyphenated line breaks before generic whitespace normalization; preserve structural separators from PDF/DOCX/HTML. Add an integration test that passes a multi-section source through the exact preprocessor → chunker sequence and asserts that dosage, indications, contraindications and interactions remain distinct and correctly typed.
+
+### 13.2 P1 — Chunk token budget is a character heuristic, not a tokenizer budget
+
+`MedicalChunker._count_tokens()` returns `len(text) // 4`. This is not the tokenizer for the configured embedding or generation model and can substantially misestimate token counts across Cyrillic, Latin drug nomenclature, Arabic, Thai, tables, numeric strings and mixed-language content.
+
+The overlap implementation also slices the previous chunk using `overlap_tokens * 4` characters. This is only a rough character window; it can start or end inside a clinically meaningful expression, dosage value, unit, table row or negation clause. The medical strategy's overlap is based on the prior part's trailing characters rather than sentence/structure-aware context.
+
+**Required correction:** use the exact configured tokenizer or a conservative model-aware token counter, persist tokenizer/model version, and implement overlap at sentence/paragraph/row boundaries. Add tests with long Cyrillic and mixed RU/EN passages, dosage strings, decimals, units, abbreviations and long unbroken tokens. Enforce a hard upper bound using the actual target tokenizer.
+
+### 13.3 P1 — PDF OCR fallback misses partially scanned pages and Russian OCR language
+
+The PDF loader calls OCR only when `page.get_text("text").strip()` is empty. A page with a small amount of selectable text plus scanned image regions will not receive OCR, so missing medication tables, warnings or dosage text can be silently omitted.
+
+The OCR language map contains `vi`, `en`, `ar`, `th` and `id`, but not `ru`. An unsupported language code falls back to `eng`, so a Russian-only OCR configuration can invoke English Tesseract data instead of Russian. OCR exceptions are caught and converted to an empty string; the page is then skipped if no text remains.
+
+**Required correction:** support page/region-level OCR for partially scanned pages, explicitly map Russian to the installed Tesseract language pack, verify requested OCR language availability at startup, and distinguish OCR failure from genuinely empty pages. Emit structured per-page ingestion warnings/status and do not mark a document complete when clinically relevant pages failed extraction. Add fixtures for text PDFs, scanned RU PDFs, mixed RU/EN pages, partially scanned pages and OCR failure.
+
+### 13.4 P1 — PDF table extraction is flattened and failures are silently swallowed
+
+PDF table extraction converts each detected table to Markdown and appends it to the page text. Exceptions are caught and only logged at debug level; the loader continues with ordinary page text. The ingestion task does not establish a table-extraction completeness gate or a durable warning in the resulting document metadata.
+
+The chunker subsequently splits the combined page content using generic text separators. There is no table-aware chunk boundary or contract guaranteeing that a header remains attached to every row/value fragment. A long table may be split across chunks, leaving numeric values without their column labels or medication identity.
+
+**Required correction:** preserve tables as structured objects with table ID, page, header cells, row IDs and cell coordinates; repeat required headers when serializing bounded row groups; keep each dosage/value row with its medicine identity and units. Record extraction errors and table counts in job outcomes. Add PDF fixtures for multi-page tables, merged cells, repeated headers, decimal values, strength/unit columns and extraction failures. Do not silently treat table-extraction failure as a complete successful parse.
+
+### 13.5 P1 — DOCX table structure and paragraph heading hierarchy are flattened
+
+The DOCX loader appends paragraphs as plain text and converts each table row into a pipe-separated string. It does not preserve paragraph style/heading level, section hierarchy, table identity, header-row semantics, cell coordinates or relationships between a table and its surrounding explanatory text. The full DOCX is emitted as one Document, then passed through generic normalization and chunking.
+
+**Required correction:** preserve DOCX heading styles and hierarchy, paragraph/table order, table IDs, header rows, cell coordinates and relevant neighboring context. Add fixtures for nested headings, merged cells, multi-page tables, repeated headers, lists and dosage/contraindication tables. Confirm that chunks preserve the table's medicine identity, strength, form, route and unit associations.
+
+### 13.6 P1 — Parent-child chunk retrieval is a target design, not an implemented contract
+
+The chunking design documentation describes parent-child retrieval as a target capability. The inspected `Chunk` schema has no `parent_chunk_id`, parent section record, child-to-parent relation or source span offsets. The active chunker creates independent chunks with document ID and chunk index only. The inspected retrieval schema and active LangGraph flow operate on retrieved chunks; no parent expansion stage was found.
+
+**Required correction:** do not claim parent-child retrieval as implemented. If adopted, add versioned parent/child identity and source offsets, enforce the same tenant/patient/jurisdiction/effective-date filters on parent expansion, cap expanded context, preserve exact child citations, and test cross-tenant/cross-patient parent access denial. A child retrieval must never authorize an unfiltered parent fetch.
+
+### 13.7 P1 — Contextual compression lacks Russian-specific instruction
+
+The active LangGraph `compress_node` passes `ctx.language` to `ContextualCompressor`. The compressor's language instruction map includes Vietnamese, Arabic, Thai, Indonesian and English, but no Russian. Unknown languages fall back to the English instruction. The final generation node has an explicit Russian instruction, but this does not correct the earlier compression/judging stage.
+
+**Impact:** for Russian queries, sentence relevance scoring is prompted in English even though the source sentences may be Russian. This can lower selection quality or remove relevant clinical evidence before answer generation.
+
+**Required correction:** add Russian instructions and evaluate compressor sentence selection on pharmacist-reviewed RU/EN cases. Compare evidence before and after compression for medication identity, strength, form, dose, route, negation, contraindications, conditions and warnings. Consider a fail-open-to-original-evidence policy when the scorer fails or returns malformed/incomplete indices; do not let an unvalidated scorer silently discard clinical qualifiers.
+
+### 13.8 P1 — Compression can remove clinically decisive evidence without a preservation gate
+
+For chunks with more than the configured sentence count, the compressor selects up to three sentences using an LLM relevance score. If no sentence reaches the threshold, it still retains the top two scored sentences. There is no deterministic preservation check for medication name, strength, units, dosage form, route, negation, exception/condition clauses or warning language before compressed text is passed to generation.
+
+The compressor preserves the original chunk citation ID, but citation identity alone does not prove that the retained sentence still supports all claims made from that source.
+
+**Required correction:** introduce domain-aware protected spans/clauses and a post-compression evidence-integrity check. Keep medication/dose/route/units, negation, conditions, contraindications and warnings attached to their supporting statement. If integrity cannot be established, pass the original chunk or abstain from compression. Add adversarial tests where the highest-scoring sentence omits a negation, exception, unit or dosage qualifier.
+
+### 13.9 P2 — Sentence splitting and fallback compression are not clinically validated
+
+The compressor uses punctuation-based sentence splitting and filters fragments shorter than 11 characters. This can mishandle abbreviations, bullet lists, table rows, decimal/unit expressions and structured labels. The lexical fallback uses exact whitespace-token overlap and does not normalize Russian inflections, transliteration or pharmaceutical synonyms. It may rank semantically relevant RU/EN sentences poorly.
+
+**Required correction:** use structure-aware sentence segmentation and preserve list/table boundaries; test abbreviations, decimals, units, Cyrillic/Latin drug names, bullets and multilingual clauses. Measure fallback retrieval/compression quality separately and record when fallback scoring was used.
+
+### 13.10 Test coverage and readiness status
+
+- Preprocessor preserves paragraph/section boundaries through the active ingestion path: **not established; current normalizer flattens whitespace**.
+- Medical section chunking: **implemented as heading heuristics, but vulnerable to preprocessing boundary loss**.
+- Exact tokenizer-based chunk budgets: **not implemented; character/4 estimate is used**.
+- Pharmaceutical-aware overlap: **not implemented; character-slice overlap is used**.
+- PDF OCR: **blank-page fallback exists; partial-page OCR and Russian mapping are missing**.
+- PDF table extraction: **basic Markdown conversion exists; structured table integrity and failure gate are not established**.
+- DOCX parsing: **paragraphs and pipe-separated tables extracted; heading/table structure is flattened**.
+- Parent-child retrieval: **documented as target architecture, not implemented in inspected schema/path**.
+- Russian contextual compression: **not configured; English fallback is used**.
+- Compression preservation of dose/units/negation/conditions: **no deterministic integrity gate established**.
+- End-to-end RU/EN document parsing and clinical chunk quality: **not demonstrated by the inspected unit tests**.
+
+No application source changes, database operations, migrations, CI runs or deployments were performed as part of this review.
