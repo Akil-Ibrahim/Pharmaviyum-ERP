@@ -1278,3 +1278,92 @@ The Ragas adapter test replaces all Ragas metric classes with a fake metric retu
 - Clinical release thresholds: **not established by measured, expert-reviewed evidence**.
 
 No application source changes, database operations, migrations, CI runs or deployments were performed as part of this review.
+
+
+## 12. Russian/English multilingual RAG end-to-end audit
+
+Source baseline: static inspection of `RAGSettings`, the active Celery ingestion task, loader configuration, tenant metadata stamping, embedding providers/router, `LangGraphRAG`, `PgVectorStore` BM25/hybrid retrieval and targeted search results. No document ingestion, embedding API call, database retrieval, OCR run or language benchmark was executed.
+
+### 12.1 Positive controls
+
+- `RAGSettings.default_languages` includes `ru` and `en`.
+- `QueryContext.language` is propagated into LangGraph query transformation and answer-language instructions.
+- LangGraph adds `_search_language` to retrieval filters; the vector store removes this control key before SQL metadata filtering and passes it to BM25.
+- PostgreSQL BM25 uses `english` text search configuration for English and `simple` for other languages. The `simple` configuration avoids applying English stemming to Russian, but does not provide Russian morphology/lemmatization.
+- The repository contains a language-aware embedding router abstraction and a separate retrieval benchmark script. Their presence does not establish that the active ingestion and request paths use them.
+
+### 12.2 P1 — Active ingestion defaults omit Russian from loader languages
+
+The Celery worker constructs `LoaderConfig.languages` with a default of `["vi", "en", "ar", "th", "id"]`. The central `RAGSettings.default_languages` includes Russian, but the active worker does not derive its loader language list from that setting.
+
+When callers omit an explicit `languages` value, the active ingestion loader therefore receives no Russian language entry. This can affect OCR or language-aware document extraction for Russian documents, depending on loader behavior.
+
+**Required correction:** establish one canonical supported-language configuration and use it in the active worker. Add Russian to the default only after verifying each loader/OCR backend's actual language-code contract. Add PDF/DOCX/HTML ingestion tests for Russian Cyrillic, English, mixed RU/EN documents and OCR fallback; verify extracted text and language metadata rather than merely checking configuration values.
+
+### 12.3 P1 — Worker metadata stamping defaults every unspecified document to English
+
+`_stamp_tenant_metadata()` uses `config.get("language", "en")` and explicitly overwrites both document language and canonical metadata language. The loader's detected or source-provided language is therefore not preserved when the ingestion request omits `config.language`.
+
+A Russian document ingested without an explicit language can be stamped as English. This can corrupt language-aware filtering, evaluation segmentation and downstream analytics even if the text itself remains in Cyrillic.
+
+**Required correction:** define trusted language provenance and precedence. Prefer a validated explicit ingestion language when supplied; otherwise use a reliable loader-level detection result or mark language as unknown/mixed. Do not silently default unknown documents to English. Add tests proving Russian loader output is not overwritten by the worker default and that caller-controlled untrusted metadata cannot override the canonical language decision.
+
+### 12.4 P1 — Multilingual embedding router excludes Russian and is not wired into active paths
+
+`LANGUAGE_MODEL_MAP` in `embeddings_multilang.py` defines `vi`, `ar`, `th`, `id`, `en` and `mixed`, but no `ru`. `detect_language()` likewise maps only those languages and returns `mixed` for Russian. Short text samples under 20 characters are classified as English without detection.
+
+Repository search found the router exported by the AI package, but did not identify a production call site in active Celery ingestion, `IngestionOrchestrator`, or the LangGraph request path. The router therefore cannot be treated as the active multilingual embedding strategy.
+
+**Required correction:** make an explicit architecture decision for one consistent multilingual embedding model versus language-specific models. If routing remains, add Russian and mixed-language handling, remove the unconditional short-text English assumption (or mark low-confidence/unknown), and wire the same deterministic model/version selection into both document ingestion and query embedding. Persist embedding model ID, model revision, dimensions and preprocessing version with the index. Do not mix incompatible embedding spaces in one vector index; model changes require a versioned index and controlled re-embedding/reindex strategy.
+
+### 12.5 P1 — Active ingestion and query use a single configured embedding provider, not language routing
+
+The active Celery task constructs one provider using the configured Gemini/OpenAI/Ollama backend and embeds every chunk through that provider. `AIComponents.initialize()` similarly creates one embeddings provider for LangGraph queries. The language-aware router is not injected into either path.
+
+A single multilingual model could be a valid design, but the current default Ollama model is `mxbai-embed-large`, and no inspected code or benchmark establishes that this model is suitable for Russian/English cross-lingual pharmacy retrieval. Provider choice alone is not evidence of multilingual capability.
+
+**Required correction:** choose and pin an embedding model with documented RU/EN support; validate it on the actual pharmacy corpus and cross-lingual queries. Ensure ingestion and query use the exact same model family, revision, dimensions, normalization and query/document instruction conventions. Record the model identity alongside each indexed chunk and reject incompatible query vectors/indexes.
+
+### 12.6 P2 — BM25 simple configuration is safe from English stemming but not a Russian linguistic analyzer
+
+The vector store selects PostgreSQL `simple` for every language other than English. This avoids inappropriate English stemming, but `simple` tokenization does not normalize Russian inflections, grammatical cases, word forms or common morphology. A query using one form of a Russian medication-related term may fail to match a document using another form.
+
+**Required correction:** benchmark `simple` against an explicitly selected Russian-aware lexical analyzer or a domain-specific normalization strategy. Preserve exact drug names, INN/active ingredients, strengths, dosage forms and Cyrillic/Latin transliterations. Add adversarial cases for inflections, ё/е, hyphenation, abbreviations, brand/generic names and transliteration. Do not apply aggressive normalization to dosage strings or clinically meaningful negation.
+
+### 12.7 P2 — Query language defaults to English unless explicitly supplied
+
+`QueryContext.language` defaults to `en`. LangGraph uses the context language for BM25 configuration and answer instructions. The inspected contract does not itself establish reliable request-language detection or prove that the API always supplies a validated language matching the user's actual query.
+
+If a Russian query reaches the RAG path with the default context, BM25 may use English configuration and answer instructions may request English. This is a contract/integration risk; actual API propagation requires an end-to-end test.
+
+**Required correction:** define a trusted language-resolution policy at the request boundary. Validate explicit user/application language, detect the query language when absent, handle mixed RU/EN queries and short medication-name-only queries conservatively, and pass one resolved language through query transformation, retrieval, answer generation and evaluation. Language must never be inferred from jurisdiction or patient identity.
+
+### 12.8 P1 — No end-to-end evidence for Russian retrieval or cross-lingual pharmacy queries
+
+The inspected evaluator measures recall over supplied source IDs and a language label; it does not execute the embedding, ingestion, BM25/vector/hybrid retrieval or answer-generation paths. The separate retrieval benchmark script exists, but no inspected RU/EN result artifact establishes representative Russian corpus coverage, Russian Recall@K, ranking quality or clinical answer support.
+
+**Required correction:** create a versioned synthetic/de-identified RU/EN benchmark with pharmacist-reviewed gold sources and queries covering:
+1. Russian query to Russian source.
+2. English query to English source.
+3. Russian query to English source and vice versa, where clinically appropriate.
+4. Cyrillic, Latin transliteration, INN and brand-name variants.
+5. Medication name + strength + dosage form + route.
+6. Negation, contraindication, interaction and dosage statements.
+7. OCR-derived Russian PDFs and mixed-language documents.
+8. Missing/ambiguous language and safe abstention.
+
+Report per-language and cross-language Recall@K, MRR/nDCG, context precision/recall, answer faithfulness, citation entailment, medication entity accuracy and negation preservation. Keep source approval, jurisdiction, effective date and tenant/patient scope checks enabled in the benchmark.
+
+### 12.9 Multilingual readiness status
+
+- Russian listed in central RAG defaults: **configured, but not consistently applied by active ingestion**.
+- Russian loader/OCR language configuration: **not present in the active worker default**.
+- Russian canonical document language: **at risk of being overwritten to English when config.language is absent**.
+- Russian embedding router: **not supported by the router map/detector**.
+- Router connected to active ingestion/query paths: **not established; targeted search found no call site**.
+- One provider used for active ingestion and query: **implemented; RU/EN suitability not measured**.
+- Russian BM25: **uses PostgreSQL simple configuration; morphology quality not established**.
+- RU/EN end-to-end retrieval quality: **not demonstrated by the inspected metric unit tests**.
+- Clinical-grade Russian support: **not established**.
+
+No application source changes, database operations, migrations, CI runs or deployments were performed as part of this review.
