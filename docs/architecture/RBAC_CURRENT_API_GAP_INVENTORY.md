@@ -1797,3 +1797,114 @@ The presence of harness unit tests does not prove the route emits valid SSE or t
 - Token accounting and consistent structured warnings: **not established**.
 
 No application source changes, test executions, CI runs, migrations, database operations or deployments were performed as part of this review.
+
+## 17. AI Observability, OpenTelemetry & Production Monitoring
+
+Scope: static review of active main implementations for OpenTelemetry provider setup, FastAPI middleware, AgentHarness and LangGraph spans, MCP tool spans, LangChain token callbacks, Prometheus metrics, monitoring endpoints, JSON logging and telemetry privacy tests. No production environment variables, collector, dashboard, deployed metrics endpoint or exported trace data were inspected. No tests were executed.
+
+### 17.1 Positive controls confirmed
+
+- The application owns one process-wide OpenTelemetry TracerProvider, uses ParentBased sampling with a bounded ratio sampler, configures an OTLP gRPC batch span processor when an endpoint is supplied, and flushes/shuts down the provider during application lifespan shutdown.
+- Resource attributes include service name, service version and deployment environment.
+- FastAPI request auto-instrumentation is deliberately gated behind an explicit opt-in and development/test environment check. SQLAlchemy and HTTPX auto-instrumentation are similarly gated.
+- Manual low-cardinality spans exist for AgentHarness model selection/execution/streaming, RAG graph nodes/retrieval, and MCP tool execution.
+- The AI telemetry facade allowlists span names, span attributes, LangSmith metadata keys and tags. Content tracing is restricted to development/test opt-in; LangChain automatic content tracing is disabled otherwise. Session identifiers are not exported to LangSmith.
+- Privacy unit tests verify span attribute allowlisting, exception-content exclusion from the telemetry facade, and redacted LangSmith payload summaries.
+- Prometheus metric labels for model, MCP tool, RAG query type and AI stages are bounded by allowlists. HTTP request metrics use route templates rather than raw dynamic paths as labels.
+- The Prometheus registry defines HTTP, DB, Redis, Celery/worker, RAG stage, tool-call, LLM token/cost and evaluation metrics. RAG graph nodes record query transformation, retrieval, document grading, query rewrite, context compression, generation and guardrails durations; the full RAG run records total pipeline duration.
+- MCP registry usage records emit tool-call count and duration metrics. The RAG run uses UsageMetadataCallbackHandler and returns token usage in its RAG response object.
+
+### 17.2 P1 — API trace_id can diverge from the actual OpenTelemetry trace ID
+
+AgentHarness._current_trace_id() reads the current OpenTelemetry span context and generates a random UUID when no valid current span exists. The FastAPI application configures FastAPI auto-instrumentation only when an explicit opt-in is enabled in development/test; production and staging are excluded by _allow_sensitive_client_instrumentation(). RequestIDMiddleware only adds request.id to a span when a recording span is already active; it does not create a server/root span.
+
+In the normal production configuration path inspected, there is therefore no application-created FastAPI server span guaranteed to be active when AgentHarness.run() or _astream_events() calls _current_trace_id(). The returned/context trace_id can consequently be the fallback UUID, while subsequent manually created OpenTelemetry spans start their own SDK trace IDs. PharmacistAgent passes this fallback trace_id into MCPClient metadata, but it does not make it the actual OpenTelemetry trace ID.
+
+**Impact:** API trace_id, MCP metadata and exported OpenTelemetry traces may not correlate. Operators may be unable to find the trace corresponding to a failed or slow AI request using the trace_id returned to the client.
+
+**Required correction:** create a PHI-safe server/root span for every AI request in all environments, with explicit reviewed attributes only; derive trace_id from that active span; propagate W3C trace context across supported service boundaries; attach request.id as a correlation attribute; and add integration tests asserting that response trace_id equals the exported span trace ID for sync, streaming, cache-hit and error paths.
+
+### 17.3 P1 — OpenTelemetry export is opt-in and disabled by default
+
+OTelSettings.enabled defaults to false. If enabled without exporter_endpoint, configure_opentelemetry logs a warning and creates no span exporter; spans remain local to the process. A configured endpoint is required for export.
+
+This means the repository's presence of spans and exporter code does not prove production traces are being exported. The deployed FastAPI Cloud environment variables and collector connectivity were not inspected in this static audit.
+
+**Required correction:** explicitly configure OTEL_ENABLED and the OTLP endpoint in each intended environment; verify collector TLS/authentication, connectivity, sampling, service/resource identity and shutdown flush. Add a deployment readiness/operational check that distinguishes SDK enabled, exporter configured and successful export. Do not report tracing as operational based solely on code initialization.
+
+### 17.4 P1 — LLM token and estimated-cost metrics do not cover all configured providers
+
+PharmaviyumCallbackHandler records ai_llm_tokens_used_total and ai_llm_cost_estimate_usd_total from LLM callback usage metadata. In _build_llm(), this callback is wired only for the QwenCloud provider. The Ollama, Gemini and Groq constructors do not attach an equivalent handler in the inspected code.
+
+LangGraphRAG.run() separately installs UsageMetadataCallbackHandler and returns total token usage in RAGResponse, but this callback path does not call record_llm_usage() or the cost tracker. The generation node itself reports tokens_used=0 in its state result.
+
+**Impact:** Prometheus token/cost counters are provider- and execution-path-dependent, and cannot currently be treated as complete AI usage or billing/cost attribution. The presence of token counters does not prove all model calls are counted.
+
+**Required correction:** implement a provider-neutral usage callback or normalize usage from each provider's response; record input/output tokens and model/provider consistently for router, RAG transformation/grading/compression/generation, reviewer and agent calls. Keep unknown usage/cost explicitly unknown rather than zero. Add provider contract tests for Ollama, QwenCloud, Gemini and Groq, including streaming usage.
+
+### 17.5 P2 — Qwen callback uses static provider identifiers instead of request-level correlation
+
+The QwenCloud LLM constructor creates PharmaviyumCallbackHandler with session_id="provider" and trace_id="qwencloud". These values are fixed at model construction and are not derived from the active request. The callback logs this static trace_id for LLM/tool lifecycle messages.
+
+**Impact:** callback log records cannot reliably correlate an individual LLM call to the request trace or session. The static values are not PHI, but they are not request correlation identifiers.
+
+**Required correction:** pass request-scoped trace context through LangChain RunnableConfig/callback metadata, use the active OpenTelemetry span context for each invocation, and never attach raw patient/session identifiers to metric labels or exported telemetry.
+
+### 17.6 P2 — Full agent execution duration metric is declared but not observed in the inspected call sites
+
+AI_AGENT_EXECUTION_DURATION is declared as a Prometheus histogram, but no observe/increment call for it was found in the inspected repository search. AI_REQUESTS_TOTAL is updated by LangGraphRAG.run(), so it measures RAG pipeline invocations rather than all top-level PharmacistAgent/AgentHarness API requests, including cache hits and requests that fail before entering RAG.
+
+The RAG pipeline stage histograms are more complete: query_transform, retrieval, document_grading, query_rewrite, context_compression, generation, guardrails and rag_pipeline have explicit recording calls.
+
+**Required correction:** instrument the outer AgentHarness request lifecycle, including cache hits, guardrail blocks, router/agent/reviewer failures, timeouts and cancellations. Separate ai_agent_requests_total from rag_pipeline_requests_total and record end-to-end duration exactly once per request. Remove unused metric declarations or wire them to their documented lifecycle.
+
+### 17.7 P2 — SQLAlchemy and HTTPX spans are intentionally absent from production auto-instrumentation
+
+The application only enables SQLAlchemy and HTTPX instrumentation when explicit sensitive-client opt-in is true and the environment is development/dev/test. Production and staging are excluded.
+
+This is a defensible privacy default, but it means the inspected production tracing setup does not automatically provide DB query spans or outbound HTTP client spans. Manual model/router/RAG/MCP spans do not replace dependency-level latency/error visibility.
+
+**Required correction:** either document this as an intentional observability limitation and provide equivalent safe DB/provider metrics, or add narrowly scoped production instrumentation with SQL parameter/content capture disabled, URL/query/credential redaction, and privacy regression tests. Do not enable raw SQL or HTTP payload capture to solve trace coverage.
+
+### 17.8 P2 — Prometheus metrics endpoint has no application-level authorization dependency
+
+The GET /metrics handler in src/pharmaviyum/api/v1/monitoring.py has no authentication/authorization dependency, unlike the detailed MCP health endpoint which requires CurrentSuperuser.
+
+The registry includes internal operational information such as request/error rates, DB/Redis/worker state, AI stage timings, model labels, tool usage, token counters, estimated cost counters and evaluation scores. The source does not establish whether FastAPI Cloud/network controls restrict access to this endpoint; external reachability is therefore unverified.
+
+**Required correction:** restrict scraping to trusted monitoring infrastructure using network policy/private ingress or a dedicated authenticated scrape mechanism. Verify deployed reachability from an unauthenticated external client. Do not expose detailed metrics publicly by default.
+
+### 17.9 P2 — General JSON logging does not enforce a central PHI/secret redaction policy
+
+The AI-specific ObservabilityTracer applies allowlists and avoids exporting exception content. However, the general JSONFormatter serializes record.getMessage(), exception message and formatted traceback without a redaction stage. LoggingMiddleware includes the raw request URL path in its message. Generic logger.exception calls elsewhere can therefore serialize exception text and stack details that have not passed through the AI telemetry allowlist.
+
+The inspected request middleware does not log request bodies or query parameters, and the AgentHarness logs error types rather than raw exception text. These are positive controls, but they do not establish a global logging boundary.
+
+**Required correction:** implement a central logging redaction/filter policy for credentials, tokens, connection strings, patient identifiers, prescription data and clinical content; prefer route templates over raw URL paths; sanitize exception messages while retaining exception type and safe error codes; and test all logging handlers/formatters with seeded PHI and secret values. Verify platform stdout log retention/access controls separately.
+
+### 17.10 P2 — Manual LangSmith metadata export methods exist, but active production call sites were not established
+
+ObservabilityTracer initializes a LangSmith client when a key is available and provides redacted log_to_langsmith, log_tool_call and log_evaluation methods. Repository search found the method definitions and tests but did not establish active application call sites invoking them. Automatic LangChain content tracing is deliberately disabled unless development/test content opt-in is enabled.
+
+**Impact:** LangSmith integration should not be represented as end-to-end operational tracing merely because the client and facade exist. Its current active production coverage is not established by the inspected call graph.
+
+**Required correction:** either wire explicit metadata-only events into the request/agent/RAG/tool lifecycle with privacy-safe trace correlation and tests, or document LangSmith as configured-but-unused/optional. Keep prompt, answer, retrieved text, patient data and raw session IDs excluded from production export.
+
+### 17.11 Observability readiness summary
+
+- Single application-owned OpenTelemetry provider and OTLP batch exporter support: **implemented**.
+- OpenTelemetry enabled by default: **no; disabled unless configured**.
+- Successful production OTLP export: **not established; deployment configuration/collector not inspected**.
+- Production FastAPI server/root span: **not established; built-in auto-instrumentation explicitly excludes production/staging**.
+- API response trace_id matching actual exported trace: **not established; fallback UUID can diverge from SDK trace ID**.
+- Manual AgentHarness/RAG/MCP spans: **implemented**.
+- Provider-neutral LLM token/cost accounting: **not implemented; callback wired only for QwenCloud, RAG usage callback is separate**.
+- Full AgentHarness request duration/request count metrics: **not established; declared histogram unused in inspected call sites and request counter is RAG-scoped**.
+- RAG stage duration/error metrics: **implemented for the inspected graph stages**.
+- Bounded Prometheus labels and AI telemetry attribute allowlists: **implemented**.
+- Production SQLAlchemy/HTTPX auto-instrumentation: **intentionally disabled by inspected environment gate**.
+- Metrics endpoint application-level authorization: **not implemented; perimeter restriction unverified**.
+- Global PHI/secret redaction for all JSON logs: **not established**.
+- Active metadata-only LangSmith call sites: **not established**.
+
+No application source changes, test executions, CI runs, migrations, database operations or deployments were performed as part of this review.
