@@ -13,7 +13,7 @@ This inventory records concrete authorization patterns found in the current sour
 
 File: `src/pharmaviyum/api/v1/endpoints/prescriptions.py`
 
-The router is included by `src/pharmaviyum/api/v1/router.py` under `/api/v1`. Its current handlers:
+The placeholder router is included by the legacy `src/pharmaviyum/api/v1/router.py` aggregator. However, the runtime application imports `api_v1_router` from `src/pharmaviyum/api/v1/__init__.py` in `src/pharmaviyum/main.py`; that runtime aggregator does not include `prescriptions_router`. Therefore these handlers are present in source but are not confirmed as mounted in the current application. See section 3.2. Its current handlers:
 
 - `GET /prescriptions/` has no user/authentication dependency and returns a placeholder empty list.
 - `GET /prescriptions/{prescription_id}` has no user/authentication dependency and always returns 404.
@@ -100,3 +100,26 @@ The inspected `src/pharmaviyum/api/v1/router.py` does not directly include this 
 ## 5. Explicit non-actions
 
 This review made no application code changes, route changes, schema changes, migration changes, permission grants, manual SQL, merge, or deployment. The findings must be reviewed against the complete router graph and runtime configuration before implementation.
+
+
+### 3.2 Runtime router composition differs from the legacy router module
+
+Files: `src/pharmaviyum/main.py`, `src/pharmaviyum/api/v1/__init__.py`, `src/pharmaviyum/api/v1/router.py`
+
+Observed runtime composition:
+
+- `main.py` imports and mounts `api_v1_router` from the `api.v1` package.
+- The package-level `api_v1_router` is assembled in `api/v1/__init__.py`.
+- That runtime aggregator includes AI, auth, catalog, dashboard, ingestion, monitoring, medical devices, orders, patients, patient purchases, POS, sync, pharmacy entities, products, and users.
+- It does not include `prescriptions_router` or `feature_flags_router`.
+- The separate `api/v1/router.py` defines another aggregator with a different set of routers, including prescriptions and feature flags, but code search found no import/use of its `api_router` symbol in the reviewed repository.
+- The legacy aggregator adds an `/api/v1` prefix while the patients router already declares `/api/v1/patients`; mounting that aggregator as written would produce a duplicated path prefix for patients.
+
+Implications:
+
+- Do not report prescription placeholder endpoints as currently exposed in the deployed application based only on the legacy aggregator. Their source handlers are unauthenticated, but the runtime mount must be verified before treating them as reachable.
+- Treat the existence of two divergent router aggregators as an API composition/maintenance risk. There must be one authoritative runtime router tree.
+- Before RBAC implementation, generate or test the actual FastAPI route table from the same app factory/entrypoint used in deployment. Record method, path, router, authentication dependency, tenant dependency, and action permission for every mounted business route.
+- Add a regression test asserting critical expected routes are mounted exactly once and retired/unmounted routes are absent.
+- Resolve the duplicated-prefix issue only as a separately reviewed routing change; do not combine it with RBAC policy implementation without tests.
+
