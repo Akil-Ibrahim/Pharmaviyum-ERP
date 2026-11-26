@@ -1,0 +1,161 @@
+name: Migrate Demo Production Database
+
+on:
+  workflow_dispatch:
+    inputs:
+      change_reference:
+        description: "Demo launch migration reference"
+        required: true
+        type: string
+      confirmation:
+        description: "Type MIGRATE-DEMO-PRODUCTION"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pharmaviyum-demo-production-migration
+  cancel-in-progress: false
+
+jobs:
+  migrate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    environment:
+      name: demo-pharmaviyum-erp
+      deployment: false
+    env:
+      ENVIRONMENT: staging
+      EXPECTED_NEON_HOST_PREFIX: ep-blue-lake-bdu775si
+      MIGRATION_DATABASE_URL: ${{ secrets.MIGRATION_DATABASE_URL }}
+
+    steps:
+      - name: Require explicit authorization
+        env:
+          CHANGE_REFERENCE: ${{ inputs.change_reference }}
+          CONFIRMATION: ${{ inputs.confirmation }}
+        run: |
+          set -euo pipefail
+          test -n "$CHANGE_REFERENCE"
+          test "$CONFIRMATION" = "MIGRATE-DEMO-PRODUCTION" || {
+            echo "Migration not authorized."
+            exit 1
+          }
+
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ github.sha }}
+
+      - uses: astral-sh/setup-uv@v7
+        with:
+          version: "0.13.8"
+          python-version: "3.15.0"
+          enable-cache: true
+
+      - name: Install locked dependencies
+        run: uv sync --frozen --no-dev
+
+      - name: Verify exact Demo database target and pre-migration state
+        run: |
+          set -euo pipefail
+          test -n "$MIGRATION_DATABASE_URL" || {
+            echo "Add MIGRATION_DATABASE_URL to GitHub Environment demo-pharmaviyum-erp."
+            exit 1
+          }
+          uv run python - <<'PY'
+          import os
+          from urllib.parse import urlparse
+          import psycopg
+
+          url = os.environ["MIGRATION_DATABASE_URL"]
+          parsed = urlparse(url)
+          host = (parsed.hostname or "").lower()
+          prefix = os.environ["EXPECTED_NEON_HOST_PREFIX"]
+          if parsed.scheme not in {"postgres", "postgresql"}:
+              raise SystemExit("Refusing: target is not PostgreSQL.")
+          if not host.startswith(prefix + ".") or "-pooler" in host:
+              raise SystemExit("Refusing: target is not the expected direct Neon endpoint.")
+          if parsed.path.lstrip("/") != "neondb":
+              raise SystemExit("Refusing: expected database neondb.")
+
+          expected = {
+              "checkpoint_blobs",
+              "checkpoint_migrations",
+              "checkpoint_writes",
+              "checkpoints",
+              "document_chunks",
+          }
+          with psycopg.connect(url, connect_timeout=15) as conn:
+              database, schema = conn.execute(
+                  "SELECT current_database(), current_schema()"
+              ).fetchone()
+              if (database, schema) != ("neondb", "public"):
+                  raise SystemExit("Refusing: unexpected database/schema.")
+              tables = {
+                  row[0] for row in conn.execute(
+                      "SELECT tablename FROM pg_catalog.pg_tables WHERE schemaname='public'"
+                  ).fetchall()
+              }
+              if tables != expected:
+                  raise SystemExit(
+                      "Refusing: schema no longer matches the verified empty-ERP "
+                      f"snapshot. Found: {sorted(tables)}"
+                  )
+              if conn.execute(
+                  "SELECT to_regclass('public.alembic_version')"
+              ).fetchone()[0] is not None:
+                  raise SystemExit("Refusing: alembic_version already exists.")
+              if conn.execute(
+                  "SELECT to_regclass('public.users')"
+              ).fetchone()[0] is not None:
+                  raise SystemExit("Refusing: users table already exists.")
+          print("Exact target and initial schema verified.")
+          PY
+
+      - name: Generate ephemeral application signing key
+        run: |
+          set -euo pipefail
+          key="$(openssl rand -hex 32)"
+          echo "::add-mask::$key"
+          printf 'SECRET_KEY=%s\n' "$key" >> "$GITHUB_ENV"
+
+      - name: Apply Alembic migrations
+        run: uv run alembic upgrade head
+
+      - name: Verify migrated schema and Alembic heads
+        run: |
+          uv run python - <<'PY'
+          import os
+          import sys
+          import psycopg
+          from alembic.config import Config
+          from alembic.script import ScriptDirectory
+
+          expected_heads = set(ScriptDirectory.from_config(Config("alembic.ini")).get_heads())
+          required = {
+              "users", "pharmacies", "products", "inventory", "suppliers",
+              "inventory_movements", "document_chunks", "checkpoints",
+              "checkpoint_blobs", "checkpoint_writes", "checkpoint_migrations",
+              "phi_access_audits",
+          }
+          with psycopg.connect(os.environ["MIGRATION_DATABASE_URL"]) as conn:
+              heads = {
+                  row[0] for row in conn.execute(
+                      "SELECT version_num FROM alembic_version"
+                  ).fetchall()
+              }
+              tables = {
+                  row[0] for row in conn.execute(
+                      "SELECT tablename FROM pg_catalog.pg_tables WHERE schemaname='public'"
+                  ).fetchall()
+              }
+          if heads != expected_heads:
+              raise SystemExit(f"Alembic heads mismatch: {heads} != {expected_heads}")
+          missing = required - tables
+          if missing:
+              raise SystemExit(f"Missing required tables: {sorted(missing)}")
+          print(f"Migration successful. Alembic heads: {sorted(heads)}")
+          print(f"Required tables verified: {sorted(required)}")
+          PY
