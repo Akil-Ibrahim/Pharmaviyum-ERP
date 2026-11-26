@@ -2054,3 +2054,130 @@ However, there is no request-wide deadline in the active AgentHarness/Pharmacist
 - Runtime fault-injection/load tests: **not executed in this audit**.
 
 No application source changes, test executions, CI runs, migrations, database operations or deployments were performed as part of this review.
+
+
+## 19. AI Security, Privacy & Threat Modeling
+
+Scope: static review of active main authentication dependencies and token issuers, AI API request boundary, pharmacy tenant resolution, MCP authorization context and registry, patient-history tool, pharmacist-agent planner/reviewer prompts, RAG prompt construction, application middleware, rate-limit setup, Redis connection configuration and related security tests. No exploit execution, token replay, penetration test, runtime environment inspection, database access, test execution or deployment inspection was performed.
+
+### 19.1 Positive controls confirmed
+
+- AI query and streaming request schemas bound query length to 2,000 characters, require a positive explicit pharmacy ID, and require selected patient and controlled purpose to be supplied together.
+- AI API validates that the selected patient is active and belongs to the authorized pharmacy before starting the harness.
+- AI conversation session HMAC binds pharmacy, authenticated user, selected patient, purpose and client session ID. Staging/production reject a missing application secret in the inspected core settings.
+- MCPAuthorizationContext is an immutable request-scoped dataclass. It validates user, pharmacy, patient, purpose and role fields; missing context fails closed.
+- MCPClient and MCPToolRegistry derive authority from the trusted ContextVar context, reject identity mismatches, validate tool input with Pydantic, and enforce tool role metadata. Model-provided tenant/user/role values are not treated as authority.
+- MCP data capabilities require trusted request context; initialize/initialized are the only public protocol methods in the inspected MCP server.
+- get_patient_history requires exact equality between model-supplied patient ID and trusted selected_patient_id, pharmacist role, a controlled purpose and active patient ownership in the trusted pharmacy.
+- get_patient_history writes metadata-only PHIAccessAudit decisions and commits the audit before returning patient data. Audit commit failure prevents the tool from returning the patient response.
+- MCP write tools are fail-closed until a trusted approval verifier is configured; the active registered tools inspected are read-only.
+- RAG query transformation and generation prompts explicitly treat user questions and retrieved evidence as untrusted data. Several RAG prompt sections HTML-escape question/evidence values before interpolation. The pharmacist planner also instructs the model not to follow instructions in tool or retrieved content and marks reference context as untrusted.
+- Provider API keys use Pydantic SecretStr in AI settings. Core application configuration requires a secret of at least 32 characters in staging/production. Password hashing uses bcrypt, and JWT decoding pins the configured algorithm rather than accepting an algorithm supplied by the token.
+- Existing contextual-compression security tests include delimiter-injection examples and assert that retrieved text and query delimiters are escaped. Existing patient-history tests cover selected-patient mismatch, missing purpose, non-pharmacist denial and audit commit failure using a test-double session.
+
+### 19.2 P1 — Refresh and password-reset JWTs can pass the active access-token dependency
+
+The active CurrentUser dependency in modules/auth/deps.py imports decode_access_token from core/oauth2.py. That decoder verifies the signature using the configured API secret and validates standard JWT expiry, but it does not require a token-type claim.
+
+The modular authentication routes issue:
+- access tokens with type=access;
+- refresh tokens with type=refresh and a 30-day default lifetime;
+- password-reset tokens with type=password_reset and a 48-hour lifetime.
+
+These token types use the same application signing key. The active get_current_user dependency calls the legacy decoder, which accepts any correctly signed, unexpired token containing a usable subject. It then resolves the subject against user ID, username or email. Consequently, a refresh token or password-reset token can be presented as a Bearer access token and may authenticate as the corresponding active user. This is a source-level token-confusion vulnerability, not a runtime exploit result.
+
+There are also two token issuance paths: the legacy /api/v1/auth/token endpoint issues untyped access tokens through core/oauth2.py, while the modular /api/v1/auth/login/access-token route issues typed tokens through core/security. This split makes consistent validation harder.
+
+**Impact:** a password-reset capability intended only to change a password, or a refresh capability intended only to rotate credentials, may also authorize protected API operations for its remaining lifetime.
+
+**Required correction:** consolidate token issuance and decoding behind one canonical security module. Require type=access in the Bearer dependency; use type-specific decoders for refresh and password reset. Migrate or retire the legacy untyped issuance endpoint with an explicit compatibility plan. Add negative API tests proving refresh and password-reset tokens cannot access CurrentUser routes, alongside positive access-token tests. Consider explicit issuer/audience claims and signing-key separation as defense in depth.
+
+### 19.3 P1 — Pharmacy membership does not establish a clinical pharmacist role
+
+The User.role property returns admin for every platform superuser and pharmacist for every other account. PharmacyMembership stores user_id, pharmacy_id and is_active but does not carry a pharmacy-specific role or permission grant.
+
+AI API copies current_user.role into trusted MCPAuthorizationContext. MCP registry filters tools by required_roles, and get_patient_history independently requires role pharmacist. Since every ordinary account is assigned that role by the User property, the role check does not establish that the user is actually a pharmacist or has a clinical PHI permission in the selected pharmacy.
+
+This is the same unresolved authorization design gap recorded in Section 7.3, restated here as an AI security threat because it directly gates clinical tool access.
+
+**Impact:** any ordinary active user with an active pharmacy membership is represented to the AI layer as a pharmacist. The tenant boundary still works, but least-privilege clinical authorization is not established.
+
+**Required correction:** resolve a role and explicit permission set from the authenticated user's active membership in the selected pharmacy. Separate platform operator privileges from pharmacy roles. Require a dedicated clinical permission for patient-history access and other PHI operations; deny by default when role/permission is missing or ambiguous. Add two-user/one-pharmacy tests for cashier, pharmacist, manager and pharmacy administrator, including cross-pharmacy role differences.
+
+### 19.4 P1 — AI rate limiting is declared but not connected to the active application
+
+The repository contains a rate_limit.py helper with setup_rate_limiting(), rate_limit_ai() and a SlowAPI Limiter configuration. However, the active src/pharmaviyum/main.py does not import or call setup_rate_limiting(). The inspected AI routes do not apply the rate_limit_ai decorator. The helper itself is therefore not evidence that the active /api/v1/ai/query or /api/v1/ai/query/stream routes are rate limited.
+
+The separate core configuration defaults RATE_LIMIT_ENABLED to false. No effective per-user/per-tenant AI request limiter was established in the active application assembly.
+
+**Impact:** authenticated users may repeatedly invoke expensive LLM, embedding, retrieval and MCP operations without an application-level rate limit in the inspected path. Authentication alone does not protect against accidental loops, compromised accounts or resource-exhaustion attempts.
+
+**Required correction:** wire one limiter into the actual FastAPI application and protect synchronous and streaming AI routes, authentication and other expensive endpoints. Use distributed storage for multi-replica deployments; key AI quotas by authenticated user and pharmacy with IP-based abuse protection as an additional dimension. Define separate concurrency/admission limits and clear 429/Retry-After behavior. Verify the limiter is active in the assembled app, not merely declared in a helper module.
+
+### 19.5 P1 — Safety reviewer prompt does not establish an untrusted-data boundary
+
+PharmacistAgent.reviewer_node constructs one HumanMessage by interpolating the user question, generated draft, tool_results and rag_sources directly into a review_prompt. These fields can contain user-controlled or externally sourced text. The reviewer SystemMessage only says that it is a strict medical safety reviewer; unlike the planner and RAG prompts, it does not explicitly instruct the reviewer to treat every embedded question, draft, tool result and retrieved passage as untrusted data and never follow instructions within them. The interpolated values are not placed in a structured, escaped evidence envelope.
+
+The reviewer is a safety gate that can approve the draft, reject it or replace it. An indirect prompt injection inside a retrieved document or tool output could therefore influence the review decision.
+
+**Impact:** prompt-injection defenses are not consistent across the agent's model calls. The presence of an explicit untrusted-data instruction in the planner does not automatically protect the separate reviewer invocation.
+
+**Required correction:** provide the reviewer with a fixed system policy that explicitly treats all dynamic fields as untrusted evidence, never as instructions. Pass question, draft, tool results and source records through a typed structured payload with robust delimiter escaping or a structured model interface. Keep deterministic checks outside the LLM reviewer for citation membership, medication identity/strength/form, dosage units, negation and critical contraindications. Add adversarial tests that place instruction-like text in each dynamic field and assert that it cannot alter reviewer policy or authorize unsupported clinical claims.
+
+### 19.6 P2 — Patient-history tool returns more PHI than its explicit include flags require
+
+PatientHistoryRequest has include_allergies, include_conditions, include_prescriptions and include_orders flags. However, PatientHistory always includes patient full_name, age, gender, blood_type, loyalty_tier and preferred_language. These fields are returned even when all four include flags are false. The current patient-history tool test explicitly disables all four flags but still expects the tool to return a PatientHistory object.
+
+The response therefore combines clinically relevant data with demographic and commercial/customer attributes regardless of the specific purpose or minimum fields required for the task.
+
+**Impact:** every authorized invocation may expose more personal information to the LLM context than the current task requires. This increases the amount of PHI processed by downstream models, checkpoints, caches and observability paths.
+
+**Required correction:** define purpose-specific minimum-necessary response projections. Make each returned field opt-in only when required by a validated workflow and permission. Exclude loyalty tier and other commercial attributes from clinical history unless a separate business purpose authorizes them. Add schema and tool tests asserting exact field allowlists for each purpose and include the LLM prompt boundary in privacy review.
+
+### 19.7 P2 — Some MCP authorization denials occur before the PHI audit function
+
+MCPToolRegistry.call_tool checks required_roles before invoking the registered tool function. get_patient_history writes PHIAccessAudit rows only after its function starts. Therefore, a registry-level role denial occurs before the patient-history audit code and is not recorded as a PHI access denial by that tool.
+
+The current security test uses a fake session to verify audit writes and fail-closed behavior; it does not prove database-backed audit persistence or the full registry-to-audit path. This is consistent with the existing PHI governance documentation.
+
+**Impact:** the audit trail may not contain every attempted PHI tool invocation or authorization denial, which weakens incident investigation and access-review completeness.
+
+**Required correction:** add a centralized audit decision point before role-based denial for PHI-designated tools, using trusted actor, tenant, selected patient, purpose, tool and request metadata. Ensure audit failure fails closed for PHI operations. Add database-backed tests for registry-level denial, selected-patient denial, successful read and audit storage failure.
+
+### 19.8 P2 — Production Redis transport encryption is not enforced by application configuration
+
+The active Redis client builds its connection pool from REDIS_URL and configures connection limits and socket timeouts. The core settings accept a redis:// URL and do not require rediss:// when ENVIRONMENT is staging or production. No runtime FastAPI Cloud Redis URL or network policy was inspected.
+
+**Impact:** source configuration does not prevent a production deployment from connecting to Redis without TLS. This matters because Redis stores AI memory, prompt cache and other state that may contain patient-linked or sensitive operational data. This finding does not establish that the current deployed Redis connection is plaintext.
+
+**Required correction:** require TLS for remote production Redis connections, validate the URL scheme in production configuration, verify certificate validation and avoid insecure TLS overrides. Document private-network requirements, Redis ACLs, credential rotation, backup retention and encryption at rest. Verify the actual provider connection settings separately.
+
+### 19.9 P2 — Security configuration is split across multiple settings and authentication modules
+
+The active app entry point imports AI settings from ai.config, while authentication, middleware, Redis and core security modules import core.config or the legacy src/pharmaviyum.config. There are two token implementations: core/oauth2.py and core/security/__init__.py. There are also separate CORS/rate-limit helper modules and middleware configuration paths.
+
+Some settings intentionally map compatible environment names, but the duplicated configuration/authentication paths make it harder to prove that production validation, token semantics, rate limiting and transport security are consistently applied by the assembled application.
+
+**Required correction:** consolidate canonical application settings and authentication/token services. Remove obsolete duplicate helpers after call-site migration. Add startup validation tests against the actual app factory so security-critical environment values and middleware are demonstrably wired.
+
+### 19.10 Security readiness summary
+
+- AI request pharmacy binding and active patient ownership check: **implemented in inspected API path**.
+- HMAC session binding to user/pharmacy/patient/purpose/session: **implemented**.
+- Trusted MCP context and fail-closed missing-context behavior: **implemented**.
+- MCP registry schema and role checks: **implemented, but upstream pharmacy-specific role is not**.
+- Patient-history exact selected-patient and same-tenant checks: **implemented**.
+- PHI audit before patient-history response: **implemented, database-backed end-to-end proof not established**.
+- MCP write approval: **fail-closed until verifier is configured**.
+- RAG/planner untrusted-context instructions: **implemented in inspected prompts**.
+- Reviewer untrusted-context boundary: **not established**.
+- Access/refresh/password-reset token type separation at CurrentUser boundary: **not implemented; P1 token-confusion risk**.
+- Pharmacy-specific clinical role/permission: **not implemented; P1**.
+- AI endpoint rate limiting: **helper declared but not wired into active app path**.
+- Patient-history minimum-necessary projection: **not implemented; response includes extra demographic/commercial fields**.
+- Redis TLS enforcement in production settings: **not implemented; actual deployed transport unknown**.
+- Global PHI/secret log redaction: **see Section 17; not established**.
+- Database-level tenant RLS: **see Sections 10 and 14; not established**.
+- Runtime penetration testing, exploit validation and security test execution: **not performed**.
+
+No application source changes, test executions, CI runs, migrations, database operations or deployments were performed as part of this review.
