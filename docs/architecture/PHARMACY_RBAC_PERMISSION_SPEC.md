@@ -36,7 +36,9 @@ Use stable, action-oriented identifiers in the form resource.action. Suggested i
 | Domain | Permission identifiers |
 |---|---|
 | POS | pos.read, pos.checkout, pos.discount.apply, pos.sale.cancel, pos.refund |
-| Catalog | catalog.read, catalog.manage |
+| Shared reference catalog | catalog.read |
+| Platform catalog governance | catalog.manage (platform-level; not a pharmacy role grant) |
+| Pharmacy assortment (future, if modeled separately) | pharmacy.catalog.read, pharmacy.catalog.manage (proposed; not yet approved) |
 | Inventory | inventory.read, inventory.receive, inventory.adjust, inventory.transfer |
 | Defectura | defectura.read, defectura.create, defectura.approve |
 | Procurement | procurement.read, procurement.create_order, procurement.approve_order, procurement.receive |
@@ -46,6 +48,25 @@ Use stable, action-oriented identifiers in the form resource.action. Suggested i
 | Audit | audit.read |
 
 The vocabulary is a starting point, not a complete endpoint inventory. Each permission must map to concrete API operations and data classifications before enforcement.
+
+
+### 3.1 Route-derived vocabulary additions — no role grants yet
+
+The API inventory identifies actions that are not represented by the initial role matrix. The following identifiers are proposed solely to make the vocabulary complete enough for product/security review. They have **no role assignments** until the relevant policy decision is approved:
+
+| Domain | Proposed identifiers | Policy boundary |
+|---|---|---|
+| Dashboard | dashboard.read, clinical_dashboard.read | Operational aggregate data must be separated from patient-identifiable clinical panels. |
+| Patients | patients.create, patients.archive, patients.visit.record, patients.purchase_history.read | Purchase history remains purpose-bound and PHI-audited; do not infer from patients.read. |
+| Orders | orders.read, orders.create, orders.status.update | Legacy patient-linked Orders are distinct from POS Sale/Payment. |
+| Inventory administration | inventory.create, inventory.update, inventory.archive, inventory.batch.read | Keep distinct from receive, adjust and transfer; batch access requires tenant ownership. |
+| Prescriptions | prescriptions.verify | Verification requires selected-patient binding, purpose and PHI audit. |
+| RAG ingestion | rag.ingestion.create, rag.ingestion.job.read | Platform-only today; any future pharmacy scope requires a signed worker grant and tenant-aware job access. |
+| Communications | patients.notify | Requires actor/service provenance, approved templates, purpose and audit at enqueue and execution. |
+| Reporting and exports | reports.generate, exports.create, exports.download | Tenant-derived scope, minimum fields and actor-bound download authorization. |
+| Monitoring | monitoring.metrics.read, monitoring.version.read | Prefer infrastructure/network restriction; not a pharmacy role permission by default. |
+
+These are vocabulary candidates only. Do not add them to the role-to-permission matrix as implicit allows. A missing matrix row means deny pending an explicit decision.
 
 ## 4. Proposed role-to-permission matrix
 
@@ -59,7 +80,7 @@ Legend: **Allow** = proposed permission; **No** = deny by default; **Decision ne
 | pos.sale.cancel | No | Decision needed | Allow | Decision needed |
 | pos.refund | No | Decision needed | Allow | Decision needed |
 | catalog.read | Allow | Allow | Allow | Allow |
-| catalog.manage | No | Decision needed | Allow | Decision needed |
+| catalog.manage (platform catalog governance) | No | No | No | No |
 | inventory.read | Decision needed | Allow | Allow | Allow |
 | inventory.receive | No | Decision needed | Allow | Decision needed |
 | inventory.adjust | No | No | Allow | Decision needed |
@@ -91,6 +112,9 @@ Legend: **Allow** = proposed permission; **No** = deny by default; **Decision ne
 ** Pharmacy administrators must not be able to grant platform privileges or assign a role above their own administrative authority. Role assignment requires an auditable workflow and protection against self-escalation. The exact role-assignment boundary remains a decision gate.
 
 **Important:** "Decision needed" is not an allow. Until resolved, deny the operation by default. Do not infer permissions from a role label or from UI visibility.
+
+
+**Catalog scope clarification:** `catalog.read` refers to shared reference data. `catalog.manage` governs the global/shared catalog and is a platform-level capability under the current API/model; it is not granted to the pharmacy Manager role. If pharmacies later manage their own assortment or pharmacy-specific price lists, model those resources separately and introduce pharmacy-scoped permissions such as `pharmacy.catalog.manage` only after approval. The current global `Product` model has no `pharmacy_id` and must not be treated as a pharmacy-owned catalog.
 
 ## 5. Authorization invariants
 
