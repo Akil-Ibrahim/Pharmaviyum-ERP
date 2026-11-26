@@ -127,6 +127,33 @@ Required future controls (not implemented by this audit):
 - Add tests for cashier/pharmacist/manager/admin membership roles across two pharmacies, role revocation, missing/ambiguous tenant context, tool discovery versus execution parity, and cross-patient/cross-pharmacy denial.
 
 
+
+### 4.8 MCP request context propagation, server exposure, and asynchronous ingestion boundary
+
+Files: `src/pharmaviyum/ai/api/v1/ai.py` (actual path: `src/pharmaviyum/api/v1/ai.py`), `src/pharmaviyum/ai/mcp/context.py`, `src/pharmaviyum/ai/mcp/client.py`, `src/pharmaviyum/ai/mcp/registry.py`, `src/pharmaviyum/ai/mcp/server.py`, `src/pharmaviyum/api/v1/ingestion.py`, `src/pharmaviyum/ai/mortarium_rag/ingestion/tasks.py`.
+
+Verified behavior:
+
+- AI `/query` installs an `MCPAuthorizationContext` around `harness.run` and resets the ContextVar token in `finally`. Streaming installs the context inside the async event generator and resets it in the generator's `finally`. This is the correct request-lifetime pattern for async ContextVar use in these handlers.
+- MCP Client refuses tool calls without trusted context and rejects supplied user/tenant/role values that differ from that context. Agent tool calls pass identity and tenant from graph state, but the client compares them against the trusted ContextVar before execution.
+- MCP Registry independently requires trusted context and checks identity, pharmacy and role equality before dispatch. It re-establishes a child context for the tool function and resets that token in `finally`.
+- MCP JSON-RPC `initialize` is intentionally public; all data capabilities (`tools/list`, `tools/call`, resources and prompts) require trusted context. Repository search found no FastAPI route or other production transport caller for `mcp_server.handle_request`; it is currently an internal server object exercised directly by tests, not evidence of an exposed unauthenticated MCP network endpoint.
+- The AI `/tools` REST endpoint is different: it uses the global account role and does not resolve pharmacy context (see 4.7).
+
+Async ingestion boundary:
+
+- Both ingestion submission endpoints require `CurrentSuperuser`, then separately call `require_pharmacy_tenant` for the requested pharmacy before placing `pharmacy_id` in the Celery task config. The worker requires a positive integer pharmacy ID and stamps it onto document metadata before chunking/vector persistence.
+- The Celery task does not receive or independently verify the submitting actor, membership, or role. The worker therefore relies on the API dispatch boundary and trusted task broker/config integrity; do not expose direct task dispatch to untrusted callers.
+- `GET /ingest/jobs/{job_id}` and `GET /ingest/jobs` require only `CurrentSuperuser`; the job-status lookup does not visibly bind the job to a pharmacy or submitting actor. The jobs list is global for platform superusers. This is a platform-admin operation today, not pharmacy-admin functionality, and should remain platform-scoped unless a tenant-aware job ownership model is deliberately introduced.
+- The upload route is additionally gated by global `CurrentSuperuser`, so a future pharmacy_admin membership role alone would not authorize ingestion. The current endpoint policy and product intent need an explicit decision before RBAC migration.
+
+Security assessment:
+
+- No ContextVar leakage or missing reset was identified in the reviewed AI query, stream, client, registry, and MCP server paths. This is a source-level assessment, not a concurrency stress-test result.
+- The main remaining authorization defects are upstream role provenance (4.7), non-pharmacy-aware tool discovery, global-superuser-only ingestion administration, and lack of actor-bound job ownership. Do not claim ContextVar alone provides authentication; the trusted context must continue to be created only after the API authentication and tenant checks.
+- Required tests: overlapping concurrent AI requests with different user/pharmacy/patient contexts; stream cancellation and exception cleanup; nested registry context restoration; attempts to call MCP server/client without context; and ingestion job cross-tenant access denial if tenant-visible job status is later introduced.
+
+
 ## 5. Explicit non-actions
 
 This review made no application code changes, route changes, schema changes, migration changes, permission grants, manual SQL, merge, or deployment. The findings must be reviewed against the complete router graph and runtime configuration before implementation.
