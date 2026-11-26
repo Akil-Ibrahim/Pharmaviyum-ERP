@@ -1,0 +1,228 @@
+name: Validate Demo Database Migrations
+
+# This workflow is an explicitly approved, one-time migration trial against
+# the isolated Neon branch created for validation. It never deploys the app.
+on:
+  workflow_dispatch:
+    inputs:
+      change_reference:
+        description: "Approved migration validation ticket or change reference"
+        required: true
+        type: string
+      confirmation:
+        description: "Type MIGRATE-ISOLATED-DEMO-BRANCH to authorize this run"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pharmaviyum-demo-migration-validation
+  cancel-in-progress: false
+
+jobs:
+  validate-and-migrate:
+    name: Validate isolated Neon branch and apply Alembic migrations
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    environment:
+      name: demo-migration-validation
+      deployment: false
+    if: github.event_name == 'workflow_dispatch'
+    steps:
+      - name: Require explicit run confirmation
+        env:
+          CHANGE_REFERENCE: ${{ inputs.change_reference }}
+          CONFIRMATION: ${{ inputs.confirmation }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -z "$CHANGE_REFERENCE" ]]; then
+            echo "A change reference is required."
+            exit 1
+          fi
+          if [[ "$CONFIRMATION" != "MIGRATE-ISOLATED-DEMO-BRANCH" ]]; then
+            echo "Refusing migration: the exact confirmation phrase was not supplied."
+            exit 1
+          fi
+          {
+            echo "## Isolated Demo migration validation"
+            echo "- Change reference: $CHANGE_REFERENCE"
+            echo "- Commit: $GITHUB_SHA"
+            echo "- Target: dedicated GitHub Environment demo-migration-validation"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Checkout selected commit
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ github.sha }}
+
+      - name: Set up uv and managed Python
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: "0.13.8"
+          python-version: "3.15.0"
+          enable-cache: true
+
+      - name: Install locked application dependencies
+        run: uv sync --frozen --no-dev
+
+      # This URL must be a direct (non-pooler) connection string for the
+      # dedicated Neon branch migration-validation-2026-11-25.
+      # Never reuse DEMO_DATABASE_URL or DATABASE_URL here.
+      - name: Verify target is the isolated Neon branch (read-only)
+        env:
+          MIGRATION_DATABASE_URL: ${{ secrets.MIGRATION_VALIDATION_DATABASE_URL }}
+          EXPECTED_NEON_HOST: ${{ vars.MIGRATION_VALIDATION_EXPECTED_HOST }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -z "$MIGRATION_DATABASE_URL" ]]; then
+            echo "Missing environment secret MIGRATION_VALIDATION_DATABASE_URL."
+            exit 1
+          fi
+          if [[ -z "$EXPECTED_NEON_HOST" ]]; then
+            echo "Missing environment variable MIGRATION_VALIDATION_EXPECTED_HOST."
+            exit 1
+          fi
+          uv run python - <<'PY'
+          import os
+          from urllib.parse import urlparse
+
+          import psycopg
+
+          url = os.environ["MIGRATION_DATABASE_URL"]
+          expected_host = os.environ["EXPECTED_NEON_HOST"].strip().lower()
+          parsed = urlparse(url)
+          actual_host = (parsed.hostname or "").lower()
+
+          if parsed.scheme not in {"postgres", "postgresql"}:
+              raise SystemExit("Refusing migration: target URL is not PostgreSQL.")
+          if not actual_host or actual_host != expected_host:
+              raise SystemExit(
+                  "Refusing migration: database hostname does not exactly match "
+                  "MIGRATION_VALIDATION_EXPECTED_HOST."
+              )
+          if "-pooler" in actual_host:
+              raise SystemExit(
+                  "Refusing migration: Alembic requires a direct, non-pooled Neon endpoint."
+              )
+          if parsed.path.lstrip("/") != "neondb":
+              raise SystemExit("Refusing migration: expected database name is neondb.")
+
+          expected_tables = {
+              "checkpoint_blobs",
+              "checkpoint_migrations",
+              "checkpoint_writes",
+              "checkpoints",
+              "document_chunks",
+          }
+
+          with psycopg.connect(url, connect_timeout=15) as connection:
+              database_name, schema_name = connection.execute(
+                  "SELECT current_database(), current_schema()"
+              ).fetchone()
+              if database_name != "neondb" or schema_name != "public":
+                  raise SystemExit(
+                      "Refusing migration: unexpected database or schema."
+                  )
+
+              tables = {
+                  row[0]
+                  for row in connection.execute(
+                      """
+                      SELECT tablename
+                      FROM pg_catalog.pg_tables
+                      WHERE schemaname = 'public'
+                      """
+                  ).fetchall()
+              }
+              if tables != expected_tables:
+                  raise SystemExit(
+                      "Refusing migration: public schema does not match the "
+                      "known pre-migration snapshot of the isolated validation branch. "
+                      f"Observed tables: {sorted(tables)}"
+                  )
+
+              alembic_table = connection.execute(
+                  "SELECT to_regclass('public.alembic_version')"
+              ).fetchone()[0]
+              if alembic_table is not None:
+                  raise SystemExit(
+                      "Refusing migration: alembic_version already exists; "
+                      "this workflow is intended for the isolated branch's initial trial."
+                  )
+
+          print(
+              "Read-only target checks passed: exact expected host, direct endpoint, "
+              "database neondb, schema public, and expected pre-migration table set."
+          )
+          PY
+
+      # This is the only schema-mutating step in the workflow. It runs only
+      # after the manual confirmation and exact-target preflight above.
+      - name: Apply Alembic migrations to the isolated validation branch
+        env:
+          ENVIRONMENT: staging
+          MIGRATION_DATABASE_URL: ${{ secrets.MIGRATION_VALIDATION_DATABASE_URL }}
+        run: uv run alembic upgrade head
+
+      - name: Verify Alembic head and required ERP schema
+        env:
+          MIGRATION_DATABASE_URL: ${{ secrets.MIGRATION_VALIDATION_DATABASE_URL }}
+        run: |
+          uv run python - <<'PY'
+          import os
+          import sys
+
+          import psycopg
+          from alembic.config import Config
+          from alembic.script import ScriptDirectory
+
+          expected_heads = set(
+              ScriptDirectory.from_config(Config("alembic.ini")).get_heads()
+          )
+          with psycopg.connect(os.environ["MIGRATION_DATABASE_URL"]) as connection:
+              actual_heads = {
+                  row[0]
+                  for row in connection.execute(
+                      "SELECT version_num FROM alembic_version"
+                  ).fetchall()
+              }
+              required_tables = {
+                  "inventory_movements",
+                  "products",
+                  "inventory",
+                  "pharmacies",
+                  "suppliers",
+              }
+              existing_tables = {
+                  row[0]
+                  for row in connection.execute(
+                      """
+                      SELECT tablename
+                      FROM pg_catalog.pg_tables
+                      WHERE schemaname = 'public'
+                      """
+                  ).fetchall()
+              }
+
+          missing_tables = required_tables - existing_tables
+          if actual_heads != expected_heads:
+              print(
+                  "Migration validation failed: database revisions "
+                  f"{sorted(actual_heads)} do not match code heads "
+                  f"{sorted(expected_heads)}."
+              )
+              sys.exit(1)
+          if missing_tables:
+              print(
+                  "Migration validation failed: required ERP tables are missing: "
+                  f"{sorted(missing_tables)}."
+              )
+              sys.exit(1)
+
+          print(f"Migration validation passed at Alembic heads: {sorted(actual_heads)}")
+          print(f"Required ERP tables are present: {sorted(required_tables)}")
+          PY
