@@ -85,13 +85,13 @@ Legend: **Allow** = proposed permission; **No** = deny by default; **Decision ne
 | inventory.receive | No | Decision needed | Allow | Decision needed |
 | inventory.adjust | No | No | Allow | Decision needed |
 | inventory.transfer | No | Decision needed | Allow | Decision needed |
-| defectura.read | No | Allow | Allow | Decision needed |
-| defectura.create | No | Allow | Allow | Decision needed |
-| defectura.approve | No | No | Allow | Decision needed |
-| procurement.read | No | Decision needed | Allow | Decision needed |
-| procurement.create_order | No | Decision needed | Allow | Decision needed |
-| procurement.approve_order | No | No | Allow | Decision needed |
-| procurement.receive | No | Decision needed | Allow | Decision needed |
+| defectura.read (future Defectura workflow) | Decision needed | Decision needed | Decision needed | Decision needed |
+| defectura.create (future replenishment proposal) | Decision needed | Decision needed | Decision needed | Decision needed |
+| defectura.approve (future replenishment approval) | Decision needed | Decision needed | Decision needed | Decision needed |
+| procurement.read (future purchase-order lifecycle) | Decision needed | Decision needed | Decision needed | Decision needed |
+| procurement.create_order | Decision needed | Decision needed | Decision needed | Decision needed |
+| procurement.approve_order | Decision needed | Decision needed | Decision needed | Decision needed |
+| procurement.receive (PO-linked receiving only) | Decision needed | Decision needed | Decision needed | Decision needed |
 | suppliers.read (pharmacy-scoped supplier directory, if modeled) | No | Decision needed | Decision needed | Decision needed |
 | suppliers.manage (pharmacy-scoped supplier records, if modeled) | No | No | Decision needed | Decision needed |
 | patients.read | No | Allow* | No | No |
@@ -118,6 +118,8 @@ Legend: **Allow** = proposed permission; **No** = deny by default; **Decision ne
 
 
 **Supplier scope clarification:** the currently mounted supplier API is global and platform-superuser-only. The role-matrix entries above describe a possible future pharmacy-scoped supplier directory only; they do not authorize access to the existing global supplier API. A pharmacy-owned supplier relationship/resource and tenant-qualified queries must exist before any pharmacy role can receive these permissions.
+
+**Defectura and procurement implementation boundary:** Defectura is one Inventory workflow/entity, not a separate Inventory subdomain or a second navigation destination for automatic replenishment. Manual entry and automatic calculation are two ways to produce a replenishment proposal within that same workflow; automatic calculation is a system-generated proposal, not an approval or purchase order. The current mounted API evidence establishes low-stock visibility/reorder levels and a standalone POS goods-receipt operation, but does not establish Defectura request creation, review/approval, supplier purchase orders, PO approval, or PO-linked receiving. Therefore `defectura.*` and `procurement.*` remain future policy candidates with every role grant set to **Decision needed** (deny until approved and implemented). The standalone `POST /api/v1/pos/inventory/receive` maps to `inventory.receive`; it must not be represented as `procurement.receive` because it has no purchase-order, supplier, invoice, delivery-note or discrepancy linkage. Do not expose these permissions as evidence of an executable workflow.
 
 ## 5. Authorization invariants
 
