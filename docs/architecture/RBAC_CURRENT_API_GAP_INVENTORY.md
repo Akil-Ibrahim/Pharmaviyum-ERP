@@ -2181,3 +2181,87 @@ Some settings intentionally map compatible environment names, but the duplicated
 - Runtime penetration testing, exploit validation and security test execution: **not performed**.
 
 No application source changes, test executions, CI runs, migrations, database operations or deployments were performed as part of this review.
+
+## 20. Release Engineering & Software Supply-Chain Security
+
+Scope: static review of the main-branch GitHub Actions CI and Demo deployment workflows, Python dependency declarations/lockfile contract, application Dockerfile, Ansible backend Compose template and deployment tasks, and documented Demo/Production environment boundary. No workflow was triggered, no image was built or pulled, no registry artifact or attestation was inspected, no deployment was performed, and no runtime environment was queried. Findings describe repository configuration only.
+
+### 20.1 Positive controls confirmed
+
+- Python dependencies are exactly pinned in pyproject.toml and resolved through uv.lock; CI and container builds use uv sync --frozen.
+- Production and Demo are explicitly separated: FastAPI Cloud is the public synthetic-data Demo host; Production targets the pharmacy server through Ansible with per-site secrets and operational data.
+- The Demo deployment workflow is manually dispatched from main, requires a change reference and Demo-only credentials, waits for CI success for the exact source SHA, checks Demo schema compatibility read-only, and does not run Alembic migrations.
+- The Demo workflow verifies that the newly serving runtime reports the expected build SHA, staging environment, debug=false and CPython 3.15.0, then checks liveness, readiness, frontend routes, invalid-auth behavior and protected POS access.
+- Main CI gates image publication on unit tests, integration tests, security scan, RAG evaluation and CPython 3.15 compatibility.
+- The GHCR build tags the image with the source commit SHA, records OCI revision/source labels, and enables BuildKit provenance and SBOM generation.
+- Production Ansible pulls the application image using backend_image@backend_image_digest rather than a mutable application tag.
+- The Dockerfile uses a multi-stage Python/frontend build, installs runtime dependencies without dev groups, creates a non-root appuser, defines a healthcheck and deliberately keeps migrations out of application startup.
+- Python dependency security checks include pip-audit and Bandit; Ansible has a separate syntax/lint workflow.
+
+### 20.2 P2 — Docker base images and OS package inputs are not immutable
+
+The Dockerfile uses python:3.15.0-slim and oven/bun:1.4.4 tags rather than reviewed image digests. Both builder and production stages install OS packages after apt-get update without a dated/snapshotted repository or exact package-version contract. The Python builder also upgrades pip, setuptools and wheel without exact version pins before installing uv==0.13.8.
+
+The tags and package repository state can resolve to different underlying bytes on later builds even when the application source SHA and uv.lock are unchanged. This weakens byte-for-byte reproducibility and complicates forensic reconstruction of a historical image.
+
+Required correction: pin base images by reviewed digest, pin build tooling and OS packages or use a controlled snapshot, record the resulting image digest and build metadata, and define a deliberate update cadence with vulnerability review. Do not confuse an immutable final GHCR digest with a reproducible rebuild.
+
+### 20.3 P2 — Ansible database and cache images still use mutable tags
+
+The active Ansible backend Compose template uses pgvector/pgvector:pg16 and valkey/valkey:8-alpine (the latter can be overridden by REDIS_IMAGE). These are mutable tags, unlike the application image which Ansible pulls by digest.
+
+A later redeployment can therefore pull a different database/cache image without a corresponding reviewed infrastructure change. Database image drift is particularly sensitive because major-version and extension compatibility affect persistent volumes and recovery procedures.
+
+Required correction: pin PostgreSQL/pgvector and Valkey images by reviewed immutable digest, record exact versions, and require backup/restore and compatibility validation before changing database image digests. Validate the override path so it cannot silently bypass the pinning policy.
+
+### 20.4 P2 — GitHub Actions dependencies use version tags rather than immutable commit SHAs
+
+The inspected CI, Demo deployment and Ansible quality workflows reference third-party actions using tags such as actions/checkout@v4.4.0, astral-sh/setup-uv@v7, docker/build-push-action@v6, oven-sh/setup-bun@v2, docker/setup-buildx-action@v3, docker/login-action@v3, actions/setup-python@v5 and actions/upload-artifact@v4.
+
+Version tags are more specific than floating major tags, but they are still mutable Git references. The workflows do not establish an enforced full-SHA pinning policy or automated reviewed update mechanism in the inspected files.
+
+Required correction: pin each third-party action to a verified full commit SHA, retain the human-readable version in a comment, and use an automated dependency update process with review. Apply the same policy to reusable workflows and external action dependencies.
+
+### 20.5 P2 — Final container image is not scanned after build
+
+The CI security job runs pip-audit against the Python dependency environment and Bandit against selected application code. The build job subsequently publishes a multi-stage Docker image with an OS package layer and a frontend build/runtime payload. No container image vulnerability scan or policy gate is present after the image is built in the inspected CI workflow.
+
+pip-audit does not inventory Debian OS packages, base-image vulnerabilities or every artifact copied into the final image. SBOM generation is enabled, which is useful, but generating an SBOM is not the same as evaluating it against a vulnerability database or enforcing severity policy.
+
+Required correction: scan the exact built image digest (including OS packages and language ecosystems), define severity/exception/expiry policy, publish scan results with the image, and block promotion for unaccepted critical/high findings. Preserve a controlled exception process rather than silently suppressing findings.
+
+### 20.6 P2 — Image provenance is generated but deployment-time provenance verification is not established
+
+The GHCR build enables provenance and SBOM generation, and the Production Ansible task pins the application image by digest. However, the inspected Ansible deployment tasks pull the digest without a visible verification step that checks an approved signer/identity, source repository, source commit, build workflow and provenance predicate before deployment.
+
+A digest establishes which bytes are requested; by itself it does not establish who built those bytes or whether they came from the approved workflow.
+
+Required correction: define a trusted build identity and provenance policy, sign or attest the image using the approved identity, and verify the attestation against repository/workflow/ref policy before Ansible promotes the digest. Record the verified digest and source commit in release evidence.
+
+### 20.7 P2 — Demo and Production have different artifact paths and assurance levels
+
+The Demo workflow builds the React frontend, stages static assets and invokes the FastAPI Cloud CLI against the checked-out source SHA. Separately, main CI builds and publishes a GHCR image with provenance/SBOM, and the Ansible Production path deploys an image digest.
+
+The Demo workflow verifies the runtime source SHA and performs useful smoke checks, but the inspected workflow does not promote the same GHCR image digest that the Production path consumes. Thus source revision parity is checked, while byte-for-byte artifact parity between Demo and Production is not established.
+
+Required correction: document the intentional platform-specific build distinction. If artifact parity is a requirement, produce a single immutable release artifact and promote that artifact through compatible environments; otherwise retain explicit per-platform build attestations and compare source revision, dependency lock, build inputs and runtime contract.
+
+### 20.8 Release engineering readiness summary
+
+- Python dependency lock and frozen installation: **implemented**.
+- Demo/Production environment separation: **documented and enforced by workflow intent; actual deployed isolation not inspected here**.
+- Demo manual approval/change reference and exact-source CI gate: **implemented in workflow**.
+- Demo runtime commit/environment/Python/readiness smoke checks: **implemented in workflow; not executed in this audit**.
+- GHCR image tag by source SHA and digest output: **implemented**.
+- BuildKit provenance and SBOM generation: **enabled; registry attestations not inspected**.
+- Production application image deployment by digest: **implemented in Ansible task**.
+- Docker base-image digest pinning: **not implemented in inspected Dockerfile**.
+- OS package snapshot/version pinning: **not established**.
+- Ansible PostgreSQL/Valkey image digest pinning: **not implemented in inspected Compose template**.
+- Third-party GitHub Actions full-SHA pinning: **not implemented in inspected workflows**.
+- Final container image vulnerability scan: **not established in inspected CI workflow**.
+- Deployment-time provenance/signature verification: **not established in inspected Ansible deployment path**.
+- Demo/Production byte-identical artifact promotion: **not established; separate deployment artifact paths**.
+- Build, image scan, signature and deployment execution: **not performed in this audit**.
+
+No application source changes, test executions, CI runs, image builds, registry operations, migrations, database operations or deployments were performed as part of this review.
