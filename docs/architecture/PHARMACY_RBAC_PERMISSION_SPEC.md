@@ -84,7 +84,7 @@ Legend: **Allow** = proposed permission; **No** = deny by default; **Decision ne
 | inventory.read | Decision needed | Allow | Allow | Allow |
 | inventory.receive | No | Decision needed | Allow | Decision needed |
 | inventory.adjust | No | No | Allow | Decision needed |
-| inventory.transfer | No | Decision needed | Allow | Decision needed |
+| inventory.transfer (future transfer lifecycle) | Decision needed | Decision needed | Decision needed | Decision needed |
 | defectura.read (future Defectura workflow) | Decision needed | Decision needed | Decision needed | Decision needed |
 | defectura.create (future replenishment proposal) | Decision needed | Decision needed | Decision needed | Decision needed |
 | defectura.approve (future replenishment approval) | Decision needed | Decision needed | Decision needed | Decision needed |
@@ -197,6 +197,9 @@ Database migrations must follow the repository's approved migration workflow and
 | Pharmacy admin access to clinical data | Deny | Product + security |
 | Pharmacist clinical access | Allow only within pharmacy ownership and PHI policy | Clinical + security |
 | Cashier access to inventory quantities / POS lot lookup | Deny general `inventory.read` by default; decide whether checkout needs a narrowly scoped POS-only availability/lot lookup permission and minimum response fields. `pos.read` alone does not authorize the endpoint currently mapped to `inventory.read`. | Product + security |
+| Inter-pharmacy stock transfers | Keep `inventory.transfer` ungranted until a tenant-aware paired transfer lifecycle exists (request, approval, dispatch, receipt, cancellation, in-transit reconciliation and atomic paired movements). Ledger movement types alone are insufficient. | Product + security + operations |
+| Batch ownership and access | Keep `inventory.batch.read` denied to pharmacy roles until ProductBatch has explicit pharmacy ownership and tenant-qualified queries; distinguish ProductBatch from pharmacy Inventory lots. | Product + security |
+| Write-off and expiry disposal | Keep these operations unavailable to pharmacy roles until dedicated endpoints, role policy, reason codes, lot eligibility checks and audit tests exist. | Product + security + pharmacy operations |
 | Discounts, refunds and cancellations | Manager only initially; pharmacist exceptions require explicit thresholds | Product |
 | Pharmacy admin role assignment | Deny until the assignable-role allowlist and hierarchy are explicit; prohibit self-escalation and granting platform privileges or equal/higher authority. Keep `members.role.assign` at Decision needed until approved. | Product + security |
 | Existing membership backfill | No automatic privileged role assignment | Product owner |
