@@ -154,6 +154,38 @@ Security assessment:
 - Required tests: overlapping concurrent AI requests with different user/pharmacy/patient contexts; stream cancellation and exception cleanup; nested registry context restoration; attempts to call MCP server/client without context; and ingestion job cross-tenant access denial if tenant-visible job status is later introduced.
 
 
+
+### 4.9 RAG retrieval, patient scope, LangGraph checkpoints, and cache isolation
+
+Files reviewed on `main`: `src/pharmaviyum/ai/mortarium_rag/vector_store.py`, `pipeline.py`, `graph.py`, `schemas.py`, `src/pharmaviyum/ai/harness/cache.py`, `agent_harness.py`, `src/pharmaviyum/ai/harness/memory.py`, `src/pharmaviyum/ai/mortarium_rag/embeddings.py`, `src/pharmaviyum/api/v1/ai.py`.
+
+Verified positive controls:
+
+- `PgVectorStore.vector_search`, `bm25_search`, and `hybrid_search` require a positive integer `pharmacy_id` and an explicit `access_level` in `public|pharmacy|patient`. Patient-level retrieval additionally requires an exact positive `patient_id`; patient_id on non-patient access levels is rejected. No missing-filter fallback exists.
+- LangGraph RAG builds three distinct retrieval scopes: public, pharmacy, and (only when selected) exact patient. Every filter set includes the authenticated pharmacy ID. Unknown country/category filters are omitted rather than compared to SQL NULL.
+- Vector and BM25 retrieval receive the same metadata filters; hybrid search fuses those results. The current implementation does not implement parent expansion or source-record fetch as a second retrieval path; architecture documents correctly describe parent-child retrieval as target capability, not shipped behavior.
+- `CanonicalMetadata` requires pharmacy_id and requires patient_id for patient-level chunks; it rejects patient_id for public/pharmacy chunks. `PgVectorStore.upsert` validates every chunk before persistence and serializes canonical metadata so extension fields cannot override canonical fields.
+- Prompt exact-cache operations require both authenticated user and positive pharmacy ID. The exact cache key includes the prompt and full supplied context; the scoped context includes pharmacy, user, patient, prescription, jurisdiction/language and relevant policy/data versions.
+- Semantic response-cache reuse is opt-in and rejects patient- or prescription-specific contexts, force-fresh requests and cache-disabled requests. Its Redis sorted-set namespace is scoped by pharmacy and user (and additional context dimensions).
+- API session namespace is currently `mortarium-session:v4` and includes pharmacy, authenticated user, patient, controlled purpose and client session ID. Agent and RAG checkpoint IDs HMAC pseudonymize their input and include pharmacy/user/patient plus the API-scoped session ID. Thus purpose is included transitively through the v4 session ID, although it is not a separate field in the checkpoint HMAC payload.
+- The reviewed memory module states that API supplies the scoped session identifier; the checkpoint and cache controls do not depend on model-supplied tenant IDs.
+
+Remaining gaps / qualifications:
+
+1. `CachedEmbeddings` uses a global Redis namespace keyed by provider class, cache namespace and SHA-256 of input text; it is not partitioned by pharmacy/user/patient. It stores embedding vectors for 30 days, not raw prompt text. This is not a direct cross-tenant retrieval path, because vectors are only reused for identical input text and are not returned as RAG evidence, but it is a shared cache of derived representations of potentially sensitive queries. Confirm whether query embeddings can contain PHI in actual call paths; consider disabling query-embedding caching for patient-specific/PHI-bearing text or using a documented privacy-reviewed policy.
+2. The semantic prompt cache is correctly disabled for patient_id/prescription_id contexts by its helper, but its safety depends on `semantic_cache_safe` being set only by trusted server-side code. Do not accept that flag from client request payloads. Confirm the full call path and tests before enabling semantic reuse.
+3. `RAGPipeline._build_filter_sets` (legacy compatibility path) includes `country: None` when country is absent, unlike the LangGraph path which omits unknown country. SQL JSON text equality to a NULL bind will match no rows, causing a fail-closed false-negative rather than a cross-tenant leak. Align the compatibility path to omit absent optional filters.
+4. Checkpoint HMAC identifiers are pseudonymized, not encrypted; checkpoint payloads may still contain prompts and clinical evidence. Redis memory payloads and checkpoint payloads require separate transport, access-control, at-rest encryption, retention, backup-expiry and deletion controls.
+5. Existing session-isolation docs are inconsistent: `patient-session-isolation.md` describes v4 in its enforcement section but retains v3 in its compatibility paragraph; `docs/ai_architecture.md` and `docs/rag_architecture_audit.md` still describe v3. Runtime `api/v1/ai.py` currently uses v4. Documentation must be reconciled before treating it as the authoritative rollout/retention contract.
+6. Source-level inspection does not establish production Redis/PostgreSQL state or prove the full patient A → patient B → no-patient E2E sequence with real persistence. The docs explicitly mark staged E2E validation as outstanding. No claim of production activation or live data isolation is made here.
+
+Required regression/evidence:
+- Run the existing `tests/security/test_rag_tenant_isolation.py`, patient isolation and prompt-cache isolation suites against current HEAD.
+- Add/verify regression for legacy `RAGPipeline` missing-country behavior, semantic_cache_safe trust provenance, and embedding cache treatment of PHI-bearing query text.
+- Perform staged E2E with one reused client session across patient A, patient B, and no-patient requests in both sync and streaming modes, backed by real Redis memory and PostgreSQL checkpoint persistence.
+- Verify Redis ACL/TLS/at-rest policy, checkpoint table access grants, backups and retention separately from application-level HMAC namespacing.
+
+
 ## 5. Explicit non-actions
 
 This review made no application code changes, route changes, schema changes, migration changes, permission grants, manual SQL, merge, or deployment. The findings must be reviewed against the complete router graph and runtime configuration before implementation.
