@@ -290,7 +290,7 @@ The legacy administrative list is separately superuser-only and filters purchase
 
 The AI query routes correctly bind requests to an authorized pharmacy and, when a patient is selected, verify that patient is active and belongs to that pharmacy. The conversation namespace is HMAC-scoped to user, pharmacy, patient, purpose and supplied session ID. MCP context carries those same authorization dimensions.
 
-The remaining RBAC limitation is upstream role resolution: `CurrentUser.role` is a legacy account-level property, not a role assigned to a particular pharmacy membership. The AI tools endpoint and MCP registry filter tools using this legacy role. Therefore current tool filtering cannot express distinct cashier, pharmacist, manager and pharmacy-admin grants. Patient-purpose validation and tenant binding are valuable controls, but they do not replace a pharmacy-specific clinical permission check.
+The remaining RBAC limitation is upstream role resolution: `User.role` is a computed account-level property returning `admin` for every platform superuser and `pharmacist` for every other user. It is not a role assigned to a particular pharmacy membership. Consequently, every ordinary active account is presented to the AI tools endpoint and MCP registry as `pharmacist`; the registry's `required_roles=["pharmacist"]` check does not distinguish cashier, pharmacist, manager and pharmacy-admin grants. The patient-history tool itself does enforce exact selected-patient matching, a non-empty controlled purpose, same-pharmacy active-patient lookup, and metadata-only PHI audit with commit before returning data. These are meaningful controls, but because the upstream role is generic, they do not establish that the caller is a clinically authorized pharmacist. Patient-purpose validation and tenant binding are valuable controls, but they do not replace a pharmacy-specific clinical permission check.
 
 ### 7.4 Shared reference data vs tenant-owned data
 
@@ -300,7 +300,22 @@ Drug Catalog search and Medical Device search read shared reference records and 
 
 1. Should the general Dashboard return only non-identifiable operational metrics? Recommended default: yes.
 2. Which pharmacy role may access patient purchase history and patient medication panels? Recommended default: deny all roles until explicitly granted; likely clinical roles only, subject to policy approval.
-3. Should AI access to selected-patient context require a clinical permission in addition to membership and purpose? Recommended default: yes.
+3. Should AI access to selected-patient context require a clinical permission in addition to membership and purpose? Recommended default: yes. The current MCP tool's pharmacist-role gate is ineffective as a pharmacy-role distinction because every non-superuser account resolves to `User.role == "pharmacist"`.
 4. Which roles may review and approve imported drug reference records? Keep restricted to a designated catalog-governance capability; do not equate Pharmacy Admin with platform Superuser.
 5. Are shared drug and medical-device reference searches available to every authenticated pharmacy member? This can remain a shared read capability if confirmed.
 
+
+
+### 7.6 MCP patient-history tool: positive controls and remaining role flaw
+
+A separate source review of `src/pharmaviyum/ai/mcp/tools/patient_history.py` confirms stronger controls inside the tool than the generic AI route alone suggests:
+- the tool requires the trusted MCP context;
+- model-supplied `patient_id` must exactly equal trusted `selected_patient_id`;
+- a controlled purpose must be present;
+- the patient must be active and belong to the trusted pharmacy;
+- prescription and order counts are also constrained through the patient's pharmacy;
+- allow/deny decisions are written to `PHIAccessAudit`, and the audit commit occurs before patient data is returned.
+
+However, the tool declares `required_roles=["pharmacist"]`, while `User.role` is computed as `"admin" if is_superuser else "pharmacist"`. Therefore every non-superuser account passes the legacy pharmacist role filter. The tool's role check is not evidence that a user has been assigned the pharmacist role in the selected pharmacy. This is the precise distinction the new membership-role RBAC model must address.
+
+Do not misclassify the MCP patient-history tool as lacking selected-patient binding or audit; those controls are present in the inspected source. The confirmed gap is the lack of pharmacy-specific role/permission resolution at the API-to-MCP boundary.
