@@ -13,7 +13,7 @@ This inventory records concrete authorization patterns found in the current sour
 
 File: `src/pharmaviyum/api/v1/endpoints/prescriptions.py`
 
-The placeholder router is included by the legacy `src/pharmaviyum/api/v1/router.py` aggregator. However, the runtime application imports `api_v1_router` from `src/pharmaviyum/api/v1/__init__.py` in `src/pharmaviyum/main.py`; that runtime aggregator does not include `prescriptions_router`. Therefore these handlers are present in source but are not confirmed as mounted in the current application. See section 3.2. Its current handlers:
+The placeholder router is included by the legacy `src/pharmaviyum/api/v1/router.py` aggregator. However, the runtime application imports `api_v1_router` from `src/pharmaviyum/api/v1/__init__.py` in `src/pharmaviyum/main.py`; that runtime aggregator does not include `prescriptions_router`. Therefore these handlers are present in source but are not mounted by the reviewed runtime aggregator. See section 3.2. Its current handlers:
 
 - `GET /prescriptions/` has no user/authentication dependency and returns a placeholder empty list.
 - `GET /prescriptions/{prescription_id}` has no user/authentication dependency and always returns 404.
@@ -123,3 +123,77 @@ Implications:
 - Add a regression test asserting critical expected routes are mounted exactly once and retired/unmounted routes are absent.
 - Resolve the duplicated-prefix issue only as a separately reviewed routing change; do not combine it with RBAC policy implementation without tests.
 
+
+
+## 4. Runtime authorization findings by mounted domain
+
+This section reviews the package-level router actually mounted by `src/pharmaviyum/main.py`. It is a source audit, not a substitute for an instantiated FastAPI route-table test.
+
+### 4.1 POS
+
+File: `src/pharmaviyum/api/v1/pos.py`
+
+- The reviewed product search, lot lookup, goods receipt, and checkout handlers accept `CurrentUser` and call `require_pharmacy_tenant` using the requested or payload pharmacy ID.
+- This establishes authentication and active membership for ordinary users, but it does not distinguish action permissions such as `pos.read`, `pos.checkout`, or `inventory.receive`.
+- The same broad membership gate currently allows any active member to reach these operations unless a separate check exists in the handler/service path. No role/action check was found in the reviewed handlers.
+- Tenant checks must remain server-side and must be paired with row-level pharmacy constraints for every resource read or mutated.
+
+### 4.2 Products / Drug Catalog
+
+File: `src/pharmaviyum/api/v1/products.py`
+
+- Product search, list, and detail require an authenticated active user.
+- Product create, update, and deactivate require `CurrentSuperuser`.
+- These product queries are global catalog queries and do not resolve a selected pharmacy tenant.
+- This may be appropriate for a shared reference catalog, but it is not sufficient for pharmacy-specific assortment, pricing, visibility, or catalog-review workflows. Those distinctions must be decided explicitly before mapping permissions.
+
+### 4.3 Patients / PHI
+
+File: `src/pharmaviyum/api/v1/endpoints/patients.py`
+
+- List, statistics, phone lookup, patient detail, and visit recording require an active user and call `resolve_pharmacy_scope`.
+- Patient create, update, and delete currently require `get_current_active_superuser`; they are not yet mapped to pharmacist/manager action permissions.
+- AI profile access checks active membership and patient ownership in the selected pharmacy, rejects platform superusers through this endpoint, and records allow/deny PHI audit events with a controlled purpose.
+- The current endpoint set therefore has a mix of tenant-scoped reads, superuser-only mutations, and a separately governed AI profile path. Do not flatten these into one generic `patients.*` permission.
+
+### 4.4 Orders / legacy purchase workflow
+
+File: `src/pharmaviyum/api/v1/orders.py`
+
+- Order creation and status mutation require `CurrentSuperuser`.
+- Order reads require an active user and resolve pharmacy scope, then constrain the order through its owning patient.
+- The query helpers only add a pharmacy predicate when a scope is resolved. For ordinary users, `resolve_pharmacy_scope` requires a sole active membership or an explicit authorized pharmacy; this behavior must be preserved.
+- This is a legacy order/patient-purchase workflow and should not be confused with the newer POS Sale/Payment domain when defining permission names.
+
+### 4.5 Users
+
+File: `src/pharmaviyum/api/v1/users.py`
+
+- Self avatar read/update/delete require `CurrentUser`.
+- Listing, creating, and reading other user accounts require `CurrentSuperuser`.
+- There is no pharmacy-scoped membership/role administration API in this router. Do not infer that user creation grants pharmacy membership or a pharmacy role.
+
+### 4.6 Pharmacy domain: inventory, suppliers, prescriptions and related resources
+
+File: `src/pharmaviyum/api/v1/pharmacy_entities.py`
+
+- This router exposes multiple pharmacy-domain resources under one router, including pharmacy, supplier, inventory, batch, prescription, and ERP integration operations.
+- The reviewed inventory adjustment and inventory deletion handlers require `CurrentSuperuser`, and adjustment loads the inventory row by ID before applying the movement.
+- Other handlers in this module must be audited individually for their exact dependency and whether the target row is constrained to the caller's authorized pharmacy. A router-level tag or the presence of a `pharmacy_id` field is not proof of tenant isolation.
+- The permission map must be endpoint/action-specific and include object-level tenant checks; avoid assigning one broad permission to the entire router.
+
+### 4.7 Current tenant helper limitation
+
+File: `src/pharmaviyum/modules/auth/tenant.py`
+
+- `require_pharmacy_tenant` treats `is_superuser` as a bypass for any requested pharmacy ID.
+- `resolve_pharmacy_scope` allows a superuser to remain global when no pharmacy ID is supplied.
+- This is a tenant-scope decision, not an action permission. Platform/support access must be designed separately from pharmacy business roles, with purpose-bound and audited access for PHI.
+
+## 5. Router composition clarification
+
+The package-level `api_v1_router` is the router mounted directly by `main.py`; it includes the patient router and several domain routers. It does not include `prescriptions_router` or `feature_flags_router` from the endpoints package. The separate `api/v1/router.py` aggregator is not the runtime router imported by `main.py`.
+
+The top-level helper in `src/pharmaviyum/api/__init__.py` would add an additional `/api/v1` prefix, but `main.py` does not call that helper in the reviewed entrypoint. Therefore do not describe the legacy aggregator's possible duplicate-prefix behavior as a current runtime defect. The confirmed concern is divergent, unused router composition that can mislead route audits and future maintenance.
+
+Before implementation, add a route-table test against the deployment app entrypoint and assert each expected method/path is registered exactly once, with an explicit expected set for intentionally unmounted routers.
