@@ -2365,3 +2365,90 @@ Required correction: document per-environment backup ownership, encrypted backup
 - Database connections, migrations, integration tests, load tests and restore drills: **not run**.
 
 No application source changes, test executions, CI runs, database connections, migrations, data writes, backup operations or deployments were performed as part of this review.
+
+## 22. System Architecture, Domain Boundaries & Integration Consistency
+
+Scope: static review of the active FastAPI entry point and runtime router aggregator on main, the legacy router aggregator, both mounted authentication route modules, AI dependency composition, frontend package manifest and API-client generation script, and Central/Edge sync ingress/dispatcher contracts. This is a source-level architecture review only. No import graph tooling, application startup, OpenAPI generation, frontend build, Celery worker startup, network integration or end-to-end workflow was executed. Absence claims are limited to the inspected paths and repository search results.
+
+### 22.1 Positive controls confirmed
+
+- The runtime is a single FastAPI application entry point in src/pharmaviyum/main.py, which mounts the versioned API router, health router, middleware, lifespan-managed infrastructure and static frontend. This is consistent with a modular-monolith deployment rather than a fleet of independently deployed domain microservices.
+- The active API router aggregator is explicitly src/pharmaviyum/api/v1/__init__.py and imports domain routers for AI, drug catalog, dashboard, ingestion, monitoring, medical devices, orders, patients, patient purchases, POS, sync, pharmacy entities, products and users.
+- AI dependency construction is centralized in src/pharmaviyum/ai/dependencies.py. AIComponents owns the composition of LangGraphRAG, AgentHarness, MCPClient, checkpointer, evaluator and ingestion orchestrator, while the FastAPI lifespan initializes shared infrastructure once.
+- AI request state has a separately documented patient-scoped HMAC namespace design, including an explicit no-patient scope and purpose-bound v4 namespace. The implementation/documentation explicitly avoids treating Redis memory or checkpoint IDs as global session identifiers.
+- The Edge outbox dispatcher emits a versioned event envelope with immutable event ID, edge node, event type/schema version, aggregate identity/version and occurrence time. It authenticates to Central over HTTPS using enrolled node credentials, uses lease fencing and preserves per-aggregate ordering.
+- Central sync ingress derives pharmacy identity from authenticated Edge node enrollment, rejects node identity mismatch, durably stores the inbox event and rejects reuse of an event ID with different content. The endpoint explicitly documents that accepted means durable receipt, not domain application.
+- The repository has architecture decision records for Central/Edge offline-first design and patient-scoped AI state, plus a readiness roadmap that states the modular-monolith-first strategy and tenant/patient isolation invariants.
+
+### 22.2 P1 — Two authentication route implementations are mounted in the same runtime API
+
+The active aggregator imports and mounts both src/pharmaviyum/api/v1/auth.py and src/pharmaviyum/modules/auth/routes/login.py. The former defines /api/v1/auth/register, /api/v1/auth/token and /api/v1/auth/me, uses src/pharmaviyum.config, src.pharmaviyum.db.session.get_db and the legacy OAuth2/JWT helpers. The modular router defines /auth/login/access-token, /auth/refresh, /auth/logout, password recovery and reset, uses src.pharmaviyum.core.config, src.pharmaviyum.shared.core.database.get_session and a separate token helper set; it is included with prefix /api/v1, producing /api/v1/auth/... paths.
+
+These are not merely two files with one inactive implementation: both are mounted. They expose overlapping authentication responsibilities through different token contracts, session dependencies, settings modules and lifecycle behavior. The route sets are not identical, so clients may obtain different token shapes and encounter different refresh/revocation semantics depending on endpoint used.
+
+Required correction: define one canonical authentication domain and API contract; explicitly deprecate/remove or isolate the legacy route set; consolidate token issuer/audience/expiry, password policy, refresh rotation/revocation, user lookup and DB session dependencies; add OpenAPI route inventory and compatibility tests proving only intended endpoints are mounted. Do not migrate clients until token compatibility and existing sessions are accounted for.
+
+### 22.3 P1 — Runtime router and legacy router aggregator create two competing API composition sources
+
+main.py imports api_v1_router from src/pharmaviyum/api/v1/__init__.py. A separate src/pharmaviyum/api/v1/router.py builds api_router/system_router and includes different endpoints such as debug, feature flags and prescription placeholders. It is not imported by the inspected runtime entry point. The legacy file therefore does not describe the routes actually mounted by the application.
+
+This creates a maintenance hazard: contributors can add a route to the legacy aggregator and assume it is live, or update one aggregator while leaving the runtime router unchanged. Prior static review also found endpoint behavior differs between the legacy prescription placeholder and the runtime pharmacy_entities prescription handlers.
+
+Required correction: retain one authoritative router composition module, remove or clearly quarantine obsolete aggregators, and add a test that inspects the runtime app route table against an explicit expected route manifest. Generate API documentation only from the runtime-mounted app.
+
+### 22.4 P1 — Multiple configuration and database-session namespaces weaken domain ownership
+
+The active auth route modules import settings from both src.pharmaviyum.config and src.pharmaviyum.core.config, and database sessions from src.pharmaviyum.db.session and src.pharmaviyum.shared.core.database. The AI dependency layer separately uses src.pharmaviyum.database.AsyncSessionLocal. These distinct namespaces may be intentional compatibility boundaries, but the inspected active paths demonstrate multiple configuration/session entry points in one application.
+
+This raises the risk of different DATABASE_URL, SECRET_KEY, token issuer/audience, transaction commit behavior or pool settings being consumed by different domains. It also complicates dependency overrides in tests and makes it harder to reason about one request's transaction boundary.
+
+Required correction: define one canonical application Settings object and one canonical async session factory/dependency contract, then migrate domains incrementally with explicit compatibility adapters. Add startup assertions that critical settings agree during transition and tests that all mounted routes use the intended session factory and rollback/commit semantics. Do not blindly replace imports before comparing current settings models and database lifecycles.
+
+### 22.5 P2 — API client generation is not a reproducible contract pipeline in the inspected frontend workflow
+
+scripts/generate-api-client.sh checks a local /health endpoint on localhost:8000, then runs npx openapi-typescript-codegen against the live /openapi.json URL and writes to frontend/shadcn-admin/src/client. The frontend package manifest inspected does not declare openapi-typescript-codegen. The script does not pin the generator version, capture an OpenAPI artifact, validate a diff, or prove generated output is part of the frontend build/CI contract. A previous repository audit recorded that the expected generated client directory and POS service/model files were absent from the inspected branch; that state was not revalidated as a separate full-tree inventory in this section.
+
+This makes client generation dependent on a developer's local running backend and an unpinned npx package resolution. API changes can therefore drift from TypeScript consumers without a deterministic CI failure.
+
+Required correction: pin the generator as a dev dependency or tool, export OpenAPI from the exact source revision in CI, generate into a stable tracked or build artifact location, fail CI on uncommitted generated diff, and add contract tests for high-risk POS, inventory, auth and sync endpoints. Keep generated files machine-owned; do not hand-edit them.
+
+### 22.6 P2 — Frontend package dependencies are range-based and API ownership is not visible from the manifest
+
+The frontend package manifest uses caret ranges for many runtime and development dependencies, while the inspected script invokes an API generator through npx rather than a declared package dependency. A lockfile can make installs reproducible when frozen installation is consistently enforced, but the manifest alone does not prove that all frontend CI/deployment paths use the same lockfile and frozen mode. The package manifest also does not itself establish which feature owns each API client or how domain DTOs are mapped into UI models.
+
+Required correction: verify the frontend lockfile is committed and every build path uses frozen lockfile installation; declare all code-generation tools; define domain-owned API modules and typed mapping boundaries; and prevent UI components from embedding transport-specific request logic for POS, inventory and clinical workflows.
+
+### 22.7 P2 — Modular-monolith domain boundaries are visible in router names but not fully established as dependency rules
+
+The runtime aggregator exposes domain-oriented routers, and the AI composition root centralizes AI services. However, this static review did not establish enforced package boundaries preventing POS from importing unrelated domain internals, API modules from directly depending on persistence models across domains, or shared modules from becoming a dumping ground. No import-linter/architecture test or dependency graph was executed or confirmed in the inspected workflow paths.
+
+Required correction: define domain ownership and allowed dependency direction (API → application/use-case → domain ports; infrastructure adapters implement ports), keep cross-domain access behind explicit application contracts, and enforce rules with import-linter or equivalent CI architecture tests. Do not split into microservices until independent scaling, deployment or security boundaries justify the operational cost.
+
+### 22.8 P2 — Central/Edge sync is a transport and durable-receipt capability, not a complete replicated domain
+
+Edge outbox delivery and Central inbox receipt are implemented, including event identity, schema version, aggregate version and idempotent receipt. The current Central ingress explicitly stops after durable receipt; no Central domain-event consumer, inventory/finance application, aggregate gap recovery or end-to-end reconciliation was established in the reviewed implementation. This is consistent with the separate Central Inbox Consumer Readiness document and must not be represented as completed two-way synchronization.
+
+Required correction: keep the transport contract separate from domain projection/application; implement a durable consumer lifecycle (received → validated → pending/order-gap → applied/rejected/quarantined), schema compatibility policy, per-aggregate checkpointing, replay and reconciliation. Until then, label Central sync as durable ingress/receipt, not full inventory or financial synchronization.
+
+### 22.9 P2 — AI, Redis, Celery and API lifecycles are composed but not proven as independently scalable domain services
+
+The FastAPI lifespan initializes Redis and AIComponents within the web process. AIComponents composes the agent, RAG, MCP, checkpointer and ingestion orchestrator. This is a valid modular-monolith composition approach, but the inspected files do not establish separate scaling/health ownership for AI execution, ingestion workers and API request serving. A web process can therefore have a broad startup dependency surface, while worker-specific lifecycle and failure isolation need separate verification.
+
+Required correction: keep the monolith until metrics justify extraction, but define explicit lifecycle/readiness contracts per workload: web API, AI execution, Celery ingestion/dispatch, Redis and PostgreSQL. Ensure slow or optional AI initialization does not accidentally prevent unrelated pharmacy operations where product policy allows degraded operation; keep critical security/data dependencies fail-closed. Validate worker bootstrap and shutdown paths independently.
+
+### 22.10 Architecture readiness summary
+
+- Single FastAPI deployment with domain-oriented routers: **implemented**.
+- One authoritative runtime router aggregator: **not achieved; a separate legacy aggregator remains**.
+- Single authentication route/token contract: **not achieved; two auth implementations are mounted**.
+- Single canonical settings/session dependency boundary: **not established across inspected domains**.
+- AI composition root and shared lifespan initialization: **implemented**.
+- Patient-scoped AI session/checkpoint design: **documented and implemented in reviewed paths; runtime E2E not executed here**.
+- Frontend OpenAPI client generation: **script exists; pinned/reproducible CI contract not established**.
+- Enforced modular-monolith dependency rules: **not established in inspected workflows**.
+- Versioned Edge outbox and durable Central inbox receipt: **implemented in reviewed paths**.
+- Central domain-event application and reconciliation: **not established**.
+- Separate workload lifecycle/readiness contracts: **not fully established by this review**.
+- Application startup, OpenAPI generation, frontend build, Celery startup, architecture tests and end-to-end sync: **not executed**.
+
+No application source changes, test executions, CI runs, database connections, migrations, frontend builds, worker starts, sync operations or deployments were performed as part of this review.
