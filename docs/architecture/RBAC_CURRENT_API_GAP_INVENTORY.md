@@ -1006,3 +1006,101 @@ The current specification is a starting vocabulary, not yet a complete route-lev
 6. Keep platform operations, Edge nodes, payment providers, workers and MCP invocations as distinct principal classes. A permission string does not convert a machine principal into a human pharmacy role.
 
 No proposed vocabulary addition in this section is approved for assignment or enforcement. Product, clinical and security owners must resolve the policy decisions before implementation.
+
+
+## 9. RAG document lifecycle and data integrity
+
+Source baseline: targeted source review of `main`, including the Celery ingestion task, the separate `IngestionOrchestrator`, `PgVectorStore`, the deduplication/versioning managers, the pgvector migration and the available RAG contract tests. This is a static source review; no database, worker, or integration test was executed.
+
+### 9.1 Ingestion paths are not lifecycle-equivalent
+
+The repository contains two distinct ingestion implementations:
+
+- The active API ingestion path dispatches `src/pharmaviyum/ai/mortarium_rag/ingestion/tasks.py::ingest_document`. It loads, preprocesses, stamps tenant/source metadata, chunks, embeds and persists through `PgVectorStore.upsert()`.
+- `IngestionOrchestrator.ingest_file()` additionally invokes `DocumentDeduplicator` and `DocumentVersionManager`.
+
+The active Celery task does not invoke either lifecycle manager. Its metadata stamping reads a supplied `version` value but does not assign a managed `version_number` or `version_status`; it also does not run duplicate filtering. Therefore the existence of deduplication/versioning classes does not establish those guarantees for the API's active ingestion path.
+
+**Required decision:** designate one production ingestion implementation and make every supported entry point use the same tenant authorization, provenance, idempotency, deduplication, version activation, failure recovery and deletion contract. Until then, treat lifecycle guarantees in the Celery path as absent.
+
+### 9.2 Deduplication: tenant predicate exists, but fuzzy mode is not fuzzy
+
+Positive control:
+- `DocumentDeduplicator._strict_dedup()` compares exact `content_hash` values and includes `pharmacy_id` in the SQL predicate. A matching hash in another pharmacy is not considered a duplicate by this query.
+- `DocumentPreprocessor` calculates a SHA-256 content hash from preprocessed/redacted content.
+
+Gaps:
+1. `DedupStrategy="fuzzy"` currently delegates to `_strict_dedup()`; it performs no embedding-similarity or other near-duplicate comparison.
+2. Deduplication is read-then-filter, not protected by a database uniqueness constraint or transaction-level serialization. Concurrent ingestion requests can both observe no existing hash and both insert.
+3. The deduplication query is not part of the active Celery task.
+4. The deduplication helper's `get_duplicate_stats()` is global and does not accept a pharmacy scope. Do not expose its output to pharmacy users or use it as tenant-scoped reporting without an explicit authorization boundary.
+5. The current chunk table has a unique constraint on `(document_id, chunk_index)`, but no uniqueness constraint on tenant plus document content hash.
+
+**Required controls:** define the intended scope (same pharmacy only versus explicitly shared public reference documents), use a canonical source/document identity, make duplicate decisions concurrency-safe, and test both same-tenant deduplication and cross-tenant non-interference. Do not silently deduplicate across pharmacies.
+
+### 9.3 Versioning and activation are incomplete
+
+The separate `DocumentVersionManager` scopes `get_next_version()`, `archive_old_versions()`, `rollback_to_version()` and `get_version_history()` by both `source` and `pharmacy_id`. This is a useful tenant predicate.
+
+However:
+1. `get_next_version()` performs `MAX(version_number) + 1` without an evident row lock, advisory lock or unique version constraint. Concurrent ingestions for the same pharmacy/source can select the same version.
+2. `IngestionOrchestrator` archives old versions before chunking, embedding and persistence of the new version have completed. Because `archive_old_versions()` commits independently, a later failure can leave the previous version archived without a successfully stored replacement.
+3. `rollback_to_version()` archives currently active chunks before checking whether the target version exists. A nonexistent target can therefore leave the source with no active chunks; the method does not fail closed on a zero-row restore.
+4. The version manager updates chunk metadata directly; there is no separate document-level lifecycle record or transaction coordinating version creation, chunk replacement and activation.
+5. The active Celery ingestion path does not call the version manager.
+
+**Required controls:** stage a new version without deactivating the current one; validate completeness and provenance; atomically activate the new version and archive the previous version; serialize version allocation; and make rollback validate the target before changing active state. A failed ingest must leave the last known-good version searchable.
+
+### 9.4 Retrieval does not enforce active-version status by default
+
+`PgVectorStore` builds retrieval predicates from the supplied metadata filters and validates the pharmacy/access-level boundary. It does not independently add `version_status = active` or exclude archived/deleted chunks. The version manager writes `version_status`, but that metadata is not, by itself, a retrieval control.
+
+Consequently, archived or deleted-status chunks can remain eligible for retrieval unless every caller supplies a correct status filter. The current code does not establish a single mandatory active-document predicate shared by vector and BM25 search.
+
+**Required controls:** enforce active status centrally in the vector store/query contract, apply the same predicate to vector, BM25 and hybrid retrieval, and test that archived/deleted versions cannot appear even when a caller omits the status filter. Define explicit behavior for documents with missing legacy status metadata before migration/backfill.
+
+### 9.5 Upsert does not reconcile a document's complete chunk set
+
+`PgVectorStore.upsert()` inserts or updates rows using `ON CONFLICT (document_id, chunk_index)`. It updates matching chunk content/metadata/embedding/token count but does not remove rows whose chunk indexes are no longer present in a replacement document.
+
+If a previously indexed document becomes shorter or its chunking strategy changes, trailing chunks from the old content can remain in the table. Those stale chunks may still be retrieved and cited as if they belong to the current document version.
+
+**Required controls:** replace a document's complete chunk set atomically (or use immutable version-specific document IDs and activate the new version only after all chunks are stored). Add regression tests for shorter replacements, changed chunk boundaries, partial batch failure and retry/idempotency.
+
+### 9.6 Delete, purge and reindex contracts are not established
+
+The reviewed `PgVectorStore` exposes upsert and retrieval operations but no tenant-checked document deletion/replacement API. The migration downgrade intentionally retains `document_chunks`, which is appropriate for a non-destructive schema rollback but does not implement a governed document deletion workflow.
+
+The inspected code does not establish:
+- a pharmacy-scoped soft-delete operation that immediately excludes a document from retrieval;
+- a separately authorized hard-purge workflow with audit and retention checks;
+- cascade handling for every chunk belonging to a document/version;
+- safe reindexing that cannot expose a partial new index or erase the last good version;
+- idempotent retry behavior for deletion and reindex jobs.
+
+**Required controls:** separate logical retirement from irreversible purge; require an authorized tenant and immutable actor/job provenance; apply exact pharmacy + document identity predicates to every mutation; audit the decision; and test that deleting/reindexing one pharmacy's document cannot alter another pharmacy's chunks.
+
+### 9.7 Source provenance and ingestion trust
+
+The active worker stamps `pharmacy_id`, source, version, access level, country, language and document type from its configuration/document context before persistence. This protects those canonical fields from being accepted solely from arbitrary source metadata at that step. However, metadata stamping does not prove that the source is authentic, current, approved for the jurisdiction, or clinically valid. The current chunk schema also lacks a first-class document registry with source publisher, source URL/identifier, content digest, approval state, effective interval, ingestion actor, review actor and supersession relationship.
+
+The Celery worker validates a positive pharmacy ID and tenant-scoped object-storage key, but it relies on the dispatch/broker boundary for the assertion that the supplied pharmacy was authorized. This review does not establish an independently verifiable actor authorization grant inside the worker.
+
+**Required controls:** persist source provenance and approval state separately from untrusted document metadata; distinguish uploaded, quarantined, reviewed, approved, superseded and withdrawn states; retain source digest and jurisdiction/effective dates; and pass a verifiable tenant-scoped job authorization envelope to background execution.
+
+### 9.8 Test coverage and release gates
+
+The inspected RAG contract/security tests cover important metadata and retrieval-filter validation, but the targeted search did not identify dedicated tests proving the full lifecycle behavior above: concurrent deduplication/version allocation, cross-pharmacy dedup isolation, stale trailing-chunk removal, active-only retrieval, failed replacement rollback, missing-target rollback, tenant-scoped deletion, hard-purge authorization, and Celery-path lifecycle parity.
+
+Before treating document lifecycle as production-safe, add database-backed tests for:
+1. Two pharmacies ingesting identical content without cross-tenant suppression or mutation.
+2. Concurrent ingestion of the same source within one pharmacy.
+3. Shorter-document replacement and chunker-version changes without stale chunks.
+4. Active-only retrieval across vector, BM25 and hybrid paths.
+5. Failed embedding/storage leaving the previous version active.
+6. Rollback to an existing and a nonexistent version.
+7. Soft delete, authorized purge, retries and idempotency.
+8. Forged or mismatched tenant/job authorization at the worker boundary.
+9. Reindex and deletion isolation across two pharmacies.
+
+No application source changes, database operations, migrations, CI runs or deployments were performed as part of this review.
