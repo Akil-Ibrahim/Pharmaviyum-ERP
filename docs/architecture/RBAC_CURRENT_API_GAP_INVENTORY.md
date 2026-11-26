@@ -1676,3 +1676,124 @@ No test suite was executed as part of this static audit. Test presence is not ev
 - Full end-to-end pharmacist-reviewed clinical answer benchmark: **not demonstrated**.
 
 No application source changes, CI runs, migrations, database operations or deployments were performed as part of this review.
+
+## 16. AI API Response Contract & Streaming Consistency
+
+Scope: static review of the active main implementations of the FastAPI AI router, AgentHarness sync/stream paths, PharmacistAgent graph event mapping, PromptCache and AgentResponse/StreamingEvent schemas. This section records code-level contract findings only; no HTTP integration test, browser SSE test or deployed runtime verification was performed.
+
+### 16.1 Positive controls confirmed
+
+- Both POST endpoints validate the selected pharmacy tenant and validate that a selected patient is active and belongs to that pharmacy.
+- Both endpoints derive the same HMAC-scoped session namespace from user, pharmacy, patient, purpose and client session ID.
+- MCP authorization context is set around the sync execution and inside the streaming generator, then reset in a finally block.
+- The synchronous route declares the canonical AgentResponse Pydantic response model.
+- AgentHarness streaming has explicit start/status/answer/complete/error event concepts and records cancellation/error status in its OpenTelemetry span.
+- Both sync and streaming harness paths execute input preprocessing, output post-processing and the post-processing citation-ID allowlist check on cache misses. Cached responses are returned from the cache path without repeating generation.
+
+### 16.2 P1 — FastAPI SSE frames use escaped backslash-n sequences instead of actual line delimiters
+
+In src/pharmaviyum/api/v1/ai.py, the streaming endpoint yields strings containing the Python source literal `\\n\\n` for event separators and for the [DONE] frame. In a Python string literal, the doubled backslashes produce literal backslash-plus-n characters, not newline characters. Server-Sent Events require each event to be terminated by an actual blank line.
+
+The same delimiter is used for the exception event. Consequently, the endpoint's emitted body is not correctly framed as standard SSE from the inspected source. This is a direct protocol-level defect, not merely a frontend formatting preference.
+
+**Required correction:** use actual newline characters (Python source literal `\n\n`) in the emitted SSE frame, set/retain the text/event-stream media type, and add an HTTP-level test that consumes the response body and verifies multiple independently parseable frames, JSON payloads and the terminal [DONE] frame. Include error and client-disconnect cases.
+
+### 16.3 P1 — Streaming omits the generated session ID
+
+QueryRequest.session_id is optional. The sync AgentResponse returns the raw session ID, including a newly generated ID when the client omitted it. The streaming endpoint generates the same kind of ID internally, but its start event contains only trace_id; no stream event returns the raw session ID.
+
+A client that omits session_id on the first streaming request therefore cannot learn the server-generated conversation ID from the response and cannot reliably continue the same conversation on a later request.
+
+**Required correction:** include the opaque client-facing session ID in the first streaming event (and define the same response contract for sync and stream). Do not expose the internal HMAC-derived checkpoint/session identifier.
+
+### 16.4 P1 — Sync and streaming cache payloads are not symmetric for MCP tool results
+
+The sync AgentHarness.run cache payload stores answer, warnings, tool_results, rag_sources and model_used. The streaming _astream_events cache payload stores answer, warnings, rag_sources and model_used, but omits tool_results.
+
+The streaming cache-hit event derives tool_result_count from cached tool_results, so entries written by streaming report zero tool results. More importantly, if a streaming request populates the exact cache and a later sync request hits that entry, the sync harness returns an empty tool_results list by default. The FastAPI sync response then omits the MCP source records and tool-call records that were used to produce the answer.
+
+The cache key is shared between the sync and streaming harness paths, so this is a cross-path data-contract inconsistency.
+
+**Required correction:** define one canonical versioned cache payload and use the same serializer/deserializer in sync and streaming. Preserve tool result provenance and tool-call metadata where appropriate, and add round-trip tests for sync-write/stream-read and stream-write/sync-read.
+
+### 16.5 P1 — Streaming final answer omits MCP tool-result sources
+
+On a streaming cache miss, the harness collects executor tool_results but the final answer event exposes only rag_sources in its sources field. The sync API constructs its sources list from both successful tool results and RAG chunks.
+
+As a result, an answer based partly or primarily on MCP data can have tool results in the sync response but no equivalent tool provenance in the streaming answer event. The stream only reports a tool_result_count, which is not enough to identify the source records or inspect their provenance.
+
+**Required correction:** define a common source envelope for RAG chunks and tool results, including source type, stable ID, bounded content/summary and metadata. Return the same provenance contract in the sync response and the terminal streaming answer event. Keep tool-call execution records separate from source citations where their semantics differ.
+
+### 16.6 P2 — Sync response drops the harness cache-hit flag
+
+AgentHarness.run returns cache_hit=True on a cache hit and cache_hit=False on a miss. The FastAPI query_agent route constructs AgentResponse without passing cache_hit, whose schema default is False. Therefore the synchronous API reports cache_hit=False even when the harness returned a cached response.
+
+The streaming answer event does expose cache_hit. The two API modes therefore disagree on an operationally useful response field.
+
+**Required correction:** pass the harness cache_hit value into AgentResponse and test both cache-hit and cache-miss cases for sync and streaming.
+
+### 16.7 P1 — Confidence and safety_score are hard-coded heuristics, not evaluated quality signals
+
+The sync endpoint assigns confidence=0.9 and safety_score=0.95 when the warnings list is empty, and confidence=0.7 and safety_score=0.8 whenever any warning exists. These values are not calculated by a calibrated model, clinical verifier or risk engine. A warning-free answer is not necessarily clinically correct or safe, and a warning may describe a non-critical operational condition.
+
+The AgentResponse.is_safe property treats safety_score >= 0.9 and absence of critical warnings as safe. Because the endpoint maps every warning string to severity="warning", it does not preserve any critical severity classification from upstream.
+
+**Required correction:** remove misleading numeric confidence/safety values until their semantics, calibration dataset, thresholds and validation procedure exist. Use explicit state fields such as validation_status, requires_human_review and structured warning severity, each populated from defined checks. Do not infer clinical safety from absence of warnings.
+
+### 16.8 P2 — Human-review flag is not reliably derived from current warning codes
+
+The sync route sets requires_human_review only when the exact string human_review_required occurs in result.warnings. The inspected producer paths use codes such as reviewer_failed_closed, safety_block_triggered, citation_validation_failed, output_safety_block and dosage_unverified_disclaimer_added; no producer for human_review_required was found in the inspected active path.
+
+This means the response flag can remain false even when a safety/review-related warning is present. The current implementation also assigns every warning the same severity value.
+
+**Required correction:** define a central warning taxonomy and map each warning code to severity and escalation policy. Derive requires_human_review from that policy, not from one magic string. Add exhaustive tests for every safety-critical warning code.
+
+### 16.9 P2 — Streaming event schema is not enforced by the endpoint
+
+A StreamingEvent Pydantic schema exists with event_type and data fields, but AgentHarness emits untyped dictionaries using event as the discriminator, and the FastAPI streaming route serializes those dictionaries directly. No endpoint-level schema validation or versioned event envelope was established in this review.
+
+The code also emits status messages as free-form text. The current event contract is therefore implicit and can drift between the harness, API and frontend.
+
+**Required correction:** establish a versioned SSE envelope with a stable event discriminator, typed payloads, sequence/request identifiers and documented terminal/error semantics. Validate events before serialization and add contract tests against the OpenAPI/client-facing event specification.
+
+### 16.10 P2 — API response loses token usage and warning severity metadata
+
+AgentResponse defines total_tokens_used, but the sync route does not populate it and the inspected AgentHarness result does not expose a token total. The route converts all warning strings into Warning objects with severity="warning", regardless of their actual risk category. Streaming returns warning strings rather than the same structured warning objects.
+
+This creates avoidable differences in observability, frontend rendering and downstream audit handling.
+
+**Required correction:** either implement measured token accounting end-to-end or mark the field unavailable rather than silently defaulting to zero. Share a structured Warning schema across sync and streaming, including stable code, severity, message and safe details.
+
+### 16.11 P2 — Route-level streaming contract tests were not found in the inspected test search
+
+The inspected unit tests cover AgentHarness event sequencing, cache-hit completion and telemetry span behavior. The search did not locate an HTTP-level test for POST /api/v1/ai/query/stream that validates actual SSE delimiters, JSON parsing, [DONE], generated session ID, error framing or client cancellation through FastAPI.
+
+The presence of harness unit tests does not prove the route emits valid SSE or that the browser can consume it.
+
+**Required correction:** add ASGI-level endpoint tests and a frontend/client contract test. Verify sync/stream parity for answer, warnings, source records, tool calls, model, cache_hit, session_id, trace_id and terminal status.
+
+### 16.12 Recommended canonical API contract
+
+1. **Shared response envelope:** define one versioned response contract for sync and stream, with session_id, trace_id, answer, sources, tool calls, structured warnings, validation status, model metadata, cache metadata and timing.
+2. **SSE transport:** emit standards-compliant frames with actual newline delimiters; define start, status, source/tool activity, answer, warning, complete and error events. Include terminal semantics and session_id in start.
+3. **Single cache schema:** version the cache payload and preserve equivalent provenance/metadata for sync and streaming. Invalidate or safely migrate older payload versions.
+4. **Trustworthy quality fields:** do not synthesize confidence/safety scores from warning presence. Publish only measured, documented and calibrated indicators.
+5. **Consistent warnings:** one shared warning taxonomy with explicit severity, escalation and human-review mapping.
+6. **Contract testing:** cover sync and streaming cache cross-reads, tool-backed and RAG-backed answers, missing/invalid citations, empty sources, safety blocks, reviewer failure, disconnects, SSE framing and frontend deserialization.
+
+### 16.13 API/streaming readiness summary
+
+- Tenant and selected-patient validation on both endpoints: **implemented in the inspected route code**.
+- HMAC-scoped session derivation: **implemented**.
+- Sync response Pydantic schema: **implemented**.
+- Standards-compliant SSE framing: **not satisfied by the inspected string literals**.
+- Generated session ID returned by streaming: **not implemented**.
+- Sync/stream cache payload parity: **not implemented**.
+- MCP tool provenance parity between sync and stream: **not implemented**.
+- Sync cache_hit propagation: **not implemented**.
+- Calibrated confidence and safety scores: **not established; current values are hard-coded heuristics**.
+- Reliable human-review mapping: **not established**.
+- Route-level SSE contract verification: **not demonstrated**.
+- Token accounting and consistent structured warnings: **not established**.
+
+No application source changes, test executions, CI runs, migrations, database operations or deployments were performed as part of this review.
