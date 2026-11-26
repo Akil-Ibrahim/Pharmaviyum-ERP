@@ -382,3 +382,81 @@ The prescription-verification tool is tenant-scoped, which is positive, but tena
 5. Add integration tests for worker and MCP denial paths, including audit failure and cross-tenant payload substitution.
 6. Keep all unapproved grants denied by default. These findings do not approve the proposed four pharmacy roles or any role-to-permission mapping.
 
+## 9. Integrations, webhooks and application event flows
+
+Source baseline: `main` at `b5a0f51cc45e39b5afdfd21af99a5053823af5ce`. This section distinguishes the legacy ERP integration API, POS payment callbacks, durable Edge synchronization, and the process-local application event bus.
+
+### 9.1 Legacy ERP integration API is global and operator-only
+
+Files: `src/pharmaviyum/api/v1/pharmacy_entities.py`, `src/pharmaviyum/models/erp_sync.py`.
+
+- `ERPIntegration` has no `pharmacy_id`, owner tenant, credential reference, or service-principal identity. Its provider, endpoint and sync mode are global fields.
+- `GET/POST /api/v1/erp/integrations`, `POST /api/v1/erp/integrations/{integration_id}/events`, `GET /api/v1/sync-events` and `GET /api/v1/erp/integrations/{integration_id}/events` use `CurrentSuperuser`. This is a platform-operator gate, not pharmacy-scoped integration authorization.
+- The event-ingest route is not authenticated as an external provider. It requires an application superuser session; do not mistake it for a provider webhook contract.
+- `ERPEventIn` accepts `event_id`, `entity_type`, optional `entity_id`, and a bounded free-form `direction`. It has no payload schema, signature, provider event timestamp, tenant binding or provider identity. The stored `ERPSyncEvent` is metadata-only in the reviewed model.
+- Duplicate handling checks only whether the global `event_id` exists and returns `duplicate`; it does not compare the incoming integration/entity/direction with the stored event. Reuse of an ID with altered metadata is silently treated as duplicate rather than a protocol conflict.
+- Event list endpoints are global superuser reads; no dedicated access audit was found in the inspected handlers.
+
+**Conclusion:** this is a global administrative metadata API, not a production-ready multi-tenant connector framework. Keep it separate from Pharmacy Admin. Before external use, define integration ownership, machine identity, secret lifecycle, signed/versioned event schema, replay/idempotency semantics and operator audit.
+
+### 9.2 POS payment webhook has HMAC authentication and state checks, but needs provider-bound replay controls
+
+File: `src/pharmaviyum/api/v1/pos.py`, `payment_webhook`.
+
+Positive controls:
+- HMAC-SHA256 over the exact raw request body; constant-time `hmac.compare_digest`; fail-closed if `PAYMENT_WEBHOOK_SECRET` is absent.
+- Only `succeeded` or `failed` states are accepted; payment must exist, be non-cash and pending; callback amount must equal the persisted amount.
+- Sale/payment rows are locked before finalization; stock changes use the inventory movement service; the payment event is written to the transactional outbox in the same database transaction.
+- Matching retries are idempotent; conflicting final states return 409.
+
+Remaining controls:
+- The handler's docstring explicitly delegates provider-specific signature verification to an adapter before the normalized event reaches this endpoint. This handler alone does not establish provider-specific verification, signed timestamp/nonce freshness, or credential-to-provider binding.
+- `provider_name` and `provider_payment_id` are accepted from the signed body but are not compared with an expected provider identity/reference already bound to the pending payment.
+- This is a machine-to-machine principal, not interactive user RBAC. Give each payment provider a distinct service identity/secret and explicit allowed operations.
+- Add tests for wrong provider, stale signature, altered duplicate event, amount mismatch, concurrent callbacks and payment cross-link attempts.
+
+This is not evidence that HMAC is absent; it identifies the boundary between the normalized shared-secret handler and provider-specific verification that must be proven in the adapter.
+
+### 9.3 Pharmacy Edge Sync has meaningful tenant and payload controls
+
+Files: `src/pharmaviyum/api/v1/sync.py`, `src/pharmaviyum/services/edge_identity.py`, `src/pharmaviyum/schemas/sync.py`, `src/pharmaviyum/services/outbox.py`, `src/pharmaviyum/services/outbox_dispatcher.py`.
+
+Positive controls:
+- Edge enrollment/revocation require `CurrentSuperuser`; enrollment validates an active pharmacy and returns a high-entropy credential once. Only a SHA-256 digest is stored; revoked/inactive credentials are rejected.
+- Inbound pharmacy scope is derived from the authenticated Edge node registration, not the request body. The supplied `edge_node_id` must match that identity.
+- Event v1 allowlists four POS lifecycle types with strict typed payload models, `extra="forbid"`, aggregate/version checks, monetary and quantity invariants, and a 256 KiB payload limit.
+- Integration tests cover forged scope, cross-pharmacy Edge identity, revoked credentials, altered duplicate event content, unsupported event types and patient fields in payloads.
+- Event IDs and aggregate versions are unique; identical retries are idempotently acknowledged, while altered content/conflicting versions are rejected.
+- Edge outbox rows are written in the originating business transaction. Dispatcher uses HTTPS-only configuration, bounded retries, per-aggregate ordering, lease tokens/fencing and dead-letter quarantine.
+- Dead-letter listing omits business payloads; replay is superuser-only and writes an `OutboxReplayAudit` with actor and reason.
+
+Boundaries:
+- POS event payloads contain product names/SKUs, lot numbers, quantities, prices and payment metadata. They exclude patient identity under the current allowlisted contract, but remain commercially sensitive.
+- Central ingress stores `CentralInboxEvent` with `processing_status=accepted`; there is no Central domain consumer. `accepted` means durable receipt, not that Central applied sale/payment/inventory effects. ADR-0007 correctly blocks domain application pending product/lot mapping, actor provenance, stock semantics, ordering and reconciliation.
+- Dead-letter listing is a global `CurrentSuperuser` view. Replay is audited, but support inspection/replay is not pharmacy-scoped and has no explicit time-bound support grant. Keep this a platform operations capability and consider reason-bound tenant access/read audit.
+- Edge provisioning is platform-global superuser-only, not a Pharmacy Admin permission.
+
+**Conclusion:** retain Edge identity and event-contract controls. Do not broaden v1 with patient identifiers or generic entity events. Do not implement the Central consumer until ADR-0007 prerequisites are met.
+
+### 9.4 Generic patient lifecycle events still carry linkable identifiers
+
+Files: `src/pharmaviyum/services/patient.py`, `src/pharmaviyum/services/event_bus.py`.
+
+- `patient.created` was minimized to pharmacy-level metadata.
+- `patient.updated` still emits `patient_id`, updated field names and optional `updated_by`; `patient.deleted` still emits `patient_id`, hard-delete flag and optional actor. Stable patient IDs are linkable personal data even without name/phone.
+- The event bus is process-local and best-effort; handler exceptions are logged and swallowed. It is not durable integration delivery.
+- The reviewed repository search found no in-repository `event_bus.on(...)` subscribers. That does not prove dynamic/runtime consumers cannot be registered and does not justify identifiers in a generic event contract.
+
+**Required controls:** remove patient identifiers from generic lifecycle notifications. If a workflow needs a patient reference, define a dedicated event contract with explicit consumer identity, purpose and lookup authorization. Keep PHI out of generic telemetry and event payloads.
+
+### 9.5 Integration/RBAC implementation gates
+
+1. Decide which integrations are platform-global and which are pharmacy-owned; model tenant ownership explicitly.
+2. Create distinct machine/service principals for each provider, Edge node and scheduled integration; keep them separate from human pharmacy roles.
+3. Replace the legacy ERP metadata event contract before external use: authenticate provider, validate a versioned schema, derive tenant from credential, and reject event-ID reuse with different content.
+4. Prove provider-specific signature validation, freshness/replay protection and binding to the expected payment/provider reference before production payment callbacks.
+5. Preserve Edge Sync's strict allowlist, tenant derivation, idempotency, ordering and durable-receipt semantics. Keep Central domain application disabled until ADR-0007 prerequisites are met.
+6. Minimize patient lifecycle events and audit privileged cross-pharmacy sync inspection/replay.
+7. Test service-principal revocation, wrong-tenant credentials, altered duplicate IDs, stale/replayed callbacks, PHI payload rejection and audit failure.
+
+These findings do not approve pharmacy role grants. Integration administration, Edge provisioning, payment callbacks and support replay are distinct machine/platform capabilities and must not be collapsed into `pharmacy_admin`.
