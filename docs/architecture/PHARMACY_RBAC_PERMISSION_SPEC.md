@@ -102,7 +102,7 @@ Legend: **Allow** = proposed permission; **No** = deny by default; **Decision ne
 | clinical_records.update | No | Allow* | No | No |
 | members.read | No | No | Decision needed | Allow |
 | members.invite | No | No | Decision needed | Allow |
-| members.role.assign | No | No | No | Allow** |
+| members.role.assign | No | No | No | Decision needed |
 | pharmacy.settings.read | No | No | Allow | Allow |
 | pharmacy.settings.update | No | No | Decision needed | Allow |
 | audit.read | No | No | Decision needed | Decision needed |
@@ -194,9 +194,9 @@ Database migrations must follow the repository's approved migration workflow and
 | Manager access to patient-level data | Deny; permit only operational aggregates without patient identifiers | Product + security |
 | Pharmacy admin access to clinical data | Deny | Product + security |
 | Pharmacist clinical access | Allow only within pharmacy ownership and PHI policy | Clinical + security |
-| Cashier access to inventory quantities | Decide whether POS requires read-only stock visibility | Product |
+| Cashier access to inventory quantities / POS lot lookup | Deny general `inventory.read` by default; decide whether checkout needs a narrowly scoped POS-only availability/lot lookup permission and minimum response fields. `pos.read` alone does not authorize the endpoint currently mapped to `inventory.read`. | Product + security |
 | Discounts, refunds and cancellations | Manager only initially; pharmacist exceptions require explicit thresholds | Product |
-| Pharmacy admin role assignment | No self-escalation; bounded role assignment | Product + security |
+| Pharmacy admin role assignment | Deny until the assignable-role allowlist and hierarchy are explicit; prohibit self-escalation and granting platform privileges or equal/higher authority. Keep `members.role.assign` at Decision needed until approved. | Product + security |
 | Existing membership backfill | No automatic privileged role assignment | Product owner |
 | Platform support access | Separate time-bound, audited grant | Security |
 | Audit log visibility | Restricted, separately permissioned | Security |
