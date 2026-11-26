@@ -92,8 +92,8 @@ Legend: **Allow** = proposed permission; **No** = deny by default; **Decision ne
 | procurement.create_order | No | Decision needed | Allow | Decision needed |
 | procurement.approve_order | No | No | Allow | Decision needed |
 | procurement.receive | No | Decision needed | Allow | Decision needed |
-| suppliers.read | No | Decision needed | Allow | Decision needed |
-| suppliers.manage | No | No | Allow | Decision needed |
+| suppliers.read (pharmacy-scoped supplier directory, if modeled) | No | Decision needed | Decision needed | Decision needed |
+| suppliers.manage (pharmacy-scoped supplier records, if modeled) | No | No | Decision needed | Decision needed |
 | patients.read | No | Allow* | No | No |
 | patients.update | No | Allow* | No | No |
 | prescriptions.read | No | Allow* | No | No |
@@ -115,6 +115,9 @@ Legend: **Allow** = proposed permission; **No** = deny by default; **Decision ne
 
 
 **Catalog scope clarification:** `catalog.read` refers to shared reference data. `catalog.manage` governs the global/shared catalog and is a platform-level capability under the current API/model; it is not granted to the pharmacy Manager role. If pharmacies later manage their own assortment or pharmacy-specific price lists, model those resources separately and introduce pharmacy-scoped permissions such as `pharmacy.catalog.manage` only after approval. The current global `Product` model has no `pharmacy_id` and must not be treated as a pharmacy-owned catalog.
+
+
+**Supplier scope clarification:** the currently mounted supplier API is global and platform-superuser-only. The role-matrix entries above describe a possible future pharmacy-scoped supplier directory only; they do not authorize access to the existing global supplier API. A pharmacy-owned supplier relationship/resource and tenant-qualified queries must exist before any pharmacy role can receive these permissions.
 
 ## 5. Authorization invariants
 
