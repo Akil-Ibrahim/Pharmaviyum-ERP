@@ -130,7 +130,7 @@ Required future controls (not implemented by this audit):
 
 ### 4.8 MCP request context propagation, server exposure, and asynchronous ingestion boundary
 
-Files: `src/pharmaviyum/ai/api/v1/ai.py` (actual path: `src/pharmaviyum/api/v1/ai.py`), `src/pharmaviyum/ai/mcp/context.py`, `src/pharmaviyum/ai/mcp/client.py`, `src/pharmaviyum/ai/mcp/registry.py`, `src/pharmaviyum/ai/mcp/server.py`, `src/pharmaviyum/api/v1/ingestion.py`, `src/pharmaviyum/ai/mortarium_rag/ingestion/tasks.py`.
+Files: `src/pharmaviyum/api/v1/ai.py`, `src/pharmaviyum/ai/mcp/context.py`, `src/pharmaviyum/ai/mcp/client.py`, `src/pharmaviyum/ai/mcp/registry.py`, `src/pharmaviyum/ai/mcp/server.py`, `src/pharmaviyum/api/v1/ingestion.py`, `src/pharmaviyum/ai/mortarium_rag/ingestion/tasks.py`.
 
 Verified behavior:
 
