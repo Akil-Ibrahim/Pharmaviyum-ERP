@@ -193,6 +193,10 @@ Database migrations must follow the repository's approved migration workflow and
 | Decision | Proposed safe default | Approval required |
 |---|---|---|
 | Approve the four pharmacy roles | Keep role set limited to four | Product owner |
+| Persisted pharmacy role | Add an explicit role to each PharmacyMembership; do not use the derived global `User.role` (`pharmacist` for every non-superuser) as tenant authorization. Unknown/missing roles deny by default. | Product + security |
+| Membership administration workflow | No pharmacy-scoped membership/role CRUD endpoint was identified. Define invitation, activation, deactivation, role assignment/change, self-escalation prevention and append-only actor/reason audit before granting `members.*`. | Product + security |
+| Authenticated pharmacy context | Extend `/auth/me` or add a dedicated context endpoint for memberships, selected pharmacy and effective permissions. Define selection, refresh/invalidation after role changes, and fail-closed behavior. | Product + security + frontend |
+| Inactive pharmacy semantics | Deny operational tenant access when the pharmacy is inactive; explicitly define and test whether platform superusers may inspect inactive tenants through a separate audited operator path. | Product + security |
 | Manager access to patient-level data | Deny; permit only operational aggregates without patient identifiers | Product + security |
 | Pharmacy admin access to clinical data | Deny | Product + security |
 | Pharmacist clinical access | Allow only within pharmacy ownership and PHI policy | Clinical + security |
