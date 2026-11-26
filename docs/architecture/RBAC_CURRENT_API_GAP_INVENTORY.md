@@ -460,3 +460,90 @@ Files: `src/pharmaviyum/services/patient.py`, `src/pharmaviyum/services/event_bu
 7. Test service-principal revocation, wrong-tenant credentials, altered duplicate IDs, stale/replayed callbacks, PHI payload rejection and audit failure.
 
 These findings do not approve pharmacy role grants. Integration administration, Edge provisioning, payment callbacks and support replay are distinct machine/platform capabilities and must not be collapsed into `pharmacy_admin`.
+
+## 10. Consolidated RBAC implementation blueprint — proposal only
+
+This blueprint consolidates the API, Sidebar, PHI, MCP, worker and integration findings above. It is a delivery design, not authorization to implement or grant roles. The role matrix in `PHARMACY_RBAC_PERMISSION_SPEC.md` remains unapproved; unresolved policy means deny by default.
+
+### 10.1 Target authorization decision
+
+Every protected operation should resolve the following trusted context before accessing or mutating a resource:
+
+1. **Principal:** authenticated human user or explicitly registered machine/service identity.
+2. **Tenant:** one pharmacy resolved from a selected context and an active membership, or from a machine credential's registered pharmacy. Never derive tenant authority from a client-supplied ID alone.
+3. **Action:** a stable permission identifier for the exact operation.
+4. **Resource:** load the target row with tenant ownership in the SQL predicate; do not load globally and compare tenant ownership only after materialization.
+5. **Additional policy:** patient ownership/care relationship, purpose of use, workflow state, approval threshold, and/or platform support grant as applicable.
+6. **Audit:** persist required allow/deny decision metadata before releasing PHI or committing a privileged action. Audit failure must fail closed for governed PHI access.
+
+Conceptual decision: `authenticated AND active_tenant AND action_permission AND resource_scope AND additional_policy`. A missing/unknown input is deny. This should be implemented as a small centralized authorization service/dependency plus resource-scoped query helpers, not as a broad general-purpose policy engine.
+
+### 10.2 Separate human roles from machine/platform capabilities
+
+| Principal class | Scope source | Intended responsibility | Must not inherit |
+|---|---|---|---|
+| Cashier / Pharmacist / Manager / Pharmacy Admin (proposed) | Active `PharmacyMembership` and approved membership role | Human pharmacy workflows | Platform-wide superuser or another pharmacy's permissions |
+| Platform operator | Explicit platform capability and, for sensitive access, a time-bound support grant | Provisioning, support and operational review | Automatic clinical/PHI access |
+| Payment provider | Provider-specific credential and verified signed callback | Narrow payment state callback | Interactive user permissions or arbitrary payment access |
+| Pharmacy Edge node | Active enrolled `PharmacyEdgeNode` credential | Submit allowlisted events for its registered pharmacy | Other Edge nodes or direct Central domain writes |
+| Background job | Persisted initiating actor or scheduled service identity plus scoped job grant | Execute one authorized task within one tenant | The caller's ambient/global privileges |
+| MCP tool invocation | Trusted user, selected pharmacy, selected patient and purpose context plus effective permission | Execute one registered tool | Generic `User.role` as proof of clinical role |
+
+### 10.3 Permission enforcement map
+
+| Surface | Required enforcement boundary |
+|---|---|
+| POS checkout, cancel, refund, discount | Separate action permissions; sale and inventory rows constrained to the same pharmacy; payment provider callbacks use a separate machine identity |
+| Inventory, Defectura, procurement, transfers | Action-specific permissions; selected pharmacy; object ownership in SQL; immutable movement ledger and reason/idempotency checks |
+| Patients, purchases, prescriptions, clinical records | Clinical permission plus patient/pharmacy ownership, purpose-of-use policy, minimum response fields and PHI audit |
+| General Dashboard | Operational aggregate permission only; remove patient-identifiable and medication-level panels from the general response |
+| Clinical Dashboard panels | Separate clinical endpoint and permission; selected patient/tenant scope, purpose and PHI audit |
+| Shared Drug Catalog / Medical Device reference | Explicitly approved shared-reference read capability; keep separate from pharmacy-owned assortment, stock and pricing |
+| Catalog review, supplier and ERP administration | Designated governance/platform capability until ownership and separation-of-duties policy is approved |
+| MCP discovery and execution | Effective pharmacy permission at both discovery and invocation; revalidate trusted context and resource scope inside the tool |
+| Background jobs and notifications | Persist actor/service identity, tenant, purpose, permission/grant ID and correlation ID; revalidate scoped grant and ownership at execution |
+| Reports and exports | Report-specific permission; server-derived tenant scope; minimum fields; audit export creation and download; short-lived actor-bound download authorization |
+| ERP integration / payment webhook / Edge Sync | Distinct service principals and provider contracts; no mapping to human pharmacy roles |
+| Support / dead-letter replay | Platform operations capability, reason-bound access and durable operator audit; no default PHI access |
+
+### 10.4 Minimal technical architecture
+
+- **Identity:** retain the global `User` identity; do not use `User.role` as a pharmacy role.
+- **Membership:** after policy approval, add one constrained role assignment to each active pharmacy membership. A user may have different roles in different pharmacies.
+- **Permission registry:** start with a versioned code-level registry mapping permission IDs to protected actions. Avoid a database-driven custom-role engine unless runtime-customizable roles become a concrete requirement.
+- **Authorization dependency/service:** accept principal + selected tenant + permission; fail closed for missing membership, unknown permission, inactive membership or lookup failure.
+- **Resource access:** use tenant-qualified SELECT/UPDATE/DELETE predicates and composite tenant/resource constraints where appropriate. Avoid fetching by global ID before checking ownership.
+- **PHI governance:** use a shared metadata-only audit contract (actor/service, tenant, action, resource reference, purpose, request/correlation ID, timestamp, outcome); never copy clinical payloads, secrets or unnecessary patient fields into the audit record.
+- **Authenticated context API:** extend `GET /api/v1/auth/me` only after API contract approval to expose selected pharmacy, memberships/roles and effective permissions. Do not return PHI or use the legacy role string as authority.
+- **Frontend:** filter Sidebar destinations by implemented-route state and effective permissions for UX only. Backend remains authoritative; stale/unavailable permission context fails closed.
+- **Non-HTTP execution:** use explicit job grants and service principals for workers, MCP, integrations and scheduled tasks; never rely on ambient process privileges.
+
+### 10.5 Safe implementation sequence
+
+| Phase | Deliverable | Gate |
+|---|---|---|
+| 0. Policy | Approve role set, permission IDs, role grants, PHI purposes, support access and global-vs-tenant integration ownership | Product + clinical + security approval |
+| 1. Baseline tests | Runtime route-table inventory; endpoint × action × resource matrix; cross-tenant negative tests | All mounted routes identified; legacy routes distinguished |
+| 2. Identity model | Membership role and safe existing-membership classification/backfill design | No automatic privileged role assignment; migration reviewed |
+| 3. Authorization core | Central permission registry/dependency and tenant-qualified resource query helpers | Unit + PostgreSQL integration tests; 401/403 semantics |
+| 4. PHI migration | Dashboard split, patient/prescription/purchase access, purpose and audit | Audit-before-release; ownership and failure-closed tests |
+| 5. Operational domains | POS, inventory, Defectura, procurement, catalog and pharmacy administration | Per-action permissions; movement/idempotency invariants preserved |
+| 6. Non-HTTP paths | MCP, notifications, workers, exports, reports and service integrations | Scoped grant validation, revocation, replay and tenant-isolation tests |
+| 7. Frontend context | Authenticated context contract, selected pharmacy and Sidebar permission UX | UI tests; backend authorization independently verified |
+| 8. Demo validation | Synthetic multi-pharmacy end-to-end validation and CI | No production DB changes; no migration guard bypass |
+| 9. Controlled rollout | Staged enablement and rollback plan | Explicit release approval |
+
+### 10.6 Non-negotiable acceptance criteria
+
+- A user can hold different roles in different pharmacies; switching pharmacy changes the effective permission set.
+- Client-supplied `pharmacy_id`, patient ID, sale ID, inventory ID or integration ID cannot widen scope.
+- Every protected operation is checked at the backend action boundary; UI visibility never grants access.
+- Unknown permission, missing membership, inactive membership, stale/revoked job grant, ambiguous patient ownership or failed authorization lookup denies access.
+- PHI access is purpose-bound where required, minimum-necessary, and durably audited before data is returned.
+- Platform operators and support tools are separately governed; Pharmacy Admin is never equivalent to platform superuser.
+- Payment provider, Edge node, scheduled job and MCP tool identities are separate from human pharmacy roles.
+- Retries, duplicate events, webhook replay, job replay and dead-letter replay cannot duplicate business effects or bypass authorization.
+- All role × permission outcomes, cross-tenant attempts, revoked identities, audit failures and worker/MCP denial paths have automated tests.
+- Migrations and deployments use approved workflows and environment guards; no manual production SQL or guard bypass.
+
+**Current implementation status:** the application does not yet have this complete pharmacy-scoped RBAC model. The documents define gaps and a proposed sequence; they do not represent implemented authorization, approved role grants, or a production security certification.
