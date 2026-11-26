@@ -631,10 +631,10 @@ This matrix translates the observed mounted route families into action-level can
 | POS inventory receipt | CurrentUser + pharmacy tenant | `inventory.receive` (existing candidate) | Supplier/lot ownership, receiving workflow, idempotency |
 | POS payment callback | HMAC shared-secret callback | Payment-provider service principal; not a human role permission | Provider-specific credential binding, signed timestamp/nonce freshness, payment reference match |
 | Inventory read | CurrentUser + membership pharmacy IDs | `inventory.read` (existing candidate) | Selected tenant scope and object-level pharmacy predicate |
-| Inventory create/update/adjust/delete | CurrentSuperuser | `inventory.manage` or split `inventory.create`, `inventory.update`, `inventory.adjust`, `inventory.archive` (proposed vocabulary additions) | Keep platform-only until product/security approves pharmacy role matrix and object scope |
+| Inventory create/update/adjust/delete | CurrentSuperuser | `inventory.create`, `inventory.update`, `inventory.archive` (proposed vocabulary additions); `inventory.adjust` (existing candidate) | Keep platform-only until product/security approves pharmacy role matrix and object scope |
 | Batch read | CurrentSuperuser | `inventory.batch.read` (proposed vocabulary addition) | ProductBatch currently lacks pharmacy ownership; do not widen access until tenant ownership exists |
 | Patient list/search/detail | CurrentUser + pharmacy scope | `patients.read` (existing candidate) | Active membership, selected tenant, patient ownership; PHI purpose/audit where applicable |
-| Patient create/update/archive | CurrentUser + pharmacy scope / service checks | `patients.create`, `patients.update`, `patients.archive` (proposed vocabulary additions) | Verify service-level policy and PHI audit per mutation |
+| Patient create/update/delete | CurrentSuperuser for create/update/delete; archive is not a separately exposed operation in the reviewed route set | `patients.create`, `patients.archive` (proposed vocabulary additions); `patients.update` (existing candidate) | Do not widen the current platform-only mutation boundary until role policy, service checks, ownership and PHI audit are approved |
 | Patient visit recording | CurrentUser + pharmacy scope | `patients.visit.record` (proposed vocabulary addition) | Patient ownership; record purpose and audit policy |
 | Patient AI profile | CurrentUser + explicit membership/patient checks and PHI audit | `clinical_records.read` (existing candidate) | Patient ownership, allowed purpose, audit commit before release |
 | Patient purchase history | CurrentUser + explicit membership, ownership, purpose and PHI audit | `patients.purchase_history.read` (proposed vocabulary addition) | Deny platform support principal absent separately approved support grant |
@@ -670,7 +670,7 @@ This matrix translates the observed mounted route families into action-level can
 The current specification is a starting vocabulary, not yet a complete route-level contract. Before implementation, reconcile at least these items:
 
 1. Add explicit permissions for patient creation, patient visit recording, purchase-history access, operational versus clinical dashboard access, legacy orders, RAG ingestion/jobs, MCP prescription verification, notifications, reports and exports.
-2. Decide whether POS sale cancellation is canonically `pos.sale.cancel` or whether the specification's resource.action convention should use `pos.cancel`; use one stable ID consistently.
+2. POS sale cancellation is consistently named `pos.sale.cancel` in the specification and endpoint mapping. Preserve this identifier; do not introduce a `pos.cancel` alias.
 3. Decide whether inventory writes should remain separate actions (`inventory.receive`, `inventory.adjust`, `inventory.transfer`) and whether create/update/archive need separate identifiers.
 4. Keep shared reference catalog permissions distinct from pharmacy-owned assortment, pricing and inventory permissions.
 5. Do not use a broad `patients.read` permission as a substitute for purpose-bound clinical record, purchase-history or AI-profile access.
