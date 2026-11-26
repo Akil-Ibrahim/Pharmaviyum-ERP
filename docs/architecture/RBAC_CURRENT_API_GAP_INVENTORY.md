@@ -2265,3 +2265,103 @@ Required correction: document the intentional platform-specific build distinctio
 - Build, image scan, signature and deployment execution: **not performed in this audit**.
 
 No application source changes, test executions, CI runs, image builds, registry operations, migrations, database operations or deployments were performed as part of this review.
+
+## 21. Database Reliability, Transaction Integrity & Data Consistency
+
+Scope: static review of active main implementations for POS checkout, payment webhook settlement, pending-sale cancellation, goods receipt, inventory movement service and ledger model/migration, SQLAlchemy session/engine configuration, outbox event creation/dispatch, and related integration test definitions. The review did not connect to any database, execute migrations or tests, run concurrent requests, inspect production schema state, or validate live backup/restore. Code-level mechanisms are distinguished from runtime evidence.
+
+### 21.1 Positive controls confirmed
+
+- POS checkout obtains a PostgreSQL transaction-scoped advisory lock derived from pharmacy ID and idempotency key before looking up an existing sale.
+- Sale model and migration enforce unique pharmacy_id + idempotency_key and unique receipt number. Payment enforces unique sale_id + idempotency_key and unique provider reference.
+- Replayed checkout requests compare product/quantity lines, discount and payment method (and cash received for cash sales); conflicting reuse returns HTTP 409 rather than creating another sale.
+- Checkout locks eligible inventory lots with SELECT FOR UPDATE, orders FEFO by expiry then inventory ID, and allocates only available non-expired stock. Inventory mutations are routed through apply_inventory_movement.
+- Inventory movement service uses a pharmacy-scoped transaction advisory lock, rechecks the immutable command for a repeated key, locks the target inventory row, validates on-hand/reserved invariants, and writes the balance update and movement journal in the caller's transaction.
+- Inventory movement migration/model provide tenant-scoped idempotency uniqueness, lot identity foreign key, balance and delta checks, supported movement type checks, actor identity checks, and append-only UPDATE/DELETE/TRUNCATE triggers.
+- Cash checkout, non-cash reservation, sale lines, payment state, allocation rows, inventory movements and the pos.sale.created outbox event are staged before one checkout commit. Insufficient stock explicitly rolls back the partial work.
+- Payment webhook locks the sale, payment and inventory rows; checks HMAC-SHA256, event status and amount; settles or releases the existing reservations; writes corresponding inventory movements and aggregate version 2 outbox event in the same transaction.
+- Pending-sale cancellation locks sale/payment/inventory records, releases reservations through the ledger, marks pending payments failed and writes a version 2 outbox event. Already-cancelled replay returns the terminal sale without repeating the release.
+- Goods receipt uses a pharmacy-scoped movement idempotency key, locks an existing lot, enforces unique product_id + pharmacy_id + lot_number, and rolls back on integrity conflict.
+- get_db rolls back when an exception escapes the request dependency and commits after a successful yield. Explicit route commits are present for transactional POS write paths.
+- SQLAlchemy engine config includes pool_pre_ping, configurable pool size, max overflow, pool timeout and recycle; query duration/errors, connection hold time and pool occupancy/timeout metrics are instrumented.
+- Outbox event creation deliberately does not commit or publish; it stages the event in the caller's business transaction. Dispatcher claims with FOR UPDATE SKIP LOCKED, uses lease/fencing tokens, preserves per-aggregate ordering, retries transient failures with exponential backoff/jitter, dead-letters permanent failures and bounds automatic attempts.
+- Existing integration test definitions cover FEFO allocation, expired-lot exclusion, insufficient-stock rollback, same-key checkout replay, cash/card payment flows, failed-payment release, cancellation replay, movement idempotency, concurrent same-key movement and concurrent distinct-key stock adjustment.
+
+### 21.2 P1 — Payment webhook authenticity is a shared-secret envelope, not a provider-specific replay-safe protocol
+
+The active webhook verifies HMAC-SHA256 over the raw body using one PAYMENT_WEBHOOK_SECRET, then trusts normalized payment_id, provider_name, provider_payment_id, status and amount fields. Its docstring explicitly assigns provider-specific signature verification to an adapter before this endpoint. No provider event ID, signed timestamp/nonce, bounded replay window, key ID/rotation contract or provider-specific verifier is visible in this endpoint.
+
+The payment state transition is idempotent for a repeated terminal status with the same provider payment ID, and the database has a unique provider reference. This limits duplicate effects after a successful first transition, but it does not establish provider-origin authenticity or freshness unless the upstream adapter reliably enforces those properties. If the shared secret is used directly by multiple senders or the endpoint is exposed without a verified provider adapter, a captured valid body remains replayable while the payment is pending.
+
+Required correction: define and enforce a provider-specific verification boundary, validate signed timestamp and event ID, persist provider event IDs under a unique constraint, reject stale/replayed events, bind provider identity to the configured adapter, and test key rotation and duplicate/out-of-order delivery. Do not claim the current generic HMAC endpoint is equivalent to a full payment-provider webhook integration.
+
+### 21.3 P1 — POS checkout has no explicit concurrent last-unit integration test in the inspected test module
+
+The checkout implementation locks inventory rows and the movement service serializes balance changes. The inspected tests/integration/test_pos_checkout.py covers sequential checkout replay and insufficient stock rollback, but its test definitions do not include two simultaneous checkout requests competing for the last available unit. Separate inventory movement tests do exercise concurrent same-key idempotency and distinct-key oversell prevention, but that is not the same as concurrent end-to-end checkout including sale, allocation, payment and outbox records.
+
+Required correction: add PostgreSQL-backed concurrent checkout tests for (a) two distinct idempotency keys competing for the last unit, (b) same-key concurrent identical requests, (c) same-key concurrent conflicting payloads, (d) multi-lot/multi-product overlapping allocations and deadlock behavior, and (e) concurrent webhook versus cancellation. Assert sale count, payment count, allocations, journal deltas, persisted stock and outbox versions after both transactions finish. Tests were not run in this audit.
+
+### 21.4 P2 — Payment provider event identity and transition ordering are not fully represented
+
+The Payment model uniquely constrains provider_name + provider_payment_id, but provider event identity is not stored independently. The webhook treats a repeated event as already processed only when the current payment status equals the incoming status and provider payment ID matches. Different event IDs for the same payment, provider-specific ordering, and explicit reconciliation of contradictory success/failure notifications are not represented as durable provider-event records.
+
+Required correction: persist immutable provider event identity and payload digest, define an explicit payment transition state machine, and reconcile late/contradictory provider events through an auditable exception workflow rather than relying only on the current Payment status.
+
+### 21.5 P2 — Tenant isolation is enforced in application queries and composite relationships, not proven by database row-level security
+
+The inventory movement foreign key binds inventory ID, pharmacy ID and product ID together; movement idempotency and POS sale idempotency are pharmacy-scoped. POS routes call require_pharmacy_tenant, and the inventory movement service checks that the locked lot belongs to the supplied pharmacy.
+
+These are valuable controls, but the inspected inventory movement migration does not enable PostgreSQL RLS or define tenant policies. A database credential capable of unrestricted table access can bypass application-level tenant predicates. This is a defense-in-depth gap, not evidence that the current API query paths leak tenants.
+
+Required correction: decide and document whether Pharmacy Edge's DB role is intentionally a trusted single-tenant application role. If shared/multi-tenant DB credentials or direct SQL access are in scope, implement and test RLS with a transaction-local tenant context, least-privilege grants and connection-pool context reset tests. Do not introduce RLS without validating worker, migration, admin and background-task access paths.
+
+### 21.6 P2 — Database connection budget is configured per process, not bounded against total deployment topology
+
+The main SQLAlchemy engine defaults to pool_size=5, max_overflow=5 and pool_timeout=30 seconds, with environment-configurable values. These values apply to each process/engine instance. The repository also defines separate application and Celery worker processes and can run multiple replicas; no single deployment-wide calculation or enforced upper bound was established by the inspected code.
+
+If each process/replica creates its own engine, aggregate possible PostgreSQL connections can exceed the intended database connection budget as replicas and workers scale. Pool timeout metrics exist, but a 30-second wait can create long request latency under saturation.
+
+Required correction: calculate maximum connections across web replicas, Celery workers, beat/maintenance processes, migrations and operational access; reserve capacity for administration; set per-process pools accordingly; and validate with load tests and database-side connection metrics. Record the actual FastAPI Cloud/Neon connection budget separately; it was not inspected here.
+
+### 21.7 P2 — POS receipt lot creation is protected by a unique constraint but has no explicit race-focused route test
+
+Goods receipt first checks for an existing idempotency movement, then selects a matching lot FOR UPDATE; when no row exists it creates a new lot. A row lock cannot lock a row that does not yet exist. The unique constraint on product_id + pharmacy_id + lot_number is the final duplicate-lot guard, and the route converts an IntegrityError into HTTP 409 after rollback.
+
+The database guard prevents two committed duplicate lot rows, but the inspected receipt tests establish sequential idempotency rather than concurrent first receipt of the same new lot. The losing request returns a conflict rather than transparently replaying the winning receipt.
+
+Required correction: add a concurrent first-receipt test and decide whether HTTP 409 is the intended conflict contract or whether the losing transaction should reload the committed lot and resolve by idempotency key. Verify that different idempotency keys for the same lot cannot accidentally apply the same receipt twice.
+
+### 21.8 P2 — Outbox provides durable at-least-once delivery, not end-to-end business application
+
+The Edge outbox stores event IDs and aggregate versions, and the dispatcher uses leases/fencing and retries. The related architecture contract states that Central currently records a durable inbox receipt with processing_status=accepted; that acknowledgement is receipt, not application of sale/payment/inventory effects. The Central domain-event consumer and end-to-end reconciliation are not established by the reviewed implementation.
+
+Required correction: retain the at-least-once delivery contract, implement an idempotent Central consumer with durable applied/rejected states, per-aggregate ordering and gap detection, and add reconciliation between Edge business ledgers and Central projections. Do not describe a Central accepted receipt as a completed cross-site transaction.
+
+### 21.9 P2 — Backup, restore and disaster-recovery readiness cannot be established from application code
+
+The inspected code and migration definitions establish transaction-level controls, not backup frequency, PITR retention, encryption, restore isolation, RPO/RTO, WAL/archive integrity or a tested recovery procedure. No live database configuration or backup artifacts were inspected.
+
+Required correction: document per-environment backup ownership, encrypted backup storage, retention, PITR, restore drills, measured RPO/RTO, and post-restore reconciliation of inventory ledger, sale/payment state and outbox. A configured backup job alone is not evidence of recoverability.
+
+### 21.10 Database and transaction readiness summary
+
+- POS idempotency key serialization and database uniqueness: **implemented in code/schema**.
+- FEFO row locking and stock allocation: **implemented in code**.
+- Inventory movement ledger, balance checks and append-only triggers: **implemented in migration/model; live schema not verified**.
+- Sale/payment/inventory/outbox atomic write boundary: **implemented in inspected route code**.
+- Insufficient-stock rollback: **covered by integration test definition; not executed**.
+- Sequential checkout replay and conflicting key reuse: **covered by integration test definition; not executed**.
+- Concurrent inventory movement idempotency/oversell: **covered at movement-service level; not executed**.
+- Concurrent end-to-end POS checkout last-unit race: **not covered in inspected test module**.
+- Payment webhook HMAC and terminal replay handling: **implemented; provider-specific authenticity/freshness depends on an upstream adapter not established here**.
+- Payment provider event ID/replay window: **not established**.
+- Pending cancellation reservation release and replay: **implemented and represented in integration tests; not executed**.
+- Goods receipt duplicate lot guard: **database unique constraint implemented; concurrent first-receipt route behavior not tested in inspected module**.
+- SQLAlchemy pool limits and DB metrics: **implemented per process; total deployment connection budget not established**.
+- Application-level tenant checks and composite lot identity FK: **implemented; RLS not established in inspected migration**.
+- Edge outbox lease/retry/dead-letter: **implemented and represented in integration tests; not executed**.
+- Central durable receipt: **implemented; Central business event application/reconciliation not established**.
+- Backup/restore, PITR, RPO/RTO and disaster recovery: **not established by this static review**.
+- Database connections, migrations, integration tests, load tests and restore drills: **not run**.
+
+No application source changes, test executions, CI runs, database connections, migrations, data writes, backup operations or deployments were performed as part of this review.
