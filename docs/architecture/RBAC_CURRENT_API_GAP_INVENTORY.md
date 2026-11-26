@@ -1456,3 +1456,97 @@ The compressor uses punctuation-based sentence splitting and filters fragments s
 - End-to-end RU/EN document parsing and clinical chunk quality: **not demonstrated by the inspected unit tests**.
 
 No application source changes, database operations, migrations, CI runs or deployments were performed as part of this review.
+
+
+## 14. Retrieval and ranking quality
+
+Source baseline: static inspection of active `AIComponents.initialize()`, `LangGraphRAG`, `PgVectorStore`, query transformation, PostgreSQL/pgvector Alembic migration, retrieval unit tests and the offline retrieval benchmark runner/dataset. No benchmark was executed during this audit; no live model, embedding provider, database or deployment was invoked.
+
+### 14.1 Implemented retrieval path
+
+The active path is:
+1. Retain the original user query.
+2. Generate up to the configured number of Multi-Query variations and optionally one HyDE query.
+3. Embed each query using the single active embedding provider.
+4. For each query and each authorized access-level filter set, run vector and PostgreSQL full-text search in parallel.
+5. Fuse vector and BM25 result lists with Reciprocal Rank Fusion (RRF).
+6. Deduplicate chunks across query/filter variants and retain up to `max_context_docs`.
+7. Apply LLM relevance grading, bounded rewrite retries, contextual compression and answer generation.
+
+The production pgvector migration creates an HNSW index using `vector_cosine_ops`, `m=16` and `ef_construction=200`. Vector SQL orders by cosine distance; PostgreSQL full-text search uses `english` for English and `simple` for other languages. Hybrid search retrieves up to `2 * top_k` candidates from each of vector and BM25 before RRF and returns at most `top_k` fused candidates per query/filter call.
+
+### 14.2 P1 — No active reranker despite declared reranking configuration
+
+`PgVectorStore` accepts an optional `RerankerPort`, but the active `AIComponents.initialize()` constructs it without a reranker. No concrete reranker implementation or runtime factory/injection was found in the active construction path. `RAG_RERANK_TOP_N` is declared in configuration but is not passed into runtime construction. The optional reranker exception handler also falls back to fused results without surfacing a retrieval warning if a reranker is supplied later and fails.
+
+**Impact:** current ranking is RRF-only. There is no active cross-encoder or other dedicated semantic reranking stage to refine the fused candidates against the original user question.
+
+**Required correction:** evaluate a reranker on the same pharmacist-reviewed benchmark before adopting one. If adopted, inject it explicitly, wire its top-N setting, emit a bounded warning/metric on failure and define whether fallback is acceptable for each clinical query class. Do not claim reranking is active today.
+
+### 14.3 P1 — Russian query transformation falls back to English
+
+`QueryContext.language` is passed into the active query transformer, but the language-instruction maps in `QueryTransformer.transform_with_hyde()` and `generate_multi_query()` contain `vi`, `ar`, `th`, `id` and `en`, not `ru`. Unknown languages use the English instruction.
+
+**Impact:** for a Russian request, the original Russian query is retained (a useful safeguard), but Multi-Query and HyDE may generate English retrieval text. This can be harmful when the indexed corpus is Russian-only, terminology is jurisdiction-specific, or cross-lingual embedding quality is not established.
+
+**Required correction:** add explicit Russian transformation instructions and test RU-only, EN-only and mixed-language corpora. Assert preservation of drug name, active ingredient, strength, dosage form, units, negation, route and patient-context qualifiers in every generated variant. Track retrieval results by original and transformed query separately.
+
+### 14.4 P1 — LLM document grading sees only the first 800 characters of each chunk
+
+`LangGraphRAG._grade_one()` sends `hit.chunk.content[:800]` to the relevance classifier. Chunks can be larger than this excerpt under the configured chunk budget. A relevant dosage, warning, interaction or contraindication appearing later in a chunk is invisible to the grader, which can reject an otherwise relevant retrieved result.
+
+The grading decision is also binary: a candidate is retained when the model response starts with `YES`. There is no structured relevance score, evidence-span output or clinical-field coverage check.
+
+**Required correction:** grade the complete bounded chunk or a structure-aware excerpt that includes the relevant section/title and all protected clinical spans. Return structured relevance plus supporting span(s); validate output schema and test cases where the only relevant information appears near the end of a chunk. Measure grader false-negative rate separately for dosage, interactions, contraindications and negation queries.
+
+### 14.5 P2 — No retrieval relevance threshold or calibrated score semantics
+
+The active graph does not apply a configured minimum vector similarity or calibrated relevance threshold before document grading. The declared `RAGSettings.similarity_threshold` is passed to `PromptCache`, not to vector retrieval. Vector search converts `1 - cosine_distance` into a bounded [0, 1] value; RRF then replaces raw similarity with a rank-fusion score. These values are different score semantics and neither is a calibrated probability of clinical relevance.
+
+**Required correction:** keep vector similarity, RRF score, reranker score and calibrated relevance as separately named fields. Establish thresholds only from a labelled corpus and evaluate abstention/false-negative trade-offs. Do not interpret RRF score as confidence.
+
+### 14.6 P2 — RRF and reranking settings do not fully control the runtime
+
+`RAG_RRF_K` is declared but is not passed from `AIComponents.initialize()` to `PgVectorStore.hybrid_search()`; the method default `rrf_k=60` is used. `RAG_RERANK_TOP_N` is also not an effective setting because no reranker is injected. Existing architecture documentation already records these ineffective controls; this retrieval review confirms the active call path.
+
+**Required correction:** either wire and contract-test the settings or remove them from environment templates until they have effect. Add tests that modify each supported setting and assert the runtime search arguments change.
+
+### 14.7 P2 — Multi-query fan-out increases retrieval work, but fusion is local to each query
+
+Each query variant is searched independently. Each `hybrid_search()` performs its own vector/BM25 fusion, after which `retrieve_node()` deduplicates across variants and retains the highest per-call score for each chunk. It does not perform a second rank-fusion across the original query, Multi-Query variants and HyDE results.
+
+With up to the original query + configured Multi-Query variants + one HyDE query, and two or three access-level filter sets, the graph can fan out to multiple hybrid searches per request. The concurrency semaphore bounds active calls, but does not itself reduce total search count.
+
+**Impact:** a chunk consistently retrieved across several independent query formulations does not receive an explicit cross-query consensus boost. Query variants can also increase latency and database load without a measured gain in clinical recall.
+
+**Required correction:** compare current max-score deduplication with a second-stage rank fusion across query variants. Report recall, nDCG, MRR, p50/p95 latency and candidate count by query strategy; retain only transformations that improve measured quality.
+
+### 14.8 P1 — Existing retrieval benchmark is not a clinical medication benchmark or full RAG evaluation
+
+The repository includes `scripts/evaluate_rag_retrieval.py` and an expanded manually labelled synthetic pharmacy-operations SOP dataset. It exercises the `PgVectorStore.hybrid_search()` path against an isolated disposable schema, includes cross-tenant decoy chunks, and reports retrieval metrics (Recall@K, Precision@K, MRR, nDCG) and latency percentiles. The runner explicitly excludes LLM generation, answer groundedness, citation precision/recall, provider token cost and production-scale throughput.
+
+The inspected benchmark queries and corpus are English pharmacy operations/SOP content (e.g. receiving, cold chain, returns, stock count, privacy and dispensing workflow). It does not establish medication-reference retrieval quality for drug monographs, active ingredients, strength/form/route/dose, drug interactions, contraindications, clinical negation, Russian morphology or RU↔EN cross-language retrieval. It also tests the vector-store hybrid search directly, not the full active LangGraph pipeline with Multi-Query, HyDE, grading, rewrite and compression.
+
+**Required correction:** keep the existing SOP benchmark for workflow retrieval, but create a separate pharmacist-reviewed synthetic/de-identified medication benchmark. Include exact drug entities, ingredient synonyms, brand/generic pairs, strength/unit/form/route, dosage and frequency, contraindications, interaction pairs, explicit negation, jurisdiction/effective-date cases, RU/EN monolingual and cross-lingual queries, and adversarial near-neighbor distractors. Run component ablations and full LangGraph end-to-end evaluation. Store immutable dataset and code revision hashes with every result.
+
+### 14.9 P2 — Existing tests are contract tests, not measured retrieval-quality evidence
+
+The inspected unit tests verify query preservation, retrieval concurrency limits, bounded graph configuration, tenant filter contracts and vector schema/index presence. These are useful correctness safeguards. They do not establish recall, ranking quality, clinical entity coverage, query rewrite fidelity, RU/EN performance, production latency or quality improvement from HyDE/Multi-Query.
+
+No benchmark run or result artifact was generated during this audit. Historical benchmark artifacts, if any, must be tied to their exact source revision, dataset and embedding model before they can be compared with the current code.
+
+### 14.10 Retrieval readiness summary
+
+- PostgreSQL/pgvector HNSW cosine index: **implemented in Alembic migration; deployment-specific index health/performance not measured here**.
+- BM25 + vector hybrid retrieval: **implemented**.
+- Reciprocal Rank Fusion: **implemented with default k=60**.
+- Dedicated reranker: **not injected into active runtime**.
+- Original query retained alongside generated variants: **implemented**.
+- Russian Multi-Query/HyDE prompt instructions: **missing; English fallback is used**.
+- LLM relevance grading: **implemented, but only first 800 characters are evaluated**.
+- Calibrated retrieval confidence/threshold: **not established**.
+- Existing SOP retrieval benchmark: **implemented; synthetic/English workflow scope, not clinical medication evidence**.
+- Full LangGraph RU/EN medication retrieval benchmark: **not demonstrated**.
+- Production-scale retrieval latency and quality: **not established by this static review**.
+
+No application source changes, CI runs, migrations, database operations or deployments were performed as part of this review.
