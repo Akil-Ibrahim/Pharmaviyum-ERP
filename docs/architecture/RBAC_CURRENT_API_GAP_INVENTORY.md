@@ -576,6 +576,7 @@ This section supersedes any earlier shorthand path in this inventory where the l
 | Pharmacy sellable Product master | `/api/v1/products/search`, `/api/v1/products/{product_id}`, `/api/v1/products/`, `POST/PUT/DELETE` | Read: CurrentUser; create/update/deactivate: CurrentSuperuser | Product model has no `pharmacy_id`; SKU is globally unique. It stores global `price` and legacy aggregate `stock` (the model/schema explicitly state per-pharmacy stock belongs to Inventory). Responses include both price and stock. Treat this as a shared/global product master, not tenant inventory. If prices differ by pharmacy, a pharmacy-scoped price/assortment model is required before exposing these fields as pharmacy-specific values. |
 | Patient purchases | Legacy `/patient-purchases/` and canonical `/api/v1/patient-purchases/`; history at both `/{patient_id}/history` paths | Legacy list: CurrentSuperuser; history: CurrentUser + explicit active membership, patient ownership, purpose and PHI audit; platform superusers denied | The router is intentionally mounted twice. Maintain one documented canonical path and test both aliases until legacy removal is approved. History still lacks granular membership-role permission. |
 | Pharmacy Edge Sync | `/api/v1/sync/edge-nodes`, `/edge-nodes/{node_id}`, `/outbox/dead-letter`, `/outbox/dead-letter/{entry_id}/replay`, inbound event endpoint | Provision/revoke/list/replay: CurrentSuperuser; inbound event: Edge credential authentication | Distinct platform and machine-principal policies; preserve tenant-derived Edge identity. See section 9.3. |
+| RAG document ingestion | `POST /api/v1/ingest/documents/upload`, `POST /api/v1/ingest/documents/url`, `GET /api/v1/ingest/jobs`, `GET /api/v1/ingest/jobs/{job_id}` | Upload and URL ingestion require both `CurrentSuperuser` and `CurrentUser`; job list/status require `CurrentSuperuser` | These routes are platform-superuser-only today, not ordinary pharmacy-admin/member endpoints. Keep content ingestion as a distinct platform capability until a scoped pharmacy permission and worker grant are designed. URL ingestion additionally needs SSRF/egress controls. |
 | User administration and self-service | `/users/me/avatar`, `/users/`, `/users/{user_id}` | Avatar operations: CurrentUser on self; list/create/read other users: CurrentSuperuser | User account administration is not pharmacy membership administration. No pharmacy-scoped membership/role assignment API is currently mounted. |
 | Monitoring | Root `/health`, `/ready`, `/metrics`, `/mcp/health`, `/version`; root `/api-info` | Health/readiness/metrics/version/api-info: public; MCP health: CurrentSuperuser | Keep liveness/readiness public only as operationally required. Restrict metrics to trusted scrape network/identity. Review public version metadata (build, environment, debug flags, Python runtime). Detailed MCP health remains operator-only. |
 
@@ -602,10 +603,10 @@ The exact relative paths above are appended to each router's declared prefix. Fo
 - This is a semantic/data-model risk if clients interpret the returned price/stock as selected-pharmacy values. Before adding pharmacy roles, define whether product master price is global reference data or whether pharmacy-specific price/assortment must be modeled separately. Never use the global legacy `stock` field for pharmacy authorization or availability decisions.
 
 **RAG ingestion Celery boundary**
-- `POST /api/v1/ingest/documents/upload` and `/documents/url` require both `CurrentSuperuser` and `CurrentUser`, then call `require_pharmacy_tenant`. Ordinary non-superusers therefore need active membership; platform superusers use the existing bypass.
-- The task config carries the authorized `pharmacy_id`; the Celery task requires a positive integer and stamps it onto each document before chunking. Uploaded object keys are validated against that pharmacy.
-- The worker does not receive a persisted initiating actor, approved membership role, purpose, permission ID or signed job grant; its trust boundary is the Celery broker and caller-provided task config. The Redis progress record stores pharmacy metadata, while `GET /api/v1/ingest/jobs/{job_id}` and list jobs are global CurrentSuperuser-only views.
-- Treat ingestion as a distinct high-privilege content-management action. Before allowing a pharmacy-level administrator role, add explicit ingestion permission, immutable actor/tenant provenance, a scoped worker grant validated at execution, and tenant-aware job status access. Review external URL fetch controls separately (SSRF/egress policy); URL scheme validation alone is not a complete destination policy.
+- `POST /api/v1/ingest/documents/upload` and `/documents/url` declare both `CurrentSuperuser` and `CurrentUser` dependencies, so the effective human caller must be a platform superuser; the second dependency does not broaden access to ordinary active pharmacy members. The handler then calls `require_pharmacy_tenant` for the supplied pharmacy ID. A platform superuser currently passes through the existing superuser tenant bypass.
+- The task config carries the pharmacy ID accepted by the handler; the Celery task requires a positive integer and stamps it onto each document before chunking. Uploaded object keys are validated against that pharmacy.
+- The worker does not receive a persisted initiating actor, approved membership role, purpose, permission ID or signed job grant; its trust boundary is the Celery broker and caller-provided task config. The Redis progress record stores pharmacy metadata, while `GET /api/v1/ingest/jobs/{job_id}` and `GET /api/v1/ingest/jobs/{job_id}` are platform-superuser-only views. The jobs list is also platform-superuser-only.
+- Treat ingestion as a distinct high-privilege content-management action. Do not map it to Pharmacy Admin by implication. If future policy permits pharmacy-level ingestion, add an explicit permission, immutable actor/tenant provenance, a scoped worker grant validated at execution, and tenant-aware job status access. Review external URL fetch controls separately (SSRF/egress policy); URL scheme validation alone is not a complete destination policy.
 
 **Public operational metadata**
 - The root monitoring routes `/health`, `/ready`, `/metrics` are unauthenticated in the mounted implementation. The separate `/version` endpoint returns build/environment/debug/runtime metadata, also without an auth dependency.
@@ -617,3 +618,62 @@ The exact relative paths above are appended to each router's declared prefix. Fo
 Before coding the permission registry, generate a runtime FastAPI route table from the actual app instance and snapshot method, path, endpoint function, dependencies, response model and router source. Assert no duplicate method/path registrations except explicitly approved aliases. The static source inventory above is a review baseline, not a substitute for that runtime snapshot or endpoint tests.
 
 No new route or permission is approved by this inventory. Existing CurrentUser/CurrentSuperuser checks remain the current controls until a separate policy approval and implementation PR.
+
+## 12. Endpoint-to-permission mapping and vocabulary gaps
+
+This matrix translates the observed mounted route families into action-level candidate permissions. Identifiers already present in section 3 of the Pharmacy RBAC Permission Specification are marked **existing candidate**. Any other identifier below is a **proposed vocabulary addition**, not an approved grant. Where the current endpoint is platform-superuser-only or machine-authenticated, the permission is a future target boundary only; it must not be interpreted as permission to widen access.
+
+| API operation | Existing enforcement | Candidate permission / principal boundary | Additional condition |
+|---|---|---|---|
+| POS product search and sale read | CurrentUser + pharmacy tenant | `pos.read` (existing candidate) | Selected pharmacy context; product and sale tenant predicates |
+| POS checkout | CurrentUser + pharmacy tenant | `pos.checkout` (existing candidate) | Cashier session, stock reservation, idempotency and payment state |
+| POS sale cancel | CurrentUser + pharmacy tenant | `pos.sale.cancel` (proposed vocabulary addition; current spec has `pos.sale.cancel` only in matrix? Keep canonical single ID) | Allowed sale/payment state; cancellation reason and inventory invariants |
+| POS inventory receipt | CurrentUser + pharmacy tenant | `inventory.receive` (existing candidate) | Supplier/lot ownership, receiving workflow, idempotency |
+| POS payment callback | HMAC shared-secret callback | Payment-provider service principal; not a human role permission | Provider-specific credential binding, signed timestamp/nonce freshness, payment reference match |
+| Inventory read | CurrentUser + membership pharmacy IDs | `inventory.read` (existing candidate) | Selected tenant scope and object-level pharmacy predicate |
+| Inventory create/update/adjust/delete | CurrentSuperuser | `inventory.manage` or split `inventory.create`, `inventory.update`, `inventory.adjust`, `inventory.archive` (proposed vocabulary additions) | Keep platform-only until product/security approves pharmacy role matrix and object scope |
+| Batch read | CurrentSuperuser | `inventory.batch.read` (proposed vocabulary addition) | ProductBatch currently lacks pharmacy ownership; do not widen access until tenant ownership exists |
+| Patient list/search/detail | CurrentUser + pharmacy scope | `patients.read` (existing candidate) | Active membership, selected tenant, patient ownership; PHI purpose/audit where applicable |
+| Patient create/update/archive | CurrentUser + pharmacy scope / service checks | `patients.create`, `patients.update`, `patients.archive` (proposed vocabulary additions) | Verify service-level policy and PHI audit per mutation |
+| Patient visit recording | CurrentUser + pharmacy scope | `patients.visit.record` (proposed vocabulary addition) | Patient ownership; record purpose and audit policy |
+| Patient AI profile | CurrentUser + explicit membership/patient checks and PHI audit | `clinical_records.read` (existing candidate) | Patient ownership, allowed purpose, audit commit before release |
+| Patient purchase history | CurrentUser + explicit membership, ownership, purpose and PHI audit | `patients.purchase_history.read` (proposed vocabulary addition) | Deny platform support principal absent separately approved support grant |
+| Legacy patient purchase list | CurrentSuperuser | Platform data-operations capability; not `patients.read` | Keep global admin path separate from pharmacy clinical access |
+| Dashboard operational summary | CurrentUser + pharmacy scope | `dashboard.read` (proposed vocabulary addition) | Response must exclude identifiable patient and medication-level fields |
+| Dashboard clinical panels | CurrentUser + pharmacy scope (current gap) | `clinical_dashboard.read` (proposed vocabulary addition) | Split endpoint, patient/tenant scope, purpose and PHI audit |
+| Legacy patient-linked order read/create/status | CurrentUser + pharmacy scope | `orders.read`, `orders.create`, `orders.status.update` (proposed vocabulary additions) | Preserve distinction from POS Sale/Payment |
+| Shared drug catalog search | CurrentUser | `catalog.read` (existing candidate) | Shared reference-data semantics |
+| Drug catalog source ingestion/review | CurrentSuperuser | `catalog.manage` (existing candidate) plus platform governance boundary | Shared catalog governance; separate approval and audit |
+| Medical-device reference search | CurrentUser | `catalog.read` (existing candidate) or a future `medical_devices.read` if independent policy is required | Shared reference data, no pharmacy stock scope |
+| Global Product master read | CurrentUser | `catalog.read` (existing candidate) | Global product master; do not imply tenant-specific price/stock |
+| Global Product master create/update/deactivate | CurrentSuperuser | `catalog.manage` (existing candidate) plus platform governance boundary | SKU globally unique; no pharmacy_id on Product |
+| Suppliers read/manage | CurrentSuperuser | `suppliers.read`, `suppliers.manage` (existing candidates) | Current model/API are global; define ownership before pharmacy role exposure |
+| Pharmacy membership administration | No mounted pharmacy-scoped membership/role API | `members.read`, `members.invite`, `members.role.assign` (existing candidates) | Requires invitation/approval workflow, audit and anti-self-escalation |
+| Pharmacy settings | No complete mounted action API identified | `pharmacy.settings.read`, `pharmacy.settings.update` (existing candidates) | Define resource ownership and settings contract |
+| RAG ingestion upload/URL | CurrentSuperuser + CurrentUser; effective platform superuser only | Platform content-management capability; future `rag.ingestion.create` (proposed vocabulary addition) | Worker grant must bind actor, pharmacy, source, purpose, permission and correlation ID |
+| RAG job list/status | CurrentSuperuser | Platform operations capability; future `rag.ingestion.job.read` (proposed vocabulary addition) | Tenant-aware access if exposed to pharmacy users |
+| Edge node provision/revoke and dead-letter replay | CurrentSuperuser | Platform Edge operations principal; not Pharmacy Admin | Replay reason, operator audit, scoped tenant support grant if later required |
+| Edge inbound sync event | Edge credential | Edge service principal | Derive pharmacy from enrolled node; validate event schema, version and idempotency |
+| ERP integration metadata/events | CurrentSuperuser | Platform integration-operations capability | Tenant binding and provider/service identity not yet modeled |
+| User self-avatar | CurrentUser on self | Account self-service; no pharmacy role permission | User may only mutate own avatar |
+| User account administration | CurrentSuperuser | Platform identity-administration capability | Separate from pharmacy member administration |
+| Health/readiness | Public | Operational probe endpoint | Return minimum status only; no PHI or secrets |
+| Metrics | Public | Monitoring scrape principal / network boundary (proposed) | Restrict access at infrastructure or application boundary |
+| Version/build metadata | Public | Operational metadata endpoint | Minimize environment/debug/runtime disclosure |
+| MCP patient history | Trusted MCP context, patient binding, purpose, ownership and PHI audit; registry role filter uses legacy role | `clinical_records.read` (existing candidate) plus MCP invocation principal | Resolve effective pharmacy permission at execution; retain PHI audit |
+| MCP prescription verification | Trusted pharmacy context and patient scope; no selected-patient binding/purpose/PHI audit in reviewed function | Future `prescriptions.verify` (proposed vocabulary addition) | Add patient binding, purpose and PHI audit before exposing clinical result |
+| Background patient notifications | Worker task, pharmacy-qualified patient lookup | Future `patients.notify` (proposed vocabulary addition) plus scoped job grant | Actor/service, template allowlist, purpose, tenant and audit at enqueue and execution |
+| Report/export generation | No dedicated implementation identified | Future `reports.generate`, `exports.create`, `exports.download` | Server-derived tenant scope, minimum fields, actor-bound short-lived download authorization and audit |
+
+### 12.1 Permission vocabulary reconciliation
+
+The current specification is a starting vocabulary, not yet a complete route-level contract. Before implementation, reconcile at least these items:
+
+1. Add explicit permissions for patient creation, patient visit recording, purchase-history access, operational versus clinical dashboard access, legacy orders, RAG ingestion/jobs, MCP prescription verification, notifications, reports and exports.
+2. Decide whether POS sale cancellation is canonically `pos.sale.cancel` or whether the specification's resource.action convention should use `pos.cancel`; use one stable ID consistently.
+3. Decide whether inventory writes should remain separate actions (`inventory.receive`, `inventory.adjust`, `inventory.transfer`) and whether create/update/archive need separate identifiers.
+4. Keep shared reference catalog permissions distinct from pharmacy-owned assortment, pricing and inventory permissions.
+5. Do not use a broad `patients.read` permission as a substitute for purpose-bound clinical record, purchase-history or AI-profile access.
+6. Keep platform operations, Edge nodes, payment providers, workers and MCP invocations as distinct principal classes. A permission string does not convert a machine principal into a human pharmacy role.
+
+No proposed vocabulary addition in this section is approved for assignment or enforcement. Product, clinical and security owners must resolve the policy decisions before implementation.
