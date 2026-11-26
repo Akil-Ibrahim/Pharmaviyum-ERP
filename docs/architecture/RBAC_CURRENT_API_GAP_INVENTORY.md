@@ -382,6 +382,10 @@ The prescription-verification tool is tenant-scoped, which is positive, but tena
 5. Add integration tests for worker and MCP denial paths, including audit failure and cross-tenant payload substitution.
 6. Keep all unapproved grants denied by default. These findings do not approve the proposed four pharmacy roles or any role-to-permission mapping.
 
+
+
+**POS authorization finding (verified against mounted `src/pharmaviyum/api/v1/pos.py`):** `require_pharmacy_tenant` proves active membership only; it does not evaluate pharmacy role or action permission. Consequently, checkout, lot lookup, goods receipt and pending-sale cancellation are membership-authorized today. Checkout accepts caller-supplied `discount_total` and only checks that discount is below subtotal and final total remains positive; no discount permission, ceiling, reason or approval is enforced. Lot lookup returns lot identifiers, expiry and quantity/reservation details. These are implementation gaps, not grants. Do not interpret the draft role matrix as active controls. Prioritize server-side action authorization and discount policy before enabling pharmacy roles.
+
 ## 9. Integrations, webhooks and application event flows
 
 Source baseline: `main` at `b5a0f51cc45e39b5afdfd21af99a5053823af5ce`. This section distinguishes the legacy ERP integration API, POS payment callbacks, durable Edge synchronization, and the process-local application event bus.
@@ -626,6 +630,11 @@ This matrix translates the observed mounted route families into action-level can
 | API operation | Existing enforcement | Candidate permission / principal boundary | Additional condition |
 |---|---|---|---|
 | POS product search and sale read | CurrentUser + pharmacy tenant | `pos.read` (existing candidate) | Selected pharmacy context; product and sale tenant predicates |
+| POS lot lookup | `GET /api/v1/pos/products/{product_id}/lots`; CurrentUser + requested pharmacy membership | `inventory.read` (existing candidate; earlier mapping) | Returns lot number, expiry date, on-hand quantity, reserved quantity and available quantity. No narrower POS-only permission or minimum-field response policy; decide whether Cashier needs lot-level visibility or only availability needed for checkout |
+| POS discount application | `POST /api/v1/pos/checkout`; CurrentUser + pharmacy membership; client supplies `discount_total` | `pos.discount.apply` (candidate) | No role/permission check, discount threshold, reason code, approval reference or server-side pricing policy identified. Any member can submit a discount below subtotal; matrix proposal of Manager-only must not be mistaken for enforced behavior |
+| POS sale cancellation | `POST /api/v1/pos/sales/{sale_id}/cancel`; CurrentUser + sale pharmacy membership; pending-payment state only | `pos.sale.cancel` (existing candidate) | No actor-role/action permission, ownership/shift restriction, mandatory cancellation reason or manager approval identified. Any pharmacy member can cancel an unpaid sale and release its stock reservations |
+| POS checkout | `POST /api/v1/pos/checkout`; CurrentUser + pharmacy membership; FEFO allocation, reservation, idempotency and payment-state handling | `pos.checkout` (existing candidate) | No role/action permission or cashier-session/register ownership check identified. Tenant membership alone authorizes checkout today |
+| POS goods receipt | `POST /api/v1/pos/inventory/receive`; CurrentUser + pharmacy membership; actor-attributed movement and idempotency | `inventory.receive` (existing candidate) | No role/action permission, PO/supplier linkage, receiver/count separation or approval identified. Any pharmacy member can add stock through this route today |
 | POS checkout | CurrentUser + pharmacy tenant | `pos.checkout` (existing candidate) | Cashier session, stock reservation, idempotency and payment state |
 | POS sale cancel | CurrentUser + pharmacy tenant | `pos.sale.cancel` (existing candidate) | Allowed sale/payment state; cancellation reason and inventory invariants |
 | POS inventory receipt | CurrentUser + pharmacy tenant | `inventory.receive` (existing candidate) | Supplier/lot ownership, receiving workflow, idempotency |
