@@ -37,21 +37,21 @@ After the permission vocabulary and role matrix are approved, add optional permi
 
 | Navigation destination | Candidate visibility permission |
 |---|---|
-| Dashboard | A dashboard-specific read permission, or an explicitly documented authenticated-member baseline |
+| Dashboard | `dashboard.read` for operational aggregates; `clinical_dashboard.read` for separately authorized clinical panels |
 | POS | `pos.read` |
 | Clinical Care / Patients | `patients.read` |
-| Clinical Care / Prescriptions | `prescriptions.read` |
-| Inventory / Drug Catalog | `catalog.read` |
+| Clinical Care / Prescriptions | `prescriptions.read` (read/list); dispensing and verification remain separate action permissions |
+| Inventory / Drug Catalog | `catalog.read` for shared reference data; pharmacy assortment management, if introduced, requires a separate pharmacy-scoped permission |
 | Inventory / Stock Management | `inventory.read` |
-| Inventory / Transfers | `inventory.read` plus a future transfer-specific read permission if needed |
+| Inventory / Transfers | `inventory.read` for list/read visibility; transfer actions require `inventory.transfer` and a distinct transfer-read permission only if the page exposes a separate resource |
 | Inventory / Defectura | `defectura.read` |
 | Procurement / Suppliers | `suppliers.read` |
 | Procurement / Purchase Orders | `procurement.read` |
 | Procurement / Receiving | `procurement.read` |
-| Pharmacies | A separately approved pharmacy-administration/read permission |
-| Administration / Users | A separately approved user/member administration permission |
+| Pharmacies | `pharmacy.settings.read` only for the current user's selected pharmacy context; cross-pharmacy administration requires a separate platform capability |
+| Administration / Users | `members.read` for membership administration within the selected pharmacy; global User account administration remains platform-only |
 | Settings | A documented account-settings baseline or a pharmacy-settings permission, depending on the actual page scope |
-| System / Background Tasks | A separately approved operational/system permission |
+| System / Background Tasks | Platform operational capability only; never infer it from pharmacy_admin or manager |
 
 This table is an integration mapping proposal, not approval to grant any permission. Do not infer that a read permission grants create, update, approve, dispense, refund, export, or administrative actions.
 
@@ -125,3 +125,37 @@ Backend:
 8. Validate with synthetic Demo data and the existing CI suite before any deployment.
 
 This document authorizes no code changes, schema changes, migrations, manual SQL, permission grants, merge, or deployment. Keep the existing Sidebar behavior until the required policy and API decisions are approved.
+## 9. Permission vocabulary alignment notes
+
+This plan uses the RBAC specification as the canonical permission vocabulary. The navigation table is only a visibility mapping; it does not assign roles or grant actions.
+
+| Navigation area | Canonical visibility permission | Scope / implementation gate |
+|---|---|---|
+| Dashboard | `dashboard.read` | Operational aggregate only; clinical panels require separate `clinical_dashboard.read` and must not be bundled into the general dashboard response. |
+| POS | `pos.read` | Does not grant checkout, discount, cancel or refund actions. |
+| Clinical Care / Patients | `patients.read` | Patient ownership and PHI policy still apply; purchase history is a separate permission. |
+| Clinical Care / Prescriptions | `prescriptions.read` | Does not grant dispense or verify. |
+| Inventory / Drug Catalog | `catalog.read` | Shared reference catalog only; global `catalog.manage` is platform governance, not pharmacy Manager authority. |
+| Inventory / Stock Management | `inventory.read` | Selected pharmacy scope and resource ownership required. |
+| Inventory / Transfers | `inventory.read` | Transfer operation requires `inventory.transfer`; visibility does not grant transfer execution. |
+| Inventory / Defectura | `defectura.read` | Create and approve remain distinct actions. |
+| Procurement / Suppliers | `suppliers.read` | Current supplier API is global and platform-superuser-only; do not expose as pharmacy-scoped until ownership is modeled. |
+| Procurement / Purchase Orders | `procurement.read` | Create, approve and receive remain distinct actions. |
+| Pharmacies | `pharmacy.settings.read` | Only selected pharmacy context; cross-tenant listing/administration requires separate policy. |
+| Administration / Users | `members.read` | Pharmacy membership directory only; global User account management remains platform-only. |
+| Settings | `pharmacy.settings.read` for pharmacy settings; account settings use an explicit non-tenant self-service baseline | Do not conflate account profile with pharmacy configuration. |
+| System / Background Tasks | Platform operational capability (not in pharmacy role vocabulary) | Must not be assigned to pharmacy roles by default. |
+
+### 9.1 Explicit non-equivalences
+
+- `catalog.manage` is global/shared catalog governance in the current model; it is not equivalent to pharmacy-specific assortment management. The initial role matrix must not grant it to Manager.
+- `members.*` governs pharmacy memberships, not global User account creation, password reset or platform administrator management.
+- `prescriptions.read` is not `prescriptions.dispense` or `prescriptions.verify`.
+- `inventory.read` is not `inventory.receive`, `inventory.adjust` or `inventory.transfer`.
+- `dashboard.read` excludes clinical panels and patient-level data. Clinical dashboard access requires a separate policy decision and PHI controls.
+- UI visibility permissions are not endpoint action grants. Each backend operation still needs its own action permission and resource/tenant checks.
+
+### 9.2 Unresolved route-to-navigation decisions
+
+The source audit does not establish that every sidebar item corresponds to a currently mounted API or implemented frontend page. Before adding permission metadata, cross-check each navigation item against the frontend route registry and actual product IA. Keep unimplemented items disabled regardless of permission. In particular, do not expose Suppliers, Purchase Orders, Background Tasks, Pharmacy administration or Settings as active merely because a candidate permission exists.
+
