@@ -2702,3 +2702,114 @@ Required correction: first establish the actual database role and trust model. I
 10. Run the tests only in the approved isolated CI/Demo environment after explicit authorization; no deployment follows automatically from this audit.
 
 No application source changes, permission grants, migrations, database connections, RLS/grant inspection, test executions, CI runs, API requests, queue operations or deployments were performed as part of this review.
+
+## 25. API Contract, Data Validation & Business Invariant Enforcement
+
+**Source baseline:** repository main at commit fb1e40fd47e1137bcff43369ececdb45953de473 (2026-11-26).  
+**Scope:** static inspection of active POS, Product, Pharmacy Domain, Order, Drug Catalog and Edge Sync request/response schemas, selected SQLAlchemy models and constraints, route declarations, and related unit/integration test definitions. No application import, route-table generation, OpenAPI export, API request, database query, migration inspection, test execution, frontend-client generation or live runtime validation was performed. Findings describe source contracts, not observed production responses.
+
+### 25.1 Positive contract and invariant controls confirmed
+
+- POS SaleCreate uses Decimal for discount and cash tender with non-negative, 12-digit/two-decimal bounds; requires cash tender for cash checkout, rejects it for external payments, rejects duplicate product lines, and bounds line count and quantities.
+- POS checkout derives product prices server-side, quantizes monetary calculations to cents using Decimal/ROUND_HALF_UP, rejects discounts above subtotal and non-positive totals, and rejects insufficient cash tender.
+- Sale and Payment persist monetary totals as Numeric(12,2). Sale, SaleItem and Payment models declare non-negative/positive amount, quantity, status, payment-method, uniqueness and idempotency constraints. Inventory has non-negative balance/reservation checks and reserved_quantity <= quantity.
+- Edge Sync contracts are materially stricter: nested payload models use ConfigDict(extra="forbid", strict=True), StrictInt quantities, explicit Literal state/method values, decimal-string validation at exactly two fractional digits, sale/item/payment total reconciliation, allocation quantity reconciliation, event-type/schema/aggregate-version allowlists, aware UTC-normalized occurred_at, and a 256 KiB payload limit.
+- Drug Catalog source/review contracts also forbid extra fields and use Literal review states plus cross-field validation for match/create/reject decisions.
+- Query inputs on reviewed search/list routes commonly have explicit minimum/maximum lengths and bounded limits. Product list caps limit at 200; POS and catalog search cap at 100; Sync dead-letter pagination bounds limit and offset.
+- Test definitions exist for POS schema validation, Sync strict payload validation, POS transactional checkout and Sync ingress. They cover meaningful positive/negative cases, but their presence does not establish passing execution.
+
+### 25.2 P1 — Pharmacy expiry-date normalization is not preserved between validation and persistence
+
+InventoryReceiptCreate.expiry_must_not_be_in_past converts an offset-aware expiry into a temporary UTC-naive local variable for the past-date check, but does not assign that normalized value back to self.expiry_date. The request object therefore retains the original offset-aware datetime.
+
+The receive handler then handles a timezone-aware value using expiry.replace(tzinfo=None), which removes the offset without first converting the value to UTC. The date used for persistence can therefore differ from the UTC date used by schema validation for timestamps near midnight. Separately, POS search, lot listing and checkout calculate expiry cutoffs from datetime.utcnow() and compare naive timestamps; the Pharmacy model's timezone setting is not used in these POS expiry decisions.
+
+For medication lots, this is a date-boundary correctness and patient-safety concern: the source does not establish one canonical pharmacy-local expiry-date interpretation across input validation, persistence and sellability. Existing receipt tests use naive datetimes; the inspected tests do not cover offset-aware inputs, UTC date-boundary crossings, or pharmacies in different timezones. This is a code-level risk, not proof that an expired medicine was dispensed.
+
+Required correction: represent a medicine expiry as a calendar date if that is the domain meaning, or define and consistently enforce a timezone-aware instant policy. Normalize once at the boundary and persist the normalized value. Evaluate sellability using the pharmacy's configured IANA timezone and add boundary tests for positive/negative offsets, DST transitions and local midnight. Do not silently strip timezone information.
+
+### 25.3 P2 — Product catalogue prices use binary floating-point storage while POS financial records use fixed-point decimal
+
+Product.price is declared as Python float and SQLAlchemy Float. ProductCreate, ProductUpdate and ProductResponse also expose float. The active POS checkout later converts this value through Decimal(str(value)) and quantizes to cents; Sale, SaleItem and Payment then persist Numeric(12,2).
+
+The transactional sale ledger therefore has fixed-point monetary columns, but the source price-of-record remains binary floating point. Conversion and cent quantization at checkout reduce downstream drift but do not make the catalog's stored monetary value an exact decimal contract. The older Order schema also accepts total_amount: float.
+
+Required correction: migrate authoritative monetary fields to Decimal + Numeric with explicit precision/scale, define currency and rounding policy, and preserve API decimal serialization (prefer decimal strings in external integration contracts). Add tests for fractional values, maximum supported amounts, rounding boundaries and round-trip persistence. Assess legacy data conversion before changing schema.
+
+### 25.4 P2 — Strict unknown-field rejection is inconsistent across request models
+
+Some contracts explicitly reject unknown fields, notably Edge Sync payloads, Drug Catalog source/review models and InventoryUpdate. Other active request models such as SaleCreate, ProductCreate, ProductUpdate, InventoryIn, PrescriptionIn, OrderCreate, PharmacyIn and ERP input models do not declare extra="forbid".
+
+Under Pydantic's default extra-field behavior, unsupported or misspelled keys are ignored rather than rejected. For example, a client may submit a field that it believes is part of a checkout or prescription request and receive a successful operation even though that field was not accepted by the contract. This is not mass assignment of arbitrary ORM attributes in the inspected handlers; it is a silent request-contract mismatch.
+
+Required correction: define a deliberate per-schema extra-field policy. Use extra="forbid" for security- and workflow-sensitive write contracts unless backward compatibility requires otherwise. Add tests proving that misspelled, unsupported and deprecated fields fail with a stable 422 response.
+
+### 25.5 P2 — Prescription and ERP state contracts permit unconstrained domain values
+
+PrescriptionIn.status is a plain string with a maximum length, not a Literal or enum; patient_id and optional product_id are plain integers without positive-value constraints; issued_at and expires_at have no cross-field chronology or timezone validation in this request schema. The Prescription model stores status as an unconstrained String(32) and has no corresponding status CHECK constraint in the inspected model.
+
+Likewise, ERPEventIn.direction is a free string and ERPIntegrationIn.sync_mode is a free string. These values can drift from the application's intended state vocabulary unless every caller/handler independently validates them. The Order status update schema is stronger and explicitly limits values to completed/cancelled, demonstrating an existing but inconsistent approach.
+
+Required correction: define shared enums/Literal contracts and matching database CHECK constraints for persisted state machines. Validate positive foreign-key identifiers, chronology, timezone semantics and legal state transitions at the service boundary. Keep API validation and DB invariants aligned so non-API writers cannot bypass the domain rules.
+
+### 25.6 P2 — Multiple Pharmacy Domain endpoints opt out of declared response models
+
+The active pharmacy_entities.py routes explicitly set response_model=None for pharmacy, supplier, inventory, batch, prescription, ERP integration and sync-event operations; the shared _list helper returns ORM entities directly. Other reviewed endpoints such as POS, Products, Orders, Drug Catalog and Sync use explicit response schemas in selected routes.
+
+For the response_model=None routes, the API source does not declare a bounded response DTO for OpenAPI documentation, output validation or field filtering. The exact serialized fields depend on FastAPI/ORM encoding behavior and the model attributes, so this audit does not claim that a specific sensitive field is currently exposed. The absence of an explicit response contract makes accidental schema expansion and frontend-client drift harder to detect.
+
+Required correction: introduce explicit response DTOs for every public route, especially patient-adjacent and operational entities. Return deliberately selected fields, validate output through response models, and add contract tests that assert both required fields and absence of internal/sensitive fields. Do not use raw ORM objects as the long-term public API contract.
+
+### 25.7 P2 — Pagination is not consistently bounded on operational list routes
+
+Some list endpoints are explicitly paginated and bounded, including Product list and Sync dead-letter events. In contrast, the inspected Pharmacy Domain helper _list materializes every row for pharmacies, suppliers and prescriptions; list_inventory has filters and deterministic ordering but no limit/offset; batch listing is also unbounded. Sync event history uses a fixed limit of 100 but has no cursor/offset contract in the inspected route.
+
+These endpoints can return an unbounded result set as tenant data grows, increasing response size, database work and client memory use. The review did not load-test or measure their runtime impact.
+
+Required correction: define a consistent pagination envelope (items, total or next cursor, limit/offset as appropriate), enforce maximum page sizes, use deterministic ordering with a unique tie-breaker, and add pagination boundary tests. For large operational histories, prefer keyset/cursor pagination over deep offsets.
+
+### 25.8 P2 — Date/time contracts mix naive timestamps, aware timestamps and calendar-date semantics
+
+Edge Sync explicitly requires timezone-aware occurred_at and normalizes it to UTC. POS sales, payments, inventory expiry, Pharmacy Domain events and several models use naive datetime.utcnow() or DateTime columns without timezone semantics. Other request fields accept unconstrained datetime values. Expiry is conceptually a calendar date but is represented as a datetime.
+
+The mixed contract makes comparisons, serialization and cross-system replay dependent on undocumented assumptions about whether a naive timestamp means UTC or local time. The expiry-specific consequence is detailed in 25.2.
+
+Required correction: establish a project-wide rule: aware UTC instants for events/audit timestamps and date-only types for calendar dates such as medicine expiry where appropriate. Use timezone-aware database types where supported, normalize at API boundaries, and test serialization/deserialization across offsets and DST.
+
+### 25.9 P2 — API validation and database constraints are not uniformly equivalent
+
+The POS and Inventory models have substantial CHECK and uniqueness constraints that complement request validation. Product price has a non-negative DB check but is Float rather than fixed-point Numeric. Prescription state and chronology have no equivalent model-level constraints in the inspected model. Pharmacy Domain request models also have uneven positive-ID, enum and date validation. This means some invariants are enforced only in selected request paths, while other write paths or future service/worker callers may not share them.
+
+Required correction: maintain an invariant matrix mapping each rule to request schema, domain/service validation and database constraint. Database constraints should protect durable invariants independent of caller; service validation should enforce cross-row/state-machine rules; Pydantic should provide early client feedback. Do not duplicate rules inconsistently or rely on API-only validation for data integrity.
+
+### 25.10 Error and HTTP contract observations
+
+The shared exception module defines a consistent success:false / errors envelope for Pharmaviyum exceptions, FastAPI HTTP exceptions, request validation errors, integrity errors and SQLAlchemy errors. Request validation is mapped to HTTP 422, conflicts/integrity errors to 409, and generic database/unhandled failures to sanitized 500 responses.
+
+However, the inspected source set does not establish a versioned, machine-stable error-code catalogue or contract tests across all registered handlers. Individual routes also construct HTTPException details directly, so the same semantic failure may have route-specific messages. The global registration and exact runtime behavior were not verified by importing the app or issuing requests.
+
+Required correction: define stable error codes and a versioned error schema, preserve correct HTTP status semantics, avoid exposing database internals, and test all registered exception handlers through the actual FastAPI app.
+
+### 25.11 Test coverage and evidence maturity
+
+- tests/unit/test_pos_schemas.py defines cash-tender requirements, external-payment cash rejection, duplicate-product rejection and idempotency-key boundaries.
+- tests/unit/test_sync_schemas.py defines strict Edge event payload, extra-field rejection, strict integer, amount precision, allocation reconciliation, total reconciliation and state-consistency cases.
+- tests/unit/test_products.py checks negative price/stock validation and selected Product/Inventory database constraint declarations. It does not establish exact decimal storage or monetary round-trip behavior.
+- tests/integration/test_pos_checkout.py defines checkout, FEFO, receipt, idempotency and expiry-today scenarios. The reviewed expiry tests use naive UTC datetimes and do not cover timezone-offset boundaries.
+- tests/integration/test_sync_ingress.py defines durable ingress, replay/conflict, edge identity, revoked credential and payload rejection scenarios.
+- The inspected evidence does not establish comprehensive response-model/OpenAPI snapshots, unknown-field rejection across all write schemas, prescription state-machine validation, unbounded-list pagination behavior, or a cross-route error-envelope contract suite.
+- No tests, application imports, OpenAPI generation, migrations, API calls or runtime checks were executed during this section.
+
+### 25.12 Prioritized contract remediation
+
+1. Fix expiry-date semantics and timezone normalization before relying on POS lot-expiry decisions in a live dispensing workflow.
+2. Convert authoritative Product and Order monetary values from Float to Decimal/Numeric with an explicit currency and rounding policy.
+3. Adopt strict, intentional extra-field policies for write schemas; reject silent misspellings on sensitive operations.
+4. Define shared enums and state-transition rules for prescriptions, ERP integrations/events and other persisted state fields; align DB CHECK constraints.
+5. Add explicit response DTOs to routes currently using response_model=None and test output field allowlists.
+6. Standardize bounded pagination for all operational list endpoints.
+7. Standardize aware UTC instants versus calendar-date fields and add offset/DST boundary tests.
+8. Maintain a request/service/database invariant matrix and contract-test the actual registered FastAPI exception handlers.
+9. Generate and review OpenAPI plus TypeScript client diffs in an approved CI/Demo workflow only after explicit authorization.
+
+No application source changes, schema changes, migrations, database connections, API requests, OpenAPI generation, tests, CI runs, queue operations or deployments were performed as part of this review.
