@@ -11,7 +11,7 @@ Mortarium — прикладной помощник фармацевта, пос
 
 В архитектуре есть существенные fail-closed механизмы: аутентифицированный контекст аптеки устанавливается на границе API; ID пациента проверяются относительно выбранной аптеки; pgvector retrieval требует положительный pharmacy ID; для чанков уровня пациента обязателен явный patient filter; выполнение MCP требует доверенного контекста запроса и RBAC; операции записи MCP запрещены, если не настроен доверенный verifier подтверждения.
 
-**Первоначальная P0-проблема изоляции контекста пациента устранена в `main` через PR #287** (merge commit `4d761990b31ef3aa78327dda1380689f2d094e8f`). Synchronous и streaming API теперь формируют версионируемый HMAC namespace `mortarium-session:v3` на основе pharmacy, аутентифицированного user, patient (включая явную область без пациента) и client session. Agent и RAG checkpoints независимо формируют непрозрачные версионируемые HMAC identifiers с учетом patient scope. Regression tests покрывают разделение областей, неверные идентификаторы, tenant isolation и secret rotation. В merge record проверки RAG Safety Regression, Unit Tests и Integration Tests указаны как успешные.
+**Первоначальная P0-проблема изоляции контекста пациента устранена в `main` через PR #287** (merge commit `4d761990b31ef3aa78327dda1380689f2d094e8f`). Synchronous и streaming API теперь формируют версионируемый HMAC namespace `mortarium-session:v4` на основе pharmacy, аутентифицированного user, patient (включая явную область без пациента) и client session. Agent и RAG checkpoints независимо формируют непрозрачные версионируемые HMAC identifiers с учетом patient scope. Regression tests покрывают разделение областей, неверные идентификаторы, tenant isolation и secret rotation. В merge record проверки RAG Safety Regression, Unit Tests и Integration Tests указаны как успешные.
 
 **Production readiness пока не доказана.** Остаётся staged end-to-end release gate: переключение Patient A → Patient B → no patient с повторным использованием одной client session в streaming и non-streaming режимах, с реальной Redis memory и PostgreSQL checkpoint persistence. Старые plaintext RAG checkpoint records автоматически не мигрируются и не удаляются; до rollout необходимо утвердить retention/deletion plan и rollback behavior. Этот статический обзор не запускал тесты и не проверял production state.
 
@@ -37,7 +37,7 @@ Mortarium — прикладной помощник фармацевта, пос
 
 PR #287 добавил в `main` следующие механизмы:
 
-- API session namespace `mortarium-session:v3` связывает pharmacy, аутентифицированного user, patient (включая явный `None`) и client session с помощью HMAC-SHA-256.
+- API session namespace `mortarium-session:v4` связывает pharmacy, аутентифицированного user, patient (включая явный `None`) и client session с помощью HMAC-SHA-256.
 - Оба endpoint — synchronous и streaming — проверяют tenant/patient scope до формирования внутреннего session namespace.
 - `PharmacistAgent._thread_id()` использует `agent:v2:<digest>` и учитывает patient scope.
 - `LangGraphRAG._thread_id()` использует `rag:v2:<digest>` и учитывает patient scope.
