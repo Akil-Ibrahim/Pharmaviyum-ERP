@@ -319,3 +319,66 @@ A separate source review of `src/pharmaviyum/ai/mcp/tools/patient_history.py` co
 However, the tool declares `required_roles=["pharmacist"]`, while `User.role` is computed as `"admin" if is_superuser else "pharmacist"`. Therefore every non-superuser account passes the legacy pharmacist role filter. The tool's role check is not evidence that a user has been assigned the pharmacist role in the selected pharmacy. This is the precise distinction the new membership-role RBAC model must address.
 
 Do not misclassify the MCP patient-history tool as lacking selected-patient binding or audit; those controls are present in the inspected source. The confirmed gap is the lack of pharmacy-specific role/permission resolution at the API-to-MCP boundary.
+
+## 8. Reports, exports and background execution
+
+Source baseline: `main` at `b5a0f51cc45e39b5afdfd21af99a5053823af5ce`. This is a targeted source search, not proof that no export feature can exist outside the searched repository paths.
+
+### 8.1 Reports and exports
+
+- The reviewed API tree and targeted searches did not identify a dedicated report/export endpoint or CSV/XLSX attachment implementation.
+- `src/pharmaviyum/services/analytics_service.py` is empty in the reviewed revision.
+- `GenerateDailyReportTask` is registered in the active custom worker, but its implementation returns `status: not_implemented`; it does not query or materialize report data.
+- Therefore, do not describe report export as an implemented PHI read surface based on this source review. Treat report/export authorization as a required design gate before implementing it.
+- The current `GET /api/v1/dashboard/summary` is an implemented analytics read surface and already exposes patient-identifiable and medication-level information to any active member with dashboard access; see section 7.1. This is the confirmed current risk, not a hypothetical export.
+
+**Required controls before adding reports/exports:** explicit report-specific permission; pharmacy scope fixed server-side; minimum-field projection; purpose-bound PHI access where identifiable patient data is included; allowed/denied audit decisions; export creation/download audit; short-lived, actor-bound download grants; no public or guessable object URLs; and tests for cross-pharmacy denial, revocation, and audit-persistence failure. Background generation must carry the same authorization grant and must not broaden it.
+
+### 8.2 Active background worker is Redis-backed, not the empty Celery scaffold
+
+Reviewed files:
+- `src/pharmaviyum/workers/dispatcher.py`
+- `src/pharmaviyum/workers/worker.py`
+- `src/pharmaviyum/workers/tasks/notifications.py`
+- `src/pharmaviyum/workers/tasks/pos_sync.py`
+- `src/pharmaviyum/workers/tasks/scheduled.py`
+
+Findings:
+
+1. The active worker consumes task payloads from Redis and dispatches by a hard-coded task registry. The dispatcher accepts a task name and arbitrary `task_args`; the payload has no required authenticated actor, permission/grant reference, purpose, or authorization-decision identifier.
+2. The worker checks that a task name is registered and that its queue matches the task class. It does not independently validate the initiating actor's authorization or a signed, scoped job grant before execution.
+3. `SendPatientNotificationTask` accepts `patient_id`, `pharmacy_id`, arbitrary `template_data`, channel and language. It correctly loads the patient using both patient ID and pharmacy ID, but it has no actor/permission provenance, no controlled-purpose field, no PHI audit event, and no template-specific allow-list for potentially sensitive values. It can send to patient phone/email destinations. This is a confirmed background PHI/communications governance gap; do not assume that tenant filtering alone proves the enqueueing actor was authorized.
+4. `SyncProductsTask` scopes product reads/writes by `pharmacy_id`, which is a positive tenant predicate. The task payload still has no verified initiating actor or service-principal authorization in the worker. Other POS sync tasks are currently placeholders returning `not_implemented`.
+5. `GenerateDailyReportTask` and `SyncAllPosTask` are placeholders; the former returns `not_implemented`, and the latter does not yet enumerate pharmacies or enqueue actual sync jobs.
+6. `src/pharmaviyum/tasks/celery_app.py`, `src/pharmaviyum/tasks/worker.py`, `src/pharmaviyum/tasks/tasks/analytics_event.py`, `notify_new_order.py` and `sync_inventory.py` are empty in the reviewed revision. The existence of a `tasks` package and Celery-named files is not evidence of an active Celery task runtime. The worker actually inspected here is the Redis-backed implementation under `src/pharmaviyum/workers/`.
+
+**Required controls:** define separate human-initiated and system-scheduled job principals; persist immutable actor, tenant, purpose, permission/grant ID, request/correlation ID and enqueue timestamp; validate a signed/opaque authorization grant at execution time; recheck resource ownership at execution; constrain and validate task schemas and template variables; audit patient-contact and PHI-bearing jobs; prevent sensitive payloads from appearing in logs, Redis status responses or dead-letter records; and test tenant isolation, revoked grants, retries, replay/idempotency and audit failure. A job must not inherit a caller's broad privileges merely because it runs asynchronously.
+
+### 8.3 MCP tool inventory beyond patient history
+
+Reviewed registered tool families:
+
+| Tool | Current scope/control observed | RBAC / PHI conclusion |
+|---|---|---|
+| `search_pharmacy_products` | Trusted MCP context; inventory query constrained to `auth.pharmacy_id` | Tenant-scoped operational read; registry defaults to pharmacist/admin/system roles, but upstream legacy role mapping presents every non-superuser as pharmacist |
+| `get_inventory_overview`, `get_expiring_inventory` | Trusted context; inventory rows constrained to `auth.pharmacy_id` | Tenant-scoped stock/expiry reads; same ineffective coarse role distinction |
+| `get_sales_summary` | Trusted context; sales query constrained to `auth.pharmacy_id` | Tenant-scoped aggregate sales read; same role-resolution gap |
+| `get_pharmacy_workflow_guide` | Static workflow guidance; no patient/tenant data query | No PHI read identified; registry role policy remains coarse |
+| `get_patient_history` | Exact selected-patient match, controlled purpose, active patient/pharmacy check, PHIAccessAudit commit before response | Positive patient-level controls; role assignment remains ineffective because all ordinary accounts map to pharmacist; response fields remain broader than minimum necessary |
+| `verify_prescription` | Prescription lookup joins Patient and constrains by trusted pharmacy; patient must be active | No selected-patient binding, controlled purpose, or PHIAccessAudit was found in the inspected function. Treat prescription lookup/verification as sensitive clinical access and add a clinical permission, purpose and audit before broadening access. |
+| `check_drug_interactions` | Drug names supplied as input; static interaction data and RAG enrichment; no patient-record query in inspected function | No patient PHI read identified in this function. Keep patient-specific context out of generic tool arguments unless separately authorized. |
+| `check_halal_compliance` | Drug/product and fiqh inputs; static compliance data in inspected function | No patient-record query identified. Avoid inferring a patient's religious affiliation from country defaults; this is a product-compliance lookup, not a patient authorization signal. |
+
+The MCP registry defaults tools to roles `pharmacist`, `admin`, and `system` unless overridden. Tool discovery and invocation use the legacy account-level role, not a pharmacy membership role or effective permission set. The patient-history tool explicitly narrows to pharmacist, but because `User.role` maps every non-superuser to pharmacist, this does not distinguish actual pharmacy job functions. This remains a cross-cutting authorization design gap.
+
+The prescription-verification tool is tenant-scoped, which is positive, but tenant scope alone does not establish clinical authorization. Its current implementation returns prescription validation results and performs prescription-status checks without the selected-patient/purpose/audit controls used by `get_patient_history`. The required policy should decide whether this tool is restricted to pharmacist-only and whether each lookup must be bound to the selected patient.
+
+### 8.4 Implementation gates
+
+1. Do not implement report/export access until the report data classification and permission/purpose model are approved.
+2. Add a common job authorization envelope before enabling patient communications, PHI reports, or other sensitive asynchronous tasks.
+3. Use a pharmacy membership's effective permission for MCP discovery and execution; do not use `User.role` as a proxy.
+4. Add selected-patient/purpose/audit enforcement to prescription verification if it remains a patient-linked clinical operation.
+5. Add integration tests for worker and MCP denial paths, including audit failure and cross-tenant payload substitution.
+6. Keep all unapproved grants denied by default. These findings do not approve the proposed four pharmacy roles or any role-to-permission mapping.
+
