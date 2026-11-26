@@ -386,6 +386,24 @@ The prescription-verification tool is tenant-scoped, which is positive, but tena
 
 ### 8.5 POS action authorization is membership-only
 
+## 8.6 Pharmacy membership is not yet a role-bearing authorization principal
+
+**Verified against `main` source models and dependencies:**
+
+- `PharmacyMembership` stores only `id`, `user_id`, `pharmacy_id`, `is_active` and `created_at`. It has no role, permission set, assignment actor, assignment timestamp or revocation metadata.
+- `User.role` is a computed property: every non-superuser is `pharmacist` and every superuser is `admin`. There is no persisted pharmacy-scoped role on `User` either. This legacy property must not be used as pharmacy RBAC authority.
+- `require_pharmacy_tenant` checks active membership only. It returns a tenant context with user and pharmacy IDs, but no role or effective permissions. The superuser branch bypasses membership lookup.
+- `GET /api/v1/auth/me` returns account name, email, the legacy global role and token expiry. It does not return memberships, selected pharmacy context, membership roles or effective permissions.
+- The inspected `POST /api/v1/auth/register` creates a user account but does not create a pharmacy or membership. The inspected pharmacy API exposes pharmacy listing/creation, but no pharmacy-membership list/create/update/deactivate or role-assignment workflow was identified.
+- The membership model's uniqueness constraint prevents duplicate user/pharmacy pairs, but does not implement role lifecycle, approval, audit or effective-permission resolution.
+
+**Authorization consequences:** a pharmacy membership currently proves tenant membership only. It cannot distinguish Cashier, Pharmacist, Manager or Pharmacy Admin. The frontend's legacy role value is not sufficient to render pharmacy-specific permissions, and the backend has no effective-permission dependency to enforce them. Do not backfill all existing members as Pharmacists or grant roles by inference.
+
+**Additional tenant-lifecycle check:** `require_pharmacy_tenant` checks `PharmacyMembership.is_active` but the inspected function does not check `Pharmacy.is_active`. Define and test whether inactive pharmacies must be denied for all operational actions, including for platform superusers, before finalizing tenant-context semantics.
+
+**Required implementation gates (not authorized by this audit):** approve a role-bearing membership schema and least-privilege backfill policy; define controlled membership/role administration with append-only audit; implement a centralized permission/tenant-context dependency; define `/auth/me` or a dedicated context endpoint for selected pharmacy and effective permissions; add cross-pharmacy, inactive-membership, inactive-pharmacy, role-change and default-deny tests. Keep unknown roles, missing context and permission-resolution failures denied.
+
+
 **POS authorization finding (verified against mounted `src/pharmaviyum/api/v1/pos.py`):** `require_pharmacy_tenant` proves active membership only; it does not evaluate pharmacy role or action permission. Consequently, checkout, lot lookup, goods receipt and pending-sale cancellation are membership-authorized today. Checkout accepts caller-supplied `discount_total` and only checks that discount is below subtotal and final total remains positive; no discount permission, ceiling, reason or approval is enforced. Lot lookup returns lot identifiers, expiry and quantity/reservation details. These are implementation gaps, not grants. Do not interpret the draft role matrix as active controls. Prioritize server-side action authorization and discount policy before enabling pharmacy roles.
 
 
