@@ -188,6 +188,38 @@ Required regression/evidence:
 - Verify Redis ACL/TLS/at-rest policy, checkpoint table access grants, backups and retention separately from application-level HMAC namespacing.
 
 
+### 4.10 MCP patient-history PHI audit coverage and minimum-necessary response
+
+Files reviewed on `main`: `src/pharmaviyum/ai/mcp/tools/patient_history.py`, `src/pharmaviyum/ai/mcp/context.py`, `src/pharmaviyum/ai/mcp/registry.py`, `src/pharmaviyum/ai/mcp/tool_management.py`, `src/pharmaviyum/api/v1/ai.py`, `src/pharmaviyum/models/user.py`, `tests/security/test_mcp_patient_history_scope.py`.
+
+Verified positive controls:
+
+- `MCPAuthorizationContext` validates positive user/pharmacy identifiers, selected-patient ID shape, the controlled-purpose vocabulary, and recognized legacy role values. A purpose cannot exist without a selected patient.
+- Both AI query handlers validate the selected active patient against the pharmacy tenant before invoking the harness. The model-supplied `PatientHistoryRequest.patient_id` must then exactly equal the trusted selected patient; the tool independently queries an active patient with the trusted pharmacy ID.
+- `get_patient_history` records metadata-only allowed/denied `PHIAccessAudit` decisions. The allowed audit commit occurs before the response is returned; a commit exception prevents release of the patient history. The audit payload does not copy clinical fields.
+- The tool's prescription and order count queries also constrain through the patient's trusted pharmacy ownership.
+- `tests/security/test_mcp_patient_history_scope.py` contains unit-level cases for selected-patient success, model-selected patient mismatch, missing purpose, direct tool-boundary role denial, audit-commit failure, registry context propagation, AI patient/purpose pairing and invalid context construction.
+
+Remaining gaps / qualifications:
+
+1. **The effective clinical role is not pharmacy-scoped.** `User.role` still resolves to `admin` for platform superusers and `pharmacist` for every other account. `PharmacyMembership` has no persisted role/permission. Thus an ordinary member who should be a cashier or another non-clinical role is represented as pharmacist in the trusted MCP context. Membership proves tenant affiliation only; it does not prove clinical authorization.
+2. **Registry denial is not PHI-audited.** `MCPToolRegistry.call_tool` performs generic `check_rbac` before invoking the patient-history function. A role rejected at this pre-dispatch check never reaches the function's `record_decision` path, so no `PHIAccessAudit` row is written for that denied MCP invocation. The direct function role-denial unit test does not exercise this registry-level denial path.
+3. **Tool discovery and execution are inconsistent for platform admins.** `check_rbac` grants `admin` and `system` access to every registered tool, and role-filtered discovery therefore exposes patient history to `admin`; the patient-history function itself requires exactly `pharmacist` and rejects `admin`. Discovery is not authorization, but the mismatch is misleading and needs a regression test.
+4. **The MCP role vocabulary cannot represent the proposed pharmacy roles.** The context and registry currently accept only `patient|pharmacist|admin|system`; future `cashier`, `manager` and `pharmacy_admin` membership roles cannot be represented without changing the authorization contract. Do not map these roles to the legacy global `pharmacist` string.
+5. **The response is not minimum-necessary.** The tool returns full name, age, gender, blood type, allergies, conditions, prescription and order counts, loyalty tier and preferred language. The caller currently has no permission-specific field projection or narrower purpose-to-field policy. Review whether every field is required for each supported purpose; default to the smallest clinical projection.
+6. **Database-backed enforcement remains unverified.** The security tests replace the session factory with a fake session and assert calls to `commit()`; they do not prove PostgreSQL persistence, transaction rollback behavior, database constraints/triggers, or audit durability under a real database failure. No database-backed MCP audit fixture was identified in the reviewed test.
+7. **Some denials occur before the MCP tool.** Invalid tenant membership or selected-patient ownership is rejected by the AI API before the harness and MCP tool execute. These API-level rejections are not written by the tool's `PHIAccessAudit` function. Define whether the governance requirement is to audit all PHI-access attempts end-to-end, then implement a single consistent audit boundary without double-counting.
+8. No tests were executed during this source audit. Test presence is not evidence that these tests pass on current HEAD or that the behavior is active in a deployed environment.
+
+Required regression/evidence:
+
+- Derive the effective role/permissions from the authenticated user's active pharmacy membership and resolve an explicit clinical permission at tool execution; retain tenant and patient ownership checks as independent predicates.
+- Add registry-dispatch tests proving denied MCP patient-history calls are audited, allowed calls are audited before data release, and audit persistence failure blocks release. Include PostgreSQL-backed integration tests for allowed, denied, rollback and commit-failure paths.
+- Make tool discovery pharmacy-context-aware for presentation, but re-evaluate the same effective permission at dispatch. Add parity tests for discovery versus execution, including platform admin denial absent a separately approved support grant.
+- Add tests for cashier, pharmacist, manager and pharmacy-admin memberships across two pharmacies, role revocation, cross-patient and cross-pharmacy access, missing/invalid purpose, and concurrent request context isolation.
+- Define and test a purpose-specific minimum-necessary response schema; verify PHI audit records and logs contain no clinical payload.
+- Keep support/operator access separate from pharmacy clinical permissions. A platform superuser or generic MCP `admin` role must not imply patient-history access.
+
 ## 5. Explicit non-actions
 
 This review made no application code changes, route changes, schema changes, migration changes, permission grants, manual SQL, merge, or deployment. The findings must be reviewed against the complete router graph and runtime configuration before implementation.
