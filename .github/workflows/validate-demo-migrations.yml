@@ -169,7 +169,7 @@ jobs:
           set -euo pipefail
           secret_key="$(openssl rand -hex 32)"
           echo "::add-mask::$secret_key"
-          printf 'SECRET_KEY=%s\\n' "$secret_key" >> "$GITHUB_ENV"
+          printf 'SECRET_KEY=%s\n' "$secret_key" >> "$GITHUB_ENV"
 
       # This is the only schema-mutating step in the workflow. It runs only
       # after the manual confirmation and exact-target preflight above.
