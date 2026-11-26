@@ -33,7 +33,7 @@ The purpose-bound v4 namespace intentionally does not migrate or reuse v3 sessio
 
 ## Compatibility and retention
 
-The API-scoped session format is versioned as \`mortarium-session:v3\`. Existing session namespaces are not automatically migrated or read as a fallback. This intentionally favors isolation over continuity: prior Redis memory may remain inaccessible to the new scope until its configured TTL expires.
+The current API-scoped session format is \`mortarium-session:v4\`. The previous \`mortarium-session:v3\` namespace is legacy; existing session namespaces are not automatically migrated or read as a fallback. This intentionally favors isolation over continuity: prior Redis memory may remain inaccessible to the new scope until its configured TTL expires.
 
 RAG checkpoint IDs now use a versioned HMAC namespace. Existing plaintext RAG checkpoint records are not automatically rewritten or deleted. Before production rollout, define and execute an approved retention/deletion plan for legacy checkpoint rows and their backups. Do not perform broad checkpoint deletion without confirming ownership, retention requirements and rollback implications.
 
