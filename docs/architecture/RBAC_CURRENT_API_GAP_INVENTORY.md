@@ -605,7 +605,7 @@ The exact relative paths above are appended to each router's declared prefix. Fo
 **RAG ingestion Celery boundary**
 - `POST /api/v1/ingest/documents/upload` and `/documents/url` declare both `CurrentSuperuser` and `CurrentUser` dependencies, so the effective human caller must be a platform superuser; the second dependency does not broaden access to ordinary active pharmacy members. The handler then calls `require_pharmacy_tenant` for the supplied pharmacy ID. A platform superuser currently passes through the existing superuser tenant bypass.
 - The task config carries the pharmacy ID accepted by the handler; the Celery task requires a positive integer and stamps it onto each document before chunking. Uploaded object keys are validated against that pharmacy.
-- The worker does not receive a persisted initiating actor, approved membership role, purpose, permission ID or signed job grant; its trust boundary is the Celery broker and caller-provided task config. The Redis progress record stores pharmacy metadata, while `GET /api/v1/ingest/jobs/{job_id}` and `GET /api/v1/ingest/jobs/{job_id}` are platform-superuser-only views. The jobs list is also platform-superuser-only.
+- The worker does not receive a persisted initiating actor, approved membership role, purpose, permission ID or signed job grant; its trust boundary is the Celery broker and caller-provided task config. The Redis progress record stores pharmacy metadata, while `GET /api/v1/ingest/jobs/{job_id}` and `GET /api/v1/ingest/jobs` are platform-superuser-only views.
 - Treat ingestion as a distinct high-privilege content-management action. Do not map it to Pharmacy Admin by implication. If future policy permits pharmacy-level ingestion, add an explicit permission, immutable actor/tenant provenance, a scoped worker grant validated at execution, and tenant-aware job status access. Review external URL fetch controls separately (SSRF/egress policy); URL scheme validation alone is not a complete destination policy.
 
 **Public operational metadata**
@@ -627,7 +627,7 @@ This matrix translates the observed mounted route families into action-level can
 |---|---|---|---|
 | POS product search and sale read | CurrentUser + pharmacy tenant | `pos.read` (existing candidate) | Selected pharmacy context; product and sale tenant predicates |
 | POS checkout | CurrentUser + pharmacy tenant | `pos.checkout` (existing candidate) | Cashier session, stock reservation, idempotency and payment state |
-| POS sale cancel | CurrentUser + pharmacy tenant | `pos.sale.cancel` (proposed vocabulary addition; current spec has `pos.sale.cancel` only in matrix? Keep canonical single ID) | Allowed sale/payment state; cancellation reason and inventory invariants |
+| POS sale cancel | CurrentUser + pharmacy tenant | `pos.sale.cancel` (existing candidate) | Allowed sale/payment state; cancellation reason and inventory invariants |
 | POS inventory receipt | CurrentUser + pharmacy tenant | `inventory.receive` (existing candidate) | Supplier/lot ownership, receiving workflow, idempotency |
 | POS payment callback | HMAC shared-secret callback | Payment-provider service principal; not a human role permission | Provider-specific credential binding, signed timestamp/nonce freshness, payment reference match |
 | Inventory read | CurrentUser + membership pharmacy IDs | `inventory.read` (existing candidate) | Selected tenant scope and object-level pharmacy predicate |
