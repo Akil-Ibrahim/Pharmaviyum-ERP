@@ -2452,3 +2452,140 @@ Required correction: keep the monolith until metrics justify extraction, but def
 - Application startup, OpenAPI generation, frontend build, Celery startup, architecture tests and end-to-end sync: **not executed**.
 
 No application source changes, test executions, CI runs, database connections, migrations, frontend builds, worker starts, sync operations or deployments were performed as part of this review.
+
+## 23. Pharmacy Domain Completeness & Business Workflow Integrity
+
+Scope: static review of active POS, pharmacy entity, order and patient-purchase API modules; Inventory, InventoryMovement, Prescription, Supplier and Order models; POS and inventory integration-test definitions; selected authenticated frontend routes; and the existing pharmacy workflow traceability evidence. This section assesses whether business capabilities form complete executable workflows, not whether their names appear in navigation or documentation. No tests, frontend build, API requests, database queries, migration checks or live pharmacy operations were executed. Findings describe repository source only.
+
+### 23.1 POS sale lifecycle — transactional backend exists; pharmacist workflow is incomplete
+
+Confirmed backend capabilities:
+- Pharmacy-scoped product search and lot lookup expose available stock, reservations, lot number and expiry; expired lots are excluded from sellable availability, while missing expiry is surfaced as a flag.
+- Checkout validates pharmacy membership, active sellable products, positive total and cash received; it creates sale/line/payment records, allocates stock FEFO (expiry then inventory ID), and records inventory movements plus a versioned outbox event in the same transaction.
+- Cash checkout decrements stock and completes payment; external payment checkout reserves stock until the signed webhook settles or releases it.
+- Tenant-scoped idempotency and advisory locking protect repeated checkout requests; same-key conflicting request content returns HTTP 409.
+- A specific sale can be read by ID. Pending-payment cancellation releases reservations, marks pending payments failed and is replay-safe.
+
+Business workflow gaps:
+- The active React POS feature component returns null. The route exists but does not provide a usable cashier workspace.
+- Checkout request and sale model do not carry patient or prescription identity. The POS transaction therefore cannot prove that a required prescription was checked and linked before dispensing.
+- The inspected POS router exposes single-sale lookup, not a sale-list/history endpoint or cashier/register session lifecycle.
+- Cancellation is limited to awaiting-payment sales. It is not a completed-sale return, refund, void or compensating stock transaction.
+- The POS integration test module covers important checkout, FEFO, idempotency and payment paths, but those tests were not executed in this audit. A full browser journey is not established.
+
+Assessment: **Partial — transactional POS backend primitives exist; end-user dispensing and cashier workflow is not complete.**
+
+### 23.2 Prescription validation and dispensing — record CRUD is not a dispensing workflow
+
+The Prescription model stores patient ID, optional product ID, prescription number, dosage, instructions, status and issue/expiry timestamps. The active pharmacy-entity API exposes list/create endpoints protected by CurrentSuperuser. The create handler constructs a Prescription from the request and commits it; the inspected handler does not validate that the patient belongs to a pharmacy authorized for the operator, nor does it bind the record to an authenticated pharmacist workflow. The model has no pharmacy ownership field.
+
+Checkout does not accept a prescription reference or patient ID. No source-level transition was established for prescription verification, validity/expiry checks, pharmacist review, remaining repeats/refills, controlled-medicine rules, dispense quantity, partial dispensing, or linking dispensed items and lot allocations back to the prescription.
+
+Required correction: design a jurisdiction-aware prescription aggregate with explicit pharmacy/patient ownership, verified prescriber/source, normalized prescribed medication and directions, validity and refill rules, pharmacist review/override audit, and dispense records linked to POS sale lines and exact lot allocations. Enforce the rules server-side; AI must not authorize or bypass dispensing.
+
+Assessment: **Partial at data-record level; prescription-to-dispensing workflow not established.** This is a P0 business and safety dependency before claiming prescription dispensing.
+
+### 23.3 Defectura and automatic replenishment — no executable replenishment domain established
+
+The active inventory model stores reorder_level, and GET /api/v1/inventory supports a low_stock filter based on quantity minus reserved quantity. Mortarium has read-only low-stock/inventory overview capability. These provide stock visibility, not Defectura workflow execution.
+
+The inspected active API/model paths and repository code search did not establish a Defectura entity, demand calculation, replenishment proposal, approval state, supplier/source selection, or conversion into a purchase order. There is no confirmed lifecycle for a manually curated shortage list either.
+
+Required correction: retain Defectura as one Inventory workflow with two demand-input mechanisms: (1) manual pharmacist/manager selection of required medicines and pharmacy goods; (2) system-generated proposals from configured min/max or reorder policies, sales velocity, lead time, safety stock and eligible on-hand/reserved quantities. Both mechanisms should produce one reviewable demand document with source, rationale, suggested quantity, exclusions, approver and status. Approval should create or update a procurement request; it must not silently create a supplier order or mutate stock.
+
+Assessment: **Not established as an executable domain workflow.** Low-stock filtering is implemented; Defectura and automatic replenishment execution are not confirmed.
+
+### 23.4 Procurement and supplier purchasing — supplier directory and standalone receiving only
+
+Supplier is a directory record with name, code and contact fields. The active supplier API exposes privileged list/create operations. The reviewed source did not establish PurchaseOrder, purchase-order lines, supplier-product terms, approval, submission, acknowledgement, delivery, invoice matching, or supplier-return lifecycle.
+
+POST /api/v1/pos/inventory/receive can receive a quantity into a pharmacy lot and records a goods_receipt movement with idempotency. Its request is not linked to a supplier, purchase order, purchase-order line, invoice, delivery note or discrepancy record. It is therefore a standalone stock-receipt operation, not procurement receiving.
+
+Required correction: implement a traceable lifecycle such as draft → submitted → approved → sent → partially received / received → invoiced / closed, with explicit cancellation and discrepancy states. Receiving must match purchase-order lines and preserve expected, delivered, accepted, rejected and outstanding quantities, supplier documents, lot/expiry details, user approvals and inventory movement references. Partial receipts and duplicate delivery-document handling require idempotency and concurrency tests.
+
+Assessment: **Partial — supplier records and standalone lot receipt exist; procurement-to-inventory traceability is not established.**
+
+### 23.5 Inventory, lot control and stocktake — movement primitives exist; operational control process is incomplete
+
+Confirmed:
+- Inventory is pharmacy- and product-scoped, lot-aware, with on-hand, reserved and reorder quantities plus expiry.
+- Database checks enforce non-negative quantity/reservation and reservation not exceeding on-hand.
+- InventoryMovement records typed stock/reservation deltas, before/after balances, actor, reason, reference and idempotency key. Its model restricts movement semantics and ties the movement to the exact pharmacy/product/lot identity.
+- Physical balance changes in the reviewed operational paths use the movement service. POS uses FEFO and row locks; goods receipt rejects expired lots.
+- Inventory metadata edits and manual stock adjustments are restricted to CurrentSuperuser in the reviewed pharmacy entity API. Physical quantity cannot be changed through the metadata update schema.
+
+Gaps:
+- No complete stocktake/cycle-count aggregate was established: no count session, blind/dual count, frozen snapshot, variance review, approval or posting lifecycle.
+- The adjustment endpoint is a privileged one-step delta operation; a reason and idempotency key are required, but a count evidence record and separate variance approval are not established.
+- Expiry visibility and FEFO exist, but an operational quarantine, recall, near-expiry disposition and controlled write-off workflow was not established.
+- A legacy ProductBatch model/list endpoint remains separate from pharmacy-owned Inventory lots; the endpoint is superuser-only and the model has no pharmacy_id. It must not be treated as the authoritative tenant-scoped operational lot workflow.
+
+Assessment: **Partial — strong balance and movement primitives exist; stocktake, variance governance and expiry-disposition workflows are not established.**
+
+### 23.6 Inter-pharmacy transfers — movement vocabulary is not a transfer workflow
+
+The InventoryMovement model permits transfer_in and transfer_out movement types, but the reviewed active API and model paths did not establish a transfer aggregate or dispatch/receipt endpoints. The frontend transfers route returns null. No end-to-end transfer workflow test was identified in the reviewed traceability evidence.
+
+Required correction: implement a transfer document with source and destination pharmacies, requested/approved quantities, product and exact lot identity, dispatch confirmation, in-transit custody, destination receipt, partial receipt, rejection, loss/damage discrepancy, cancellation-before-dispatch and paired source/destination movements. Enforce both tenant authorizations, prevent self-transfer and overselling, preserve aggregate version and idempotency, and reconcile interrupted/offline transfers.
+
+Assessment: **Not established.** Movement enum values alone do not prove transfer execution.
+
+### 23.7 Returns, refunds, voids and supplier returns — no complete compensating workflow established
+
+The reviewed POS API supports cancellation only before external payment settlement. No completed-sale customer return/refund endpoint, return authorization, returned-item condition/eligibility decision, refund provider operation, receipt reversal, or auditable stock disposition was established.
+
+The InventoryMovement model allows an accepted_return type, but the existence of a movement type does not implement the customer-return workflow. No source path was established that verifies the original sale line and lot, prevents returning more than sold/previously returned, records refund state, and posts the correct stock or quarantine movement. Supplier return is also not established.
+
+Required correction: distinguish customer return, refund, void, pending-sale cancellation and supplier return as separate state machines. Link every return to the original sale/payment/line/lot; enforce cumulative returned quantity; capture reason, condition, approval and refund status; use compensating ledger entries rather than editing or deleting the original sale. Returned stock must not become sellable automatically: require explicit inspection/disposition.
+
+Assessment: **Not established as an executable workflow.**
+
+### 23.8 Patient history and online orders — separate legacy records, not unified order fulfillment
+
+The pharmacist-facing patient history endpoint requires explicit pharmacy and purpose, active membership, active patient ownership and writes metadata-only PHI access audit. It returns a minimal purchase projection from PatientPurchase.
+
+The endpoint's own docstring states that it returns only the legacy PatientPurchase ledger; POS Sale history is not represented until the sale/patient linkage is implemented. Thus the pharmacist history surface is access-controlled, but it is not yet a complete history of the transactional POS sales audited in Section 23.1.
+
+The Order model contains patient_id, total_amount, status and created_at, but no item lines. Creating an order stores a generic pending record. Completing it creates one aggregate PatientPurchase row with category order and quantity one, not product-level fulfillment, batch allocation, dispensing or pickup evidence. The orders API is superuser-gated for create/status mutation in the reviewed paths.
+
+Required correction: define whether Order is a true fulfillment aggregate or remove the misleading product/dispensing implication. If retained, add item-level lines, price snapshots, stock reservation, fulfillment/pickup, cancellation and payment states. Link completed POS sales to patient history through explicit, privacy-governed references, not by inferring a patient from a cashier session.
+
+Assessment: **Partial — patient history read controls exist; POS-to-patient history completeness and item-level order fulfillment do not.**
+
+### 23.9 Frontend workflow delivery and test evidence
+
+The inspected active frontend route components for POS, inventory, procurement, transfers, prescriptions and patients render null (POS mounts a feature component that itself returns null). Sidebar entries and generated routes therefore do not represent usable pharmacy workspaces.
+
+Backend test definitions provide meaningful coverage for POS checkout/FEFO/payment and inventory movement atomicity/idempotency. They do not establish a complete browser workflow across patient selection, prescription verification, dispensing, payment, receipt and patient history. The reviewed workflow evidence also identifies no procurement, transfer, return/refund, stocktake or shift-close end-to-end tests.
+
+No test was executed during this audit. Test-file presence is not a passing test result.
+
+### 23.10 Prioritized domain readiness summary
+
+- POS transaction backend, FEFO allocation, payment reservation/settlement, cancellation of pending payment: **implemented in reviewed source; tests defined, not run**.
+- Usable POS cashier UI: **not implemented in inspected active component**.
+- Patient-linked POS sale and prescription-linked dispensing: **not established**.
+- Prescription record CRUD: **implemented for privileged operators; clinical dispensing lifecycle not established**.
+- Inventory lot balance, movement ledger, idempotent adjustment and low-stock query: **implemented in reviewed source**.
+- Defectura manual demand list and automatic replenishment proposal: **not established**.
+- Supplier directory and standalone lot receiving: **implemented in reviewed source**.
+- Purchase orders, line-level procurement, partial receipt, invoice/delivery matching and discrepancy approval: **not established**.
+- Stocktake/cycle count and variance approval: **not established**.
+- Inter-pharmacy transfer dispatch/receipt: **not established**.
+- Completed-sale returns/refunds and supplier returns: **not established**.
+- Pharmacist patient-history access control and PHI audit: **implemented in reviewed source; it reads the legacy PatientPurchase ledger**.
+- Unified POS sale history and item-level order fulfillment: **not established**.
+- Frontend workflows for the reviewed operational routes: **not delivered in inspected active components**.
+- Browser E2E, migrations, database schema, payment-provider integration and live runtime behavior: **not validated**.
+
+Recommended delivery order:
+1. Restore a usable POS workspace and link each sale to a patient only through explicit, authorized selection.
+2. Implement prescription verification/review and dispense records linked to sale lines and exact lots before enabling prescription-required dispensing.
+3. Implement Defectura as the single replenishment workspace, supporting manual demand and automatic proposals.
+4. Add purchase orders and supplier-linked receiving with partial quantities and discrepancy controls.
+5. Add stocktake/variance approval, expiry quarantine/write-off and inter-pharmacy transfer lifecycles.
+6. Add completed-sale returns/refunds and supplier returns as auditable compensating workflows.
+7. Reconcile patient history and online orders against the canonical sale/fulfillment ledger.
+8. Add browser-level business journey tests and execute them in isolated CI/staging before making delivery claims.
+
+No application source changes, test executions, CI runs, database connections, migrations, payment-provider calls, frontend builds, stock mutations or deployments were performed as part of this review.
