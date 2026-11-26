@@ -547,3 +547,71 @@ Conceptual decision: `authenticated AND active_tenant AND action_permission AND 
 - Migrations and deployments use approved workflows and environment guards; no manual production SQL or guard bypass.
 
 **Current implementation status:** the application does not yet have this complete pharmacy-scoped RBAC model. The documents define gaps and a proposed sequence; they do not represent implemented authorization, approved role grants, or a production security certification.
+
+## 11. Final mounted API route coverage and path corrections
+
+This section supersedes any earlier shorthand path in this inventory where the live router prefix differs. It was derived from `src/pharmaviyum/main.py` and the package router actually imported there: `src/pharmaviyum/api/v1/__init__.py`. The separate `src/pharmaviyum/api/v1/router.py` is not mounted by `main.py`.
+
+### 11.1 Live router composition
+
+`main.py` includes `api_v1_router` at the application root, then separately includes `src/pharmaviyum/api/v1/endpoints/health.py` at the root. The actual mounted paths are therefore:
+
+| Mounted surface | Live paths | Current access boundary | Candidate policy / gap |
+|---|---|---|---|
+| Legacy auth | `POST /api/v1/auth/register`, `POST /api/v1/auth/token` | Public | Registration creates an active non-superuser account but no pharmacy membership or invitation approval. Decide whether self-registration is allowed; account creation must not imply tenant access. |
+| Authenticated identity | `GET /api/v1/auth/me` | CurrentUser | Returns legacy `User.role`; does not expose membership roles, selected pharmacy or effective permissions. |
+| Modular auth | `POST /api/v1/auth/login/access-token`, `POST /api/v1/auth/refresh`, `POST /api/v1/auth/logout`, `POST /api/v1/auth/password-recovery/{email}`, `POST /api/v1/auth/reset-password/` | Token/reset-token flows | Identity lifecycle controls; not pharmacy business permissions. Keep token revocation, one-time reset and account activation policy separate from RBAC. |
+| AI | `GET /api/v1/ai/context`, `POST /api/v1/ai/query`, `POST /api/v1/ai/query/stream`, `GET /api/v1/ai/tools` | CurrentUser; query paths validate pharmacy tenant; optional patient requires patient + purpose together | Add effective pharmacy permission at both tool discovery and execution. Retain trusted MCP context and patient ownership checks. |
+| Dashboard | `GET /api/v1/dashboard/summary` | CurrentUser + `resolve_pharmacy_scope` | Confirmed patient-identifiable/medication PHI exposure to all active members; split operational and clinical panels as in section 7.1. |
+| Patients | `/api/v1/patients` collection, `/statistics`, `/phone/{phone}`, `/{patient_id}`, `/{patient_id}/ai-profile`, `/{patient_id}/visit`; `POST` collection, `PUT/DELETE` patient resource | CurrentUser + tenant scope; AI profile has explicit membership/patient checks and PHI audit; create/update/delete currently pass through service-level policy and tenant scope | Do not flatten to one permission. Separate patient search/read, clinical profile, create, update, archive/delete, and visit recording. Validate PHI audit coverage per operation. |
+| Orders | `/orders/`, `/orders/{order_id}`, `/orders/{order_id}/status` | CurrentUser + `resolve_pharmacy_scope`; order is linked through patient | Distinguish legacy patient-linked order workflow from POS Sale/Payment. Separate read/create/status-transition permissions and enforce patient ownership in scoped queries. |
+| POS | `/api/v1/pos/products/search`, `/inventory/receive`, `/products/{product_id}/lots`, `/checkout`, `/payments/webhook`, `/sales/{sale_id}/cancel`, `/sales/{sale_id}` | User endpoints use CurrentUser + tenant checks; payment callback uses HMAC service authentication | Separate POS read, inventory receive, checkout, sale read/cancel and provider callback. Current handlers lack pharmacy action-level role checks. |
+| Pharmacy and inventory | `/api/v1/pharmacies`, `/api/v1/suppliers`, `/api/v1/inventory`, `/api/v1/inventory/{id}`, `/api/v1/inventory/{id}/adjustments`, `/api/v1/batches`, `/api/v1/prescriptions` | Pharmacies read: CurrentUser + memberships; create: CurrentSuperuser. Suppliers and inventory writes, batches, prescriptions: CurrentSuperuser. Inventory read: CurrentUser, membership pharmacy IDs, optional requested pharmacy filter | Inventory read is membership-scoped but not selected-context/action-permission scoped. Inventory writes and prescription APIs remain platform-superuser only. Batch model lacks pharmacy ownership; fail-closed restriction is appropriate. Prescription create must validate patient/pharmacy ownership when access is expanded. |
+| Legacy ERP integration metadata | `/api/v1/erp/integrations`, `/api/v1/erp/integrations/{integration_id}/events`, `/api/v1/sync-events` | CurrentSuperuser | Global platform operations; not Pharmacy Admin. See section 9.1. |
+| Drug reference search | `GET /drug-catalog/search` | CurrentUser | **Path correction:** the search router prefix is `/drug-catalog`, not `/api/v1/drug-catalog`. Shared reference read; confirm this root-level path is intentional and document one canonical API prefix. |
+| Drug catalog review | `/api/v1/drug-catalog/sources`, `/api/v1/drug-catalog/sources/{id}/matches`, `/api/v1/drug-catalog/sources/{id}/review` and source creation | CurrentSuperuser | Global reference-data governance; separate from pharmacy stock/catalog read. |
+| Medical-device reference | `GET /medical-devices/search` | CurrentUser | **Path correction:** live prefix is `/medical-devices`, not `/api/v1/medical-devices`. Shared reference read. |
+| Pharmacy sellable Product master | `/api/v1/products/search`, `/api/v1/products/{product_id}`, `/api/v1/products/`, `POST/PUT/DELETE` | Read: CurrentUser; create/update/deactivate: CurrentSuperuser | Product model has no `pharmacy_id`; SKU is globally unique. It stores global `price` and legacy aggregate `stock` (the model/schema explicitly state per-pharmacy stock belongs to Inventory). Responses include both price and stock. Treat this as a shared/global product master, not tenant inventory. If prices differ by pharmacy, a pharmacy-scoped price/assortment model is required before exposing these fields as pharmacy-specific values. |
+| Patient purchases | Legacy `/patient-purchases/` and canonical `/api/v1/patient-purchases/`; history at both `/{patient_id}/history` paths | Legacy list: CurrentSuperuser; history: CurrentUser + explicit active membership, patient ownership, purpose and PHI audit; platform superusers denied | The router is intentionally mounted twice. Maintain one documented canonical path and test both aliases until legacy removal is approved. History still lacks granular membership-role permission. |
+| Pharmacy Edge Sync | `/api/v1/sync/edge-nodes`, `/edge-nodes/{node_id}`, `/outbox/dead-letter`, `/outbox/dead-letter/{entry_id}/replay`, inbound event endpoint | Provision/revoke/list/replay: CurrentSuperuser; inbound event: Edge credential authentication | Distinct platform and machine-principal policies; preserve tenant-derived Edge identity. See section 9.3. |
+| User administration and self-service | `/users/me/avatar`, `/users/`, `/users/{user_id}` | Avatar operations: CurrentUser on self; list/create/read other users: CurrentSuperuser | User account administration is not pharmacy membership administration. No pharmacy-scoped membership/role assignment API is currently mounted. |
+| Monitoring | Root `/health`, `/ready`, `/metrics`, `/mcp/health`, `/version`; root `/api-info` | Health/readiness/metrics/version/api-info: public; MCP health: CurrentSuperuser | Keep liveness/readiness public only as operationally required. Restrict metrics to trusted scrape network/identity. Review public version metadata (build, environment, debug flags, Python runtime). Detailed MCP health remains operator-only. |
+
+The exact relative paths above are appended to each router's declared prefix. For collection routes shown without an HTTP method, the method follows the handler decorator in the source; the access boundary is the same for the listed handler family unless stated otherwise.
+
+### 11.2 Router collisions and path inconsistencies
+
+1. **Duplicate root health routes:** the mounted package aggregator includes `monitoring_router` first, registering `GET /health`, `GET /ready`, and `GET /metrics`. `main.py` then includes `endpoints.health.router`, which registers the same three method/path pairs. Both implementations are therefore registered. Starlette route matching is order-sensitive; the first matching route is the effective handler. Consolidate to one implementation and add route-table tests so readiness/metrics semantics cannot silently diverge.
+2. **Mixed API prefixes:** `/api/v1` is used by several routers, but Orders, Drug Catalog search, Medical Devices, and Users use root-level prefixes. Do not assume the endpoint path from a module's directory or tag; use the mounted route table as source of truth. Choose and document a canonical versioning strategy before adding RBAC metadata or frontend clients.
+3. **Patient purchases alias:** the same router is mounted at both `/patient-purchases` and `/api/v1/patient-purchases`. This is an explicit compatibility alias, not two different authorization implementations.
+4. **Unused legacy router:** `src/pharmaviyum/api/v1/router.py` defines a separate `api_router` and `system_router`, including debug, feature flags and prescription placeholder routers. `main.py` does not import or mount it. Do not classify those endpoints as active production routes.
+5. **Other unmounted modules:** `src/pharmaviyum/api/v1/erp.py` is not imported by the active aggregator; `endpoints/debug.py`, `endpoints/docs.py`, `endpoints/feature_flags.py` and `endpoints/prescriptions.py` are not included by the active package aggregator. `examples.py` contains examples, not live endpoints. Any future mounting requires a fresh authorization review.
+
+### 11.3 Additional authorization and data-governance findings
+
+**Public account registration**
+- `POST /api/v1/auth/register` accepts an unauthenticated registration, creates an active non-superuser account and does not create a pharmacy membership.
+- This does not itself grant access to tenant-scoped data, but there is no invite/approval or pharmacy onboarding decision in this route.
+- Decide whether public self-registration is intended for the demo and for production separately. Production onboarding should use an invitation or controlled membership-assignment flow; never infer a pharmacy or role from an email domain.
+
+**Global Product master**
+- `Product` has no pharmacy foreign key and its SKU is globally unique. The API is therefore global product-master CRUD, not per-pharmacy inventory.
+- `ProductResponse` exposes `price` and legacy `stock`; `ProductCreate/Update` allow those values. The model/schema say per-pharmacy stock is authoritative in `Inventory`.
+- This is a semantic/data-model risk if clients interpret the returned price/stock as selected-pharmacy values. Before adding pharmacy roles, define whether product master price is global reference data or whether pharmacy-specific price/assortment must be modeled separately. Never use the global legacy `stock` field for pharmacy authorization or availability decisions.
+
+**RAG ingestion Celery boundary**
+- `POST /api/v1/ingest/documents/upload` and `/documents/url` require both `CurrentSuperuser` and `CurrentUser`, then call `require_pharmacy_tenant`. Ordinary non-superusers therefore need active membership; platform superusers use the existing bypass.
+- The task config carries the authorized `pharmacy_id`; the Celery task requires a positive integer and stamps it onto each document before chunking. Uploaded object keys are validated against that pharmacy.
+- The worker does not receive a persisted initiating actor, approved membership role, purpose, permission ID or signed job grant; its trust boundary is the Celery broker and caller-provided task config. The Redis progress record stores pharmacy metadata, while `GET /api/v1/ingest/jobs/{job_id}` and list jobs are global CurrentSuperuser-only views.
+- Treat ingestion as a distinct high-privilege content-management action. Before allowing a pharmacy-level administrator role, add explicit ingestion permission, immutable actor/tenant provenance, a scoped worker grant validated at execution, and tenant-aware job status access. Review external URL fetch controls separately (SSRF/egress policy); URL scheme validation alone is not a complete destination policy.
+
+**Public operational metadata**
+- The root monitoring routes `/health`, `/ready`, `/metrics` are unauthenticated in the mounted implementation. The separate `/version` endpoint returns build/environment/debug/runtime metadata, also without an auth dependency.
+- Public health/readiness may be operationally necessary, but metrics and detailed runtime identity should be restricted to trusted monitoring networks or a scrape identity. Avoid returning exception details or secrets from readiness; current monitoring readiness reports exception class names only.
+- `/mcp/health` is protected by CurrentSuperuser, which is the correct separation for detailed dependency/tool diagnostics.
+
+### 11.4 Route-level implementation gate
+
+Before coding the permission registry, generate a runtime FastAPI route table from the actual app instance and snapshot method, path, endpoint function, dependencies, response model and router source. Assert no duplicate method/path registrations except explicitly approved aliases. The static source inventory above is a review baseline, not a substitute for that runtime snapshot or endpoint tests.
+
+No new route or permission is approved by this inventory. Existing CurrentUser/CurrentSuperuser checks remain the current controls until a separate policy approval and implementation PR.
