@@ -160,6 +160,17 @@ jobs:
           )
           PY
 
+      # Alembic imports application Settings even though migrations do not
+      # use JWT signing. Generate a short-lived key for this isolated job only;
+      # never reuse a Demo or Production signing secret for migration validation.
+      - name: Generate ephemeral signing key for isolated migration validation
+        shell: bash
+        run: |
+          set -euo pipefail
+          secret_key="$(openssl rand -hex 32)"
+          echo "::add-mask::$secret_key"
+          printf 'SECRET_KEY=%s\\n' "$secret_key" >> "$GITHUB_ENV"
+
       # This is the only schema-mutating step in the workflow. It runs only
       # after the manual confirmation and exact-target preflight above.
       - name: Apply Alembic migrations to the isolated validation branch
