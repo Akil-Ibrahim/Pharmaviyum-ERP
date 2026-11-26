@@ -384,7 +384,10 @@ The prescription-verification tool is tenant-scoped, which is positive, but tena
 
 
 
+### 8.5 POS action authorization is membership-only
+
 **POS authorization finding (verified against mounted `src/pharmaviyum/api/v1/pos.py`):** `require_pharmacy_tenant` proves active membership only; it does not evaluate pharmacy role or action permission. Consequently, checkout, lot lookup, goods receipt and pending-sale cancellation are membership-authorized today. Checkout accepts caller-supplied `discount_total` and only checks that discount is below subtotal and final total remains positive; no discount permission, ceiling, reason or approval is enforced. Lot lookup returns lot identifiers, expiry and quantity/reservation details. These are implementation gaps, not grants. Do not interpret the draft role matrix as active controls. Prioritize server-side action authorization and discount policy before enabling pharmacy roles.
+
 
 ## 9. Integrations, webhooks and application event flows
 
@@ -638,7 +641,7 @@ This matrix translates the observed mounted route families into action-level can
 | POS checkout | CurrentUser + pharmacy tenant | `pos.checkout` (existing candidate) | Cashier session, stock reservation, idempotency and payment state |
 | POS sale cancel | CurrentUser + pharmacy tenant | `pos.sale.cancel` (existing candidate) | Allowed sale/payment state; cancellation reason and inventory invariants |
 | POS inventory receipt | CurrentUser + pharmacy tenant | `inventory.receive` (existing candidate) | Supplier/lot ownership, receiving workflow, idempotency |
-| POS payment callback | HMAC shared-secret callback | Payment-provider service principal; not a human role permission | Provider-specific credential binding, signed timestamp/nonce freshness, payment reference match |
+| POS payment callback | `POST /api/v1/pos/payments/webhook`; HMAC-SHA256 over raw body using `PAYMENT_WEBHOOK_SECRET`, constant-time signature comparison; validates payment ID, non-cash method, pending state and exact amount; retries of finalized matching status/provider payment ID are idempotent | Payment-provider service principal; not a human role permission | Current endpoint does not itself validate a signed timestamp/nonce or provider-specific identity/credential binding; document/verify provider adapter contract, replay window and payment reference binding before production provider integration |
 | Inventory read | CurrentUser + membership pharmacy IDs | `inventory.read` (existing candidate) | Selected tenant scope and object-level pharmacy predicate |
 | Low-stock inventory query | `GET /api/v1/inventory?low_stock=...` through pharmacy domain router; CurrentUser; ordinary users are filtered to all active membership pharmacy IDs, optional `pharmacy_id` is an additional filter | `inventory.read` (existing candidate) | Membership-scoped but not selected-pharmacy-context or action-permission scoped. Low-stock is a query over `quantity - reserved_quantity <= reorder_level`; it is not a replenishment proposal or Defectura workflow |
 | Inventory lot creation | `POST /api/v1/inventory`; CurrentSuperuser; validates active product/pharmacy and permits zero-balance lots only | `inventory.create` (proposed vocabulary addition) | Platform-only today; non-zero opening stock is rejected and must use a movement workflow |
