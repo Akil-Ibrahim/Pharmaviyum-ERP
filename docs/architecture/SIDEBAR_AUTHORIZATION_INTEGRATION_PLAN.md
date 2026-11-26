@@ -44,10 +44,10 @@ After the permission vocabulary and role matrix are approved, add optional permi
 | Inventory / Drug Catalog | `catalog.read` for shared reference data; pharmacy assortment management, if introduced, requires a separate pharmacy-scoped permission |
 | Inventory / Stock Management | `inventory.read` |
 | Inventory / Transfers | `inventory.read` for list/read visibility; transfer actions require `inventory.transfer` and a distinct transfer-read permission only if the page exposes a separate resource |
-| Inventory / Defectura | `defectura.read` |
-| Procurement / Suppliers | `suppliers.read` |
-| Procurement / Purchase Orders | `procurement.read` |
-| Procurement / Receiving | `procurement.read` |
+| Inventory / Defectura | Future `defectura.read` candidate only; no mounted Defectura request/approval API is established. Keep one Inventory workflow/entity for manual and automatic replenishment; no separate auto-replenishment nav item. |
+| Procurement / Suppliers | No pharmacy-role grant for the current global supplier API (platform-superuser-only). Future pharmacy-scoped supplier access requires a tenant-owned resource. |
+| Procurement / Purchase Orders | Future `procurement.read` candidate only; no complete purchase-order lifecycle or mounted pharmacy-scoped PO API is established. Keep disabled. |
+| Procurement / Receiving | Standalone POS lot receipt maps to `inventory.receive`, not PO-linked `procurement.receive`. Keep disabled until PO matching and supplier/document/discrepancy controls exist. |
 | Pharmacies | `pharmacy.settings.read` only for the current user's selected pharmacy context; cross-pharmacy administration requires a separate platform capability |
 | Administration / Users | `members.read` for membership administration within the selected pharmacy; global User account administration remains platform-only |
 | Settings | A documented account-settings baseline or a pharmacy-settings permission, depending on the actual page scope |
@@ -138,9 +138,9 @@ This plan uses the RBAC specification as the canonical permission vocabulary. Th
 | Inventory / Drug Catalog | `catalog.read` | Shared reference catalog only; global `catalog.manage` is platform governance, not pharmacy Manager authority. |
 | Inventory / Stock Management | `inventory.read` | Selected pharmacy scope and resource ownership required. |
 | Inventory / Transfers | `inventory.read` | Transfer operation requires `inventory.transfer`; visibility does not grant transfer execution. |
-| Inventory / Defectura | `defectura.read` | Create and approve remain distinct actions. |
+| Inventory / Defectura | Future `defectura.read` candidate only; there is no mounted Defectura request/approval API. | Manual entry and automatic calculation are mechanisms within one Inventory workflow; automatic calculation creates a proposal, not approval or an order. |
 | Procurement / Suppliers | `suppliers.read` | Current supplier API is global and platform-superuser-only; do not expose as pharmacy-scoped until ownership is modeled. |
-| Procurement / Purchase Orders | `procurement.read` | Create, approve and receive remain distinct actions. |
+| Procurement / Purchase Orders | Future `procurement.read` candidate only; no complete PO lifecycle/API exists in the reviewed surface. | Do not map legacy patient Orders or standalone POS receipt to procurement operations. |
 | Pharmacies | `pharmacy.settings.read` | Only selected pharmacy context; cross-tenant listing/administration requires separate policy. |
 | Administration / Users | `members.read` | Pharmacy membership directory only; global User account management remains platform-only. |
 | Settings | `pharmacy.settings.read` for pharmacy settings; account settings use an explicit non-tenant self-service baseline | Do not conflate account profile with pharmacy configuration. |
