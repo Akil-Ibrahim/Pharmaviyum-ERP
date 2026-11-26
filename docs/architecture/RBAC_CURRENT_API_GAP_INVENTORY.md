@@ -2589,3 +2589,116 @@ Recommended delivery order:
 8. Add browser-level business journey tests and execute them in isolated CI/staging before making delivery claims.
 
 No application source changes, test executions, CI runs, database connections, migrations, payment-provider calls, frontend builds, stock mutations or deployments were performed as part of this review.
+
+## 24. API Security, Authorization Enforcement & Tenant Isolation Deep Audit
+
+**Source baseline:** repository main at commit fb1e40fd47e1137bcff43369ececdb45953de473 (2026-11-26).  
+**Scope:** static inspection of authentication dependencies, pharmacy tenant resolution, PharmacyMembership/User models, mounted API route handlers for patients, dashboard, orders, POS, inventory and ingestion, MCP authorization/context, selected Celery ingestion task boundaries, PHI audit contracts and authorization test definitions. This review does not instantiate the FastAPI route table, execute requests, inspect a live database/roles/RLS policy, run tests, inspect deployed secrets, or verify production credentials. Source findings are not proof of exploitation or live cross-tenant disclosure.
+
+### 24.1 Positive controls confirmed
+
+- JWT authentication resolves the current User from the token subject and CurrentUser additionally requires is_active=True. Superuser checks are explicit through CurrentSuperuser.
+- Ordinary-user tenant resolution queries an active PharmacyMembership for the exact user and pharmacy. When a user has multiple active memberships, resolve_pharmacy_scope requires an explicit pharmacy ID rather than guessing.
+- Patient history has a dedicated route that rejects platform superusers, requires an explicit pharmacy and controlled purpose, checks active membership, verifies the patient is active and owned by that pharmacy in SQL, and adds metadata-only allow/deny PHI audit records. Its integration test definitions cover allowed access, cross-pharmacy denial, missing membership, null-owner patient denial and superuser denial.
+- AI query routes require a pharmacy tenant, validate selected patient ownership in SQL, require patient and purpose together, and HMAC-scope the session to user, pharmacy, patient, purpose and client session. Trusted MCP context is propagated through ContextVar and reset in finally.
+- MCP tool dispatch requires a trusted context and verifies that caller-supplied user ID, pharmacy ID and role match that context. Tool schemas are validated; write-class tools are denied unless an explicit pharmacist-confirmation policy and trusted approval verifier are configured.
+- The MCP patient-history tool independently requires exact equality between model-supplied patient ID and trusted selected-patient ID, a pharmacist role and a purpose; it rechecks active patient ownership in the trusted pharmacy and commits an access-audit record before returning clinical data.
+- Ingestion API handlers require platform-superuser access and separately validate membership in the selected pharmacy before dispatch. The worker rejects missing, non-integer, boolean or non-positive pharmacy IDs, stamps pharmacy metadata server-side and validates tenant-prefixed object-storage keys before reading uploaded objects.
+- The current RBAC permission specification is explicitly marked draft/not approved. It correctly separates identity, tenant membership, pharmacy role, action permission and platform operator, and defines default-deny and patient ownership invariants. It is a policy proposal, not runtime enforcement.
+
+### 24.2 P1 — Pharmacy membership is not action authorization; current account-role mapping collapses all ordinary users into pharmacist
+
+The persisted PharmacyMembership model contains user_id, pharmacy_id, is_active and created_at. It has no pharmacy role or permission assignment. The User model derives its role property solely from the global is_superuser flag: every non-superuser is reported as pharmacist, and every superuser as admin.
+
+The consequence is visible in active handlers:
+- POS product search, goods receipt, checkout, sale cancellation and sale reads require CurrentUser plus tenant membership, but do not check an action-specific pharmacy permission.
+- The dedicated patient purchase-history route requires membership and a purpose string but does not establish that the member's pharmacy role permits clinical/purchase-history access.
+- AI query and tool discovery use the same global-derived role; they cannot distinguish cashier, pharmacist, manager or pharmacy administrator within the selected pharmacy.
+- MCP get_patient_history declares required_roles=[pharmacist], but all ordinary accounts resolve to that same role. The tool's patient/purpose checks are meaningful defense in depth, but the role gate does not distinguish actual pharmacy job responsibilities.
+
+This is an authorization-model gap, not evidence that a particular user has exploited it. Membership proves tenant affiliation; it does not prove permission to checkout, receive stock, dispense, read PHI, approve a refund or administer membership.
+
+Required correction: after explicit approval of the RBAC draft, assign a role to each pharmacy membership (not globally to User), resolve effective permissions for the selected pharmacy, and enforce resource.action permissions in backend dependencies/services. Keep role changes auditable, unknown/missing roles deny by default, and preserve independent patient ownership and purpose checks. Do not automatically promote existing members or infer roles from current User.role.
+
+### 24.3 P1 — General dashboard endpoint exposes patient-level purchase and medication details to every active pharmacy member
+
+GET /api/v1/dashboard/summary requires CurrentUser and resolves a pharmacy scope, but has no action permission, clinical role check, purpose-of-use parameter or PHIAccessAudit write. Within the resolved tenant scope its response includes patient IDs and names, purchase counts and revenue aggregates, medication/product names, dosage strength, dosage form, pack quantity, prescription-required flag, expiry details and latest patient condition.
+
+The SQL queries are pharmacy-filtered for ordinary users when a scope is resolved, so the finding is not that the inspected query ignores tenant scope. The issue is that every active member of the pharmacy receives patient-level/medication-level information through a general operational dashboard, regardless of whether their job requires clinical access. Superusers can intentionally resolve to a global scope, which is a separate platform-support governance issue.
+
+Required correction: split non-identifying operational KPIs from patient-identifiable panels. Keep the general dashboard on a minimum-necessary operational DTO. Move patient-level panels behind a separate clinical permission, exact patient/pharmacy ownership, purpose policy and metadata-only PHI audit. Do not treat a UI-hidden panel as authorization.
+
+### 24.4 P1 — Global superuser bypass is a technical capability, not a governed support-access grant
+
+require_pharmacy_tenant returns a TenantContext immediately for any superuser without checking PharmacyMembership or the Pharmacy row. resolve_pharmacy_scope permits a superuser to omit pharmacy_id and receive None, which removes pharmacy predicates from several patient, order and dashboard queries. Unit tests explicitly preserve both global scope and selection of a pharmacy without membership.
+
+This behavior may be necessary for platform administration, but is_superuser alone does not encode a support ticket, reason, expiry, target pharmacy, patient/resource scope, permitted action, independent approval or PHI access audit. The dedicated patient-history and AI-profile routes explicitly deny superusers and direct them to a separately governed workflow, but general patient reads and dashboard paths retain broader global access.
+
+Required correction: separate platform operator capability from pharmacy roles. Before allowing support access to patient data, require a time-bounded, reason-coded, scope-limited grant with independent approval and immutable allowed/denied audit. General superuser global reads should be inventoried endpoint by endpoint; do not silently preserve broad PHI access merely because the account is a superuser.
+
+### 24.5 P1 — Patient-level dashboard data and other general patient reads are not covered by purpose-bound PHI audit
+
+The dedicated AI-profile and pharmacist patient-history routes write PHIAccessAudit decisions. In contrast, the general patient list/detail/phone/statistics/visit paths and dashboard summary use ordinary CurrentUser plus pharmacy scope and do not add the same purpose-bound PHI audit in the reviewed handlers. Their DTOs have been narrowed for standard patient summaries, but the dashboard's medication/patient projection remains broad.
+
+The legacy administrative GET /patient-purchases/ is superuser-only and filters through Patient.pharmacy_id, but returns a broader purchase projection and does not use the newer PHI audit event.
+
+Required correction: classify each route by data sensitivity and purpose. Aggregate-only operational reads should not return patient identifiers. Patient-level access should use explicit purpose, minimum-necessary DTOs and durable audit. Administrative/support reads require the separately governed platform grant. Ensure audit persistence failure fails closed for sensitive reads.
+
+### 24.6 P2 — Tenant helper does not reject inactive Pharmacy records
+
+The generic require_pharmacy_tenant helper verifies only an active PharmacyMembership row. It does not load Pharmacy or require Pharmacy.is_active=True. resolve_pharmacy_scope inherits that behavior for explicit ordinary-user pharmacy selection. The AI context endpoint also lists active memberships without joining/filtering the Pharmacy active flag. Some individual inventory-creation paths do check active Pharmacy, but that is a local check and not a universal tenant invariant.
+
+Required correction: decide whether inactive pharmacies must be inaccessible for all operational actions or whether limited read/archive access is allowed. Encode that policy centrally and distinguish read-only archival access from operational access. Add tests for inactive pharmacy, deactivated membership, and reactivation. Do not assume the local inventory validation protects unrelated routes.
+
+### 24.7 P2 — Inventory reads use all active memberships rather than one selected pharmacy context
+
+GET /api/v1/inventory restricts ordinary users to Inventory.pharmacy_id in the subquery of all active memberships. An optional pharmacy_id narrows the result, but the handler does not call require_pharmacy_tenant for that optional ID; the IN predicate still limits ordinary users to their memberships. This is a valid multi-tenant membership filter, but it allows one response to aggregate inventory rows from every pharmacy where the user is a member.
+
+The product specification and sidebar plan describe an active/selected pharmacy context. If users can have multiple memberships, the current inventory behavior may not match a single-selected-tenant UI or permission evaluation.
+
+Required correction: make selected pharmacy context explicit for pharmacy-operational pages, authorize it before querying, and apply the same selected scope to list, detail, export and mutation endpoints. If cross-pharmacy aggregation is a deliberate manager/platform feature, define a separate permission and audit rather than relying on membership in several pharmacies.
+
+### 24.8 P2 — Resource ownership checks are inconsistent across inventory and clinical entity handlers
+
+The reviewed inventory mutation handlers are CurrentSuperuser-only, which limits ordinary-member access, but update, adjustment and delete load Inventory by primary key (session.get) without an explicit pharmacy predicate. When a pharmacy-scoped role replaces the superuser gate, simply changing the dependency would create an IDOR risk unless the resource lookup is simultaneously constrained by the authorized pharmacy. The inventory adjustment path does preserve reason, idempotency and movement-ledger controls; those integrity controls do not substitute for tenant authorization.
+
+The active prescription create handler is also superuser-only, but its payload contains patient_id and the reviewed handler does not establish patient ownership by a selected pharmacy before persisting the prescription. Global superuser access limits the caller class but does not provide a durable prescription-to-pharmacy ownership invariant.
+
+Required correction: for every object ID, combine resource ID and authorized pharmacy ownership in the same SQL lookup (or enforce an equivalent composite tenant constraint). For prescriptions, require explicit pharmacy context and patient ownership before create/read/update; include PHI purpose and audit. Do not convert superuser-only handlers into member-accessible endpoints until these checks are present.
+
+### 24.9 P2 — Worker tenant validation proves a positive pharmacy ID, not the originating actor's authorization
+
+The document-ingestion API performs both a platform-superuser check and an active pharmacy-membership check before dispatch, and stamps the authorized pharmacy ID into task config. The Celery worker validates that the supplied pharmacy_id is a positive integer and stamps it into document/chunk metadata; it does not receive or revalidate the originating user, membership state, permission decision, or an authorization-grant reference.
+
+The current design therefore relies on the task broker and producer being trusted and on the authorization decision made at enqueue time. A queued task may also execute after the user's membership has been revoked. This review does not establish an untrusted broker or an exploitable queue path.
+
+Required correction: explicitly document the broker as a trusted boundary and decide whether authorization is evaluated at enqueue time or execution time. For sensitive ingestion, include actor ID, tenant ID, job ID and a signed/immutable authorization decision reference; revalidate membership/permission at execution when policy requires immediate revocation. Keep system-initiated jobs on a distinct service identity, not a fabricated human role.
+
+### 24.10 P2 — Database-level tenant isolation and least-privilege runtime enforcement remain unproven
+
+The reviewed application applies pharmacy predicates in many API/service queries, and Section 21 documents tenant-scoped composite relationships in the inventory ledger. However, this source review does not establish PostgreSQL Row-Level Security policies for all pharmacy-owned tables, forced RLS behavior, a per-tenant session context, or the runtime database role's inability to bypass policies. The earlier PHI governance review also records that the Ansible Compose path reuses the PostgreSQL bootstrap POSTGRES_USER for application runtime connections; the current deployed role privileges were not inspected in this audit.
+
+Required correction: first establish the actual database role and trust model. If all tenant access shares one application credential, enforce application query scoping comprehensively and test it against PostgreSQL; consider RLS as defense in depth with transaction-local tenant context and careful pool reset. Separate bootstrap, migration, runtime and audit privileges. Never claim RLS isolation without inspecting live grants/policies and running cross-tenant negative integration tests.
+
+### 24.11 Test coverage and evidence maturity
+
+- tests/unit/modules/auth/test_tenant.py defines ordinary membership, missing membership, multiple-membership ambiguity, sole-membership resolution, and explicit global-superuser behavior. It does not prove complete API route coverage or database isolation.
+- tests/integration/test_patient_history_tenant_scope.py defines five PostgreSQL integration scenarios: allowed minimal history with audit, cross-pharmacy denial, missing membership, null-owner denial and superuser denial.
+- The inspected dashboard route does not have equivalent role/purpose/PHI-audit assertions in the evidence sampled for this section.
+- No complete endpoint × role × pharmacy matrix was executed or established by this audit. No route-table instantiation, PostgreSQL RLS/grant inspection, worker authorization test, MCP DB-backed audit test or full two-tenant API suite was run here.
+- Existing test definitions are evidence of intended regression coverage only. They are not passing results.
+
+### 24.12 Prioritized authorization remediation
+
+1. Approve the pharmacy-scoped RBAC policy and safe classification of existing memberships; do not grant roles by inference.
+2. Implement membership-scoped roles and a centralized resource.action permission evaluator, with default deny.
+3. Remove patient identifiers and medication-level detail from the general dashboard; create audited clinical read surfaces.
+4. Govern platform/superuser access separately with time-bounded support grants and audit.
+5. Make selected pharmacy context explicit and consistently enforce active pharmacy + active membership.
+6. Add SQL-level tenant predicates to every resource-by-ID read/write before exposing those handlers to pharmacy roles.
+7. Bind worker and integration execution to explicit service identities and documented authorization timing.
+8. Establish database runtime-role least privilege and verify any RLS policy against PostgreSQL.
+9. Build route-table and endpoint × role × tenant tests, including negative cross-tenant, inactive membership/pharmacy, null ownership, audit failure and role revocation cases.
+10. Run the tests only in the approved isolated CI/Demo environment after explicit authorization; no deployment follows automatically from this audit.
+
+No application source changes, permission grants, migrations, database connections, RLS/grant inspection, test executions, CI runs, API requests, queue operations or deployments were performed as part of this review.
