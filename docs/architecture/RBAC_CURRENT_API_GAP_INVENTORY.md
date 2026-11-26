@@ -1550,3 +1550,129 @@ No benchmark run or result artifact was generated during this audit. Historical 
 - Production-scale retrieval latency and quality: **not established by this static review**.
 
 No application source changes, CI runs, migrations, database operations or deployments were performed as part of this review.
+
+## 15. RAG Answer Generation & Clinical Grounding
+
+Scope: static review of the active main implementations of LangGraphRAG, ContextualCompressor, MedicalGuardrails, PharmacistAgent, AgentHarness, the RAG response schemas and related unit tests. This section evaluates the transition from retrieved evidence to the final user-visible answer. It does not establish runtime behavior in a deployed environment.
+
+### 15.1 Positive controls confirmed
+
+- The LangGraph generation prompt explicitly instructs the model to answer only from retrieved evidence, treat the question/evidence as untrusted data, abstain when evidence is insufficient, and use only supplied citation IDs.
+- Compressed context retains a deterministic src-{chunk_uuid} identifier and source/version labels for each retained chunk.
+- RAG citation validation rejects missing citations and citation IDs that are not present in the retrieved source set.
+- The agent's structured SafetyReview fails closed when the reviewer invocation raises an exception.
+- The harness revalidates citation IDs after output guardrails/post-processing, reducing the chance that a post-processing step silently removes or fabricates a citation.
+- The no-relevant-document route returns an explicit no-answer response after bounded rewrites.
+
+These controls establish useful provenance and fail-closed behavior for several technical failures. They do not establish clinical claim correctness.
+
+### 15.2 P1 — Runtime citation validation checks identifier membership, not claim-level entailment
+
+LangGraphRAG._validate_answer_citations() extracts citation IDs from the answer and verifies that every extracted ID belongs to the retrieved source set. AgentHarness._validate_rag_citations() applies a similar allowlist check to the final agent answer. The agent reviewer also checks citation-ID membership.
+
+None of these runtime checks verifies that:
+- every factual/clinical claim has its own citation;
+- the cited source actually supports the associated claim;
+- a sentence containing multiple clinical claims is fully supported;
+- each citation attached to a claim is relevant, rather than merely one citation somewhere in the answer being valid;
+- a revised answer from SafetyReview has not introduced a new unsupported clinical claim.
+
+The separate offline citation_correctness evaluator requires an entailment judge, but it is not wired into the production response path. Its current sentence-level logic also accepts a sentence when any one of its cited sources supports the sentence; this does not fully solve multi-claim/multi-citation attribution.
+
+**Required correction:** generate an atomic claim-to-source structure. Each claim must carry its own exact source IDs and be checked against the corresponding source text. Split compound statements into atomic claims before entailment evaluation. Missing, invalid or unsupported citations on a critical clinical claim must trigger ABSTAIN/BLOCK, not merely an aggregate warning.
+
+### 15.3 P1 — Evidence sufficiency is defined as document relevance, not clinical evidence coverage
+
+The active graph considers retrieval sufficient when at least one document passes the binary relevance grader (MIN_RELEVANT_DOCS = 1). The no-answer route is selected only when no documents pass after the bounded rewrite attempts.
+
+This does not establish that the retrieved evidence contains all attributes required to answer the question. For example, a chunk mentioning the correct medicine may still lack the requested strength, formulation, route, dosage, frequency, duration, contraindications, interaction context, population or jurisdiction. The graph has no explicit evidence-coverage contract for these required fields and no deterministic conflict/staleness decision at answer time.
+
+The generation prompt asks the LLM to abstain when evidence is insufficient, but this remains a model instruction rather than a validated evidence-completeness gate. A single broadly relevant chunk can therefore reach generation even when a critical requested fact is absent.
+
+**Required correction:** classify the question into required evidence fields, build a coverage matrix from retrieved sources, and define explicit abstention rules for missing, conflicting, expired, unapproved or jurisdiction-inapplicable evidence. Relevance must not be treated as clinical sufficiency.
+
+### 15.4 P1 — Dosage guardrail is a substring heuristic, not dose-to-source verification
+
+MedicalGuardrails._contains_unverified_dosage() searches the answer with a narrow dosage regex and then checks whether any supplied source's string representation contains the word dosage or the substring mg. It does not compare the medication identity and the exact dose/strength/concentration, unit, route, frequency, duration or patient context in the answer against the cited source.
+
+Consequences:
+- an unrelated mg occurrence anywhere in any retrieved source can make a dosage claim appear source-backed;
+- a source containing the word dosage can satisfy the check without containing the dose stated in the answer;
+- common variants such as 500 mg every 6 hours, mcg, micrograms, units/kg, concentration-based dosing and route-specific instructions are not comprehensively covered by the regex;
+- the current action is to append a disclaimer, not to reject or abstain from an unverified high-risk dosage claim.
+
+The unit test verifies disclaimer addition when sources are empty; it does not verify exact dose matching or rejection of a wrong dose.
+
+**Required correction:** replace substring checks with structured medication/dose extraction and exact source-linked comparison. Critical mismatches or unverified dosage claims must fail closed and require pharmacist verification.
+
+### 15.5 P1 — The agent reviewer is not a claim-level clinical verifier
+
+SafetyReview contains is_safe, needs_revision, revised_response and new_warnings. The reviewer prompt asks the LLM to reject dangerous or unsupported dosage/medication claims, but the result does not contain a structured list of claims, supporting evidence spans, source IDs or per-claim verification decisions.
+
+When the reviewer returns a revised response, the code subsequently checks only that citation IDs in the final text belong to the retrieved source set. A valid ID can therefore remain attached to a revised claim that the source does not support. The reviewer failure path is fail-closed, which is positive, but a successful structured response is not proof of entailment.
+
+The reviewer receives the agent's RAG source summaries, where chunk content is truncated to 500 characters. This is not a complete evidence package for verifying claims whose support occurs later in the chunk.
+
+**Required correction:** make review output structured and evidence-bound. Prefer a reviewer that returns per-claim findings and does not freely rewrite clinical content. If a revised answer is generated, send it through the same complete claim extraction, source-entailment, medication-entity and dosage validation gates before release.
+
+### 15.6 P2 — RAG answer confidence is not meaningfully populated
+
+On the normal generate_node success path, the node returns the answer, model name, latency and token count, but does not return a confidence value. LangGraphRAG.run() then constructs RAGResponse with float(final.get("confidence") or 0.0). Consequently, the normal successful generation path reports confidence=0.0 unless another node populated it.
+
+This value is not a calibrated clinical confidence score. It must not be exposed or interpreted as one. Retrieval scores, RRF scores, LLM relevance decisions and answer confidence are different quantities.
+
+**Required correction:** either remove/rename the field until a defined calibration method exists, or provide a documented, independently validated confidence contract. Never derive clinical confidence directly from vector similarity or RRF scores.
+
+### 15.7 P2 — Compression preserves source IDs but not necessarily all clinically material evidence
+
+The compressor attaches the original chunk citation ID to the compressed text, which is a useful provenance control. However, it can retain only up to three selected sentences; if no sentence meets the relevance threshold, it still keeps the top two scored sentences. This can produce a cited but incomplete representation of the original chunk. The generation layer does not receive an explicit list of omitted critical fields.
+
+This finding is consistent with the document parsing/compression risks already recorded in Section 13; it is repeated here because it directly affects answer grounding.
+
+**Required correction:** preserve clinical entities, strengths, units, routes, dose/frequency/duration, negation, contraindications, warnings, table headers and relevant exceptions deterministically. If compression cannot preserve a required fact and its context, retain the original evidence or abstain.
+
+### 15.8 P2 — Test coverage validates citation syntax and guardrail contracts, not clinical grounding
+
+The inspected tests cover:
+- accepting a citation ID that belongs to the retrieved source set;
+- rejecting missing or fabricated citation IDs;
+- use of the guardrail validated-output contract;
+- a dosage disclaimer when no sources are supplied;
+- offline metric helper behavior with mocked entailment judges;
+- Ragas adapter behavior with fake metric classes and fixed scores.
+
+The inspected test set does not demonstrate:
+- claim-level citation entailment through the actual LangGraph generation path;
+- multi-claim sentences with partial evidence support;
+- reviewer revisions that introduce unsupported claims;
+- exact medication/dose/unit/route/frequency matching against cited source passages;
+- reliable abstention when one relevant document lacks a requested critical attribute;
+- conflict, supersession and jurisdiction-aware answer generation;
+- a full PharmacistAgent + RAG + MCP answer evaluation using a real, explicitly configured evaluation judge.
+
+No test suite was executed as part of this static audit. Test presence is not evidence of a passing run.
+
+### 15.9 Recommended generation and release contract
+
+1. **Atomic claims:** represent each factual claim separately with a stable claim ID, claim type, medication entities/attributes, criticality and exact supporting source IDs.
+2. **Claim-to-evidence binding:** resolve each source ID to the original document version and exact page/section/span. Validate each claim against its cited evidence; do not accept mere ID membership.
+3. **Medication attribute integrity:** preserve and validate ingredient, brand/generic identity, strength/concentration, dosage form, route, dose, units, frequency, duration, population and relevant contraindications/interactions.
+4. **Evidence coverage and abstention:** define required fields per question type. Missing or conflicting critical evidence, stale/unapproved sources or jurisdiction mismatch must trigger ABSTAIN and pharmacist escalation.
+5. **Reviewer constraints:** the reviewer should return structured verification findings. Any rewritten answer must pass the same validation pipeline again.
+6. **Deterministic safety gates:** exact dose/entity/negation checks and tenant/patient isolation remain deterministic controls; Ragas/LLM judges are supplementary offline quality signals.
+7. **End-to-end evaluation:** use a versioned, pharmacist-reviewed synthetic/de-identified corpus covering RU/EN, dosage and formulation variants, compound claims, negation, interactions, contraindications, conflicting/expired sources and adversarial near-neighbor medications. Report per-criticality metrics and hard-fail safety cases separately from aggregate Ragas scores.
+
+### 15.10 Answer-generation readiness summary
+
+- Evidence-only generation instruction: **implemented as a prompt instruction**.
+- Stable source IDs in compressed context: **implemented**.
+- Missing/fabricated citation-ID rejection: **implemented**.
+- Claim-level citation entailment in the production response path: **not established**.
+- Clinical evidence completeness/coverage gate: **not established**.
+- Exact dosage-to-source verification: **not implemented; current check is heuristic**.
+- Structured claim-level reviewer output: **not implemented**.
+- Safe revalidation of reviewer-rewritten clinical claims: **not established**.
+- Calibrated answer confidence: **not established; normal generation path defaults to 0.0**.
+- Full end-to-end pharmacist-reviewed clinical answer benchmark: **not demonstrated**.
+
+No application source changes, CI runs, migrations, database operations or deployments were performed as part of this review.
