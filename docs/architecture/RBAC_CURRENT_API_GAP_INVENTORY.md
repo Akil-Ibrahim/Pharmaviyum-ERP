@@ -550,6 +550,8 @@ Conceptual decision: `authenticated AND active_tenant AND action_permission AND 
 
 ## 11. Final mounted API route coverage and path corrections
 
+Route coverage source baseline: `main` at `fb1e40fd47e1137bcff43369ececdb45953de473`.
+
 This section supersedes any earlier shorthand path in this inventory where the live router prefix differs. It was derived from `src/pharmaviyum/main.py` and the package router actually imported there: `src/pharmaviyum/api/v1/__init__.py`. The separate `src/pharmaviyum/api/v1/router.py` is not mounted by `main.py`.
 
 ### 11.1 Live router composition
