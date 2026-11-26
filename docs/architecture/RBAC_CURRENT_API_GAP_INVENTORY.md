@@ -97,6 +97,36 @@ The inspected `src/pharmaviyum/api/v1/router.py` does not directly include this 
 7. Add endpoint-level 401/403, cross-tenant, role-change, and audit tests.
 8. Expose the effective permission context to the frontend and then filter Sidebar navigation.
 
+
+### 4.7 AI API and MCP tool authorization use the legacy account role
+
+Files: `src/pharmaviyum/models/user.py`, `src/pharmaviyum/api/v1/ai.py`, `src/pharmaviyum/ai/mcp/context.py`, `src/pharmaviyum/ai/mcp/registry.py`, `src/pharmaviyum/ai/mcp/tool_management.py`, `src/pharmaviyum/ai/mcp/tools/patient_history.py`
+
+Verified source behavior on the reviewed `main` commit:
+
+- `User.role` is a computed property: `admin` when `is_superuser` is true, otherwise `pharmacist`. It is not stored on `PharmacyMembership` and cannot represent different roles for one user in different pharmacies.
+- Both AI query endpoints validate the requested pharmacy through `require_pharmacy_tenant`, then `_set_mcp_context` copies `current_user.role` into trusted `MCPAuthorizationContext`. Tenant scope is therefore checked, but the role in that context remains account-global.
+- `GET /api/v1/ai/tools` has only `CurrentUser`; it does not resolve a pharmacy context. It filters tool discovery using the same global `current_user.role`.
+- MCP registry execution checks `ToolMetadata.required_roles` against the supplied trusted-context role. `check_rbac` grants every registered tool to `admin` and `system` regardless of each tool's `required_roles`.
+- The `get_patient_history` tool declares `required_roles=["pharmacist"]` and independently requires `auth_context.user_role == "pharmacist"`, exact selected-patient equality, a non-empty purpose, and active patient ownership in the trusted pharmacy. It writes metadata-only PHI audit decisions and fails closed if the audit commit fails.
+
+Security and consistency implications:
+
+1. Every ordinary non-superuser account is currently represented as `pharmacist` in AI/MCP, regardless of whether that account should be a cashier, manager, or pharmacy admin in the selected pharmacy. The MCP role filter therefore does not establish clinical authorization.
+2. A platform superuser is represented as `admin`; generic registry filtering exposes all tools to that role, but the patient-history function itself rejects `admin`. Tool discovery and tool execution can therefore disagree for this tool.
+3. AI tool discovery is not pharmacy-context-aware. It must not be treated as a reliable UI permission contract for a multi-pharmacy user.
+4. Patient-history selected-patient binding, tenant ownership, purpose classification, and PHI audit are meaningful additional safeguards, but they do not repair the incorrect upstream role resolution.
+5. The generic MCP role list (`patient`, `pharmacist`, `admin`, `system`) is not the proposed pharmacy-role vocabulary and does not model action-level permissions.
+
+Required future controls (not implemented by this audit):
+
+- Resolve one active pharmacy membership for every pharmacy-scoped AI request and derive effective permissions from that membership on the server.
+- Authorize patient-history access with an explicit clinical permission (for example, `patients.phi.read`) plus patient ownership and purpose policy; do not rely on a string role label.
+- Make tool discovery use the same trusted pharmacy permission context as execution, while treating discovery only as presentation and rechecking authorization at dispatch.
+- Keep platform-operator privileges separate from pharmacy roles; do not let a generic `admin` bypass silently imply unrestricted clinical access.
+- Add tests for cashier/pharmacist/manager/admin membership roles across two pharmacies, role revocation, missing/ambiguous tenant context, tool discovery versus execution parity, and cross-patient/cross-pharmacy denial.
+
+
 ## 5. Explicit non-actions
 
 This review made no application code changes, route changes, schema changes, migration changes, permission grants, manual SQL, merge, or deployment. The findings must be reviewed against the complete router graph and runtime configuration before implementation.
