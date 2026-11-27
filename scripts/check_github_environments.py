@@ -3,14 +3,17 @@ from pathlib import Path
 
 CANONICAL_DEMO_ENVIRONMENT = "demo-pharmaviyum-erp"
 MIGRATION_VALIDATION_ENVIRONMENT = "demo-migration-validation"
+DEMO_DATABASE_MIGRATION_ENVIRONMENT = "demo-database-migration"
 DEMO_DEPLOY_WORKFLOW = Path(".github/workflows/deploy-fastapi-cloud.yml")
 MIGRATION_VALIDATION_WORKFLOW = Path(".github/workflows/validate-demo-migrations.yml")
+DEMO_DATABASE_MIGRATION_WORKFLOW = Path(".github/workflows/migrate-demo-production.yml")
 PRODUCTION_MIGRATION_WORKFLOW = Path(".github/workflows/migrate-production-database.yml")
 workflow_dir = Path(".github/workflows")
 errors = []
 environment_counts = {
     CANONICAL_DEMO_ENVIRONMENT: 0,
     MIGRATION_VALIDATION_ENVIRONMENT: 0,
+    DEMO_DATABASE_MIGRATION_ENVIRONMENT: 0,
 }
 
 # Match a job-level GitHub Environment block (4-space job property,
@@ -23,6 +26,7 @@ environment_name = re.compile(
 approved_workflows = {
     CANONICAL_DEMO_ENVIRONMENT: DEMO_DEPLOY_WORKFLOW,
     MIGRATION_VALIDATION_ENVIRONMENT: MIGRATION_VALIDATION_WORKFLOW,
+    DEMO_DATABASE_MIGRATION_ENVIRONMENT: DEMO_DATABASE_MIGRATION_WORKFLOW,
 }
 
 for path in sorted((*workflow_dir.rglob("*.yml"), *workflow_dir.rglob("*.yaml"))):
@@ -32,7 +36,7 @@ for path in sorted((*workflow_dir.rglob("*.yml"), *workflow_dir.rglob("*.yaml"))
         if actual not in approved_workflows:
             errors.append(
                 f"{path}: unapproved GitHub Environment {actual!r}; "
-                "only the isolated Demo and migration-validation environments are allowed"
+                "only the approved Demo deployment, migration-validation, and Demo database migration environments are allowed"
             )
             continue
 
