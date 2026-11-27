@@ -157,10 +157,25 @@ jobs:
 
           expected_heads = set(ScriptDirectory.from_config(Config("alembic.ini")).get_heads())
           with psycopg.connect(os.environ["DATABASE_URL"]) as connection:
+              database_name, schema_name, search_path, alembic_table = connection.execute(
+                  """
+                  SELECT current_database(), current_schema(), current_setting('search_path'),
+                         to_regclass('public.alembic_version') IS NOT NULL
+                  """
+              ).fetchone()
+
+              if not alembic_table:
+                  print(
+                      "Refusing application deployment: public.alembic_version is missing "
+                      f"(database={database_name!r}, schema={schema_name!r}, "
+                      f"search_path={search_path!r})."
+                  )
+                  sys.exit(1)
+
               actual_heads = {
                   row[0]
                   for row in connection.execute(
-                      "SELECT version_num FROM alembic_version"
+                      "SELECT version_num FROM public.alembic_version"
                   ).fetchall()
               }
               inventory_ledger = connection.execute(
