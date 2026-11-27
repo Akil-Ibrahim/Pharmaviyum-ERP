@@ -64,6 +64,60 @@ async def get_dashboard_summary(
         order_base = order_base.where(Patient.pharmacy_id == scope)
         prescription_base = prescription_base.where(Patient.pharmacy_id == scope)
 
+    # A rolling 30-day comparison avoids partial-month bias. Receipts are
+    # counted distinctly because PatientPurchase stores one row per receipt line.
+    period_30d_start = now - timedelta(days=30)
+    previous_30d_start = now - timedelta(days=60)
+    sales_period_query = purchase_base.with_only_columns(
+        func.coalesce(
+            func.sum(
+                case(
+                    (
+                        PatientPurchase.purchased_at >= period_30d_start,
+                        PatientPurchase.quantity * PatientPurchase.unit_price,
+                    ),
+                    else_=0,
+                )
+            ),
+            0,
+        ).label("revenue_30d"),
+        func.coalesce(
+            func.sum(
+                case(
+                    (
+                        (PatientPurchase.purchased_at >= previous_30d_start)
+                        & (PatientPurchase.purchased_at < period_30d_start),
+                        PatientPurchase.quantity * PatientPurchase.unit_price,
+                    ),
+                    else_=0,
+                )
+            ),
+            0,
+        ).label("previous_revenue_30d"),
+        func.count(
+            func.distinct(
+                case(
+                    (PatientPurchase.purchased_at >= period_30d_start,
+                     PatientPurchase.receipt_number),
+                    else_=None,
+                )
+            )
+        ).label("orders_30d"),
+    )
+
+    daily_revenue_query = (
+        select(
+            func.date_trunc("day", PatientPurchase.purchased_at).label("day"),
+            func.coalesce(
+                func.sum(PatientPurchase.quantity * PatientPurchase.unit_price), 0
+            ).label("revenue"),
+        )
+        .join(Patient, Patient.id == PatientPurchase.patient_id)
+        .where(PatientPurchase.purchased_at >= period_30d_start)
+        .group_by(func.date_trunc("day", PatientPurchase.purchased_at))
+        .order_by(func.date_trunc("day", PatientPurchase.purchased_at))
+    )
+
     sales_kpi_query = purchase_base.with_only_columns(
         func.coalesce(
             func.sum(
@@ -248,7 +302,12 @@ async def get_dashboard_summary(
         top_products_query = top_products_query.where(Patient.pharmacy_id == scope)
         expiry_query = expiry_query.where(Inventory.pharmacy_id == scope)
 
+    if scope is not None:
+        daily_revenue_query = daily_revenue_query.where(Patient.pharmacy_id == scope)
+
     sales_kpi = (await session.execute(sales_kpi_query)).one()
+    sales_period = (await session.execute(sales_period_query)).one()
+    daily_revenue = (await session.execute(daily_revenue_query)).all()
     order_kpi = (await session.execute(order_kpi_query)).one()
     prescription_kpi = (await session.execute(prescription_kpi_query)).one()
     patient_kpi = (await session.execute(patient_kpi_query)).one()
@@ -488,6 +547,40 @@ async def get_dashboard_summary(
         },
         "sales": {
             "today": round(float(sales_kpi.today_sales or 0), 2),
+            "revenue_30d": round(float(sales_period.revenue_30d or 0), 2),
+            "previous_revenue_30d": round(
+                float(sales_period.previous_revenue_30d or 0), 2
+            ),
+            "revenue_growth_30d": (
+                round(
+                    (
+                        float(sales_period.revenue_30d or 0)
+                        - float(sales_period.previous_revenue_30d or 0)
+                    )
+                    / float(sales_period.previous_revenue_30d)
+                    * 100,
+                    1,
+                )
+                if float(sales_period.previous_revenue_30d or 0) > 0
+                else None
+            ),
+            "average_order_value_30d": (
+                round(
+                    float(sales_period.revenue_30d or 0)
+                    / int(sales_period.orders_30d or 0),
+                    2,
+                )
+                if int(sales_period.orders_30d or 0) > 0
+                else 0
+            ),
+            "orders_30d": int(sales_period.orders_30d or 0),
+            "daily_revenue": [
+                {
+                    "day": row.day.isoformat(),
+                    "revenue": round(float(row.revenue or 0), 2),
+                }
+                for row in daily_revenue
+            ],
             "by_category": [
                 {
                     "category": row.category,
