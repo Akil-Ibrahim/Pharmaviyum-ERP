@@ -27,6 +27,9 @@ class _Result:
             extended_warning=0,
             today_sales=0,
             month_revenue=0,
+            revenue_30d=0,
+            previous_revenue_30d=0,
+            orders_30d=0,
             month_orders=0,
             month_completed_orders=0,
             month_prescriptions=0,
@@ -71,6 +74,12 @@ async def test_dashboard_summary_applies_one_pharmacy_scope_to_all_aggregates():
 
     assert result["patients"]["active"] == 0
     assert result["sales"]["today"] == 0
+    assert result["sales"]["revenue_30d"] == 0
+    assert result["sales"]["previous_revenue_30d"] == 0
+    assert result["sales"]["revenue_growth_30d"] is None
+    assert result["sales"]["average_order_value_30d"] == 0
+    assert result["sales"]["orders_30d"] == 0
+    assert result["sales"]["daily_revenue"] == []
     assert result["inventory"]["items"] == 0
     assert "patient_purchases" not in result
     assert "patient_medications" not in result
