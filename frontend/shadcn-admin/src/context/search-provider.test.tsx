@@ -132,12 +132,12 @@ describe('SearchProvider and CommandMenu', () => {
       .not.toBeInTheDocument()
   })
 
-  it('does not expose disabled sidebar destinations in command search', async () => {
+  it('exposes every enabled sidebar destination in command search', async () => {
     const screen = await renderWithSearchProvider()
 
     await openCommandPalette(screen)
 
-    const disabledDestinations = [
+    const enabledDestinations = [
       'Mortarium AI',
       'Clinical Care Patients',
       'Clinical Care Prescriptions',
@@ -151,10 +151,10 @@ describe('SearchProvider and CommandMenu', () => {
       'Pharmacies',
     ]
 
-    for (const destination of disabledDestinations) {
+    for (const destination of enabledDestinations) {
       await expect
         .element(screen.getByRole('option', { name: destination }))
-        .not.toBeInTheDocument()
+        .toBeInTheDocument()
     }
   })
 
