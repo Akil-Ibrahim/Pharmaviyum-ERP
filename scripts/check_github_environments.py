@@ -95,7 +95,7 @@ else:
         r"https://([a-z0-9.-]+[.]fastapicloud[.]dev)",
         deploy_content,
     )
-    if fastapi_cloud_hosts != ["pharmaviyum-erp.fastapicloud.dev"]:
+    if set(fastapi_cloud_hosts) != {"pharmaviyum-erp.fastapicloud.dev"}:
         errors.append(
             f"{DEMO_DEPLOY_WORKFLOW}: expected only the dedicated Demo FastAPI Cloud "
             f"hostname; found {fastapi_cloud_hosts!r}"
