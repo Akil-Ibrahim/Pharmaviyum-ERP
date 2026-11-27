@@ -148,6 +148,27 @@ function MetricCard({
   )
 }
 
+function completeDailyRevenue(
+  points: { day: string; revenue: number }[],
+  asOf: string
+) {
+  const revenueByDay = new Map(
+    points.map((point) => [point.day.slice(0, 10), point.revenue])
+  )
+  const end = new Date(asOf)
+  const endUtc = Date.UTC(
+    end.getUTCFullYear(),
+    end.getUTCMonth(),
+    end.getUTCDate()
+  )
+
+  return Array.from({ length: 30 }, (_, index) => {
+    const date = new Date(endUtc - (29 - index) * 24 * 60 * 60 * 1000)
+    const day = date.toISOString().slice(0, 10)
+    return { day, revenue: revenueByDay.get(day) ?? 0 }
+  })
+}
+
 function EmptyState({ children }: { children: string }) {
   return (
     <div className='flex min-h-32 items-center justify-center rounded-lg border border-dashed px-4 text-center text-sm text-muted-foreground'>
@@ -165,7 +186,9 @@ export function Dashboard() {
   })
 
   const categories = data?.sales.by_category ?? []
-  const revenueTrend = data?.sales.daily_revenue ?? []
+  const revenueTrend = data
+    ? completeDailyRevenue(data.sales.daily_revenue, data.as_of)
+    : []
   const revenueGrowth = data?.sales.revenue_growth_30d
   const revenueGrowthLabel =
     revenueGrowth == null
@@ -243,7 +266,7 @@ export function Dashboard() {
               <CardContent>
                 {isPending ? (
                   <Skeleton className='h-64 w-full' />
-                ) : revenueTrend.length === 0 ? (
+                ) : data?.sales.orders_30d === 0 ? (
                   <EmptyState>No realized sales were recorded in the last 30 days.</EmptyState>
                 ) : (
                   <div className='h-64 w-full' role='img' aria-label='Daily realized revenue for the last 30 days'>
