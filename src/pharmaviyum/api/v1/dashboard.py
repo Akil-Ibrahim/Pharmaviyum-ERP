@@ -525,7 +525,9 @@ async def get_dashboard_summary(
                 "available_packs": round(
                     float(row.available_units or 0) / float(row.units_per_pack or 1), 1
                 ),
-                "reorder_level": int(row.reorder_level or 0),
+                "reorder_level": round(
+                    float(row.reorder_level or 0) / float(row.units_per_pack or 1), 1
+                ),
                 "packs_30d": int(row.packs_30d or 0),
                 "days_on_hand": (
                     round(
