@@ -92,7 +92,7 @@ else:
     # hostname: the dedicated Demo app. Reject any additional cloud hostname
     # without embedding identifiers for retired or private applications here.
     fastapi_cloud_hosts = re.findall(
-        r"https://([a-z0-9.-]+\\.fastapicloud\\.dev)",
+        r"https://([a-z0-9.-]+[.]fastapicloud[.]dev)",
         deploy_content,
     )
     if fastapi_cloud_hosts != ["pharmaviyum-erp.fastapicloud.dev"]:
