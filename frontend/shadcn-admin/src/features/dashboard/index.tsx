@@ -306,7 +306,7 @@ export function Dashboard() {
                       <TableRow>
                         <TableHead>Medicine</TableHead>
                         <TableHead className='text-right'>Packs</TableHead>
-                        <TableHead className='text-right'>Stock</TableHead>
+                        <TableHead className='text-right'>Stock units</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -342,7 +342,7 @@ export function Dashboard() {
                       <div key={product.id} className='flex items-center justify-between gap-3 border-b pb-3 last:border-0 last:pb-0'>
                         <div className='min-w-0'>
                           <p className='truncate text-sm font-medium'>{product.name}</p>
-                          <p className='mt-1 text-xs text-muted-foreground'>Reorder level: {number(product.reorder_level)} · 30-day demand: {number(product.packs_30d)} packs</p>
+                          <p className='mt-1 text-xs text-muted-foreground'>Reorder level: {number(product.reorder_level)} packs · 30-day demand: {number(product.packs_30d)} packs</p>
                         </div>
                         <Badge variant='secondary' className='shrink-0'>{number(product.available_packs)} packs left</Badge>
                       </div>
