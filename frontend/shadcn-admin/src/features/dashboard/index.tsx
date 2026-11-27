@@ -216,9 +216,9 @@ export function Dashboard() {
 
           <section aria-label='Pharmacy key performance indicators' className='grid gap-4 sm:grid-cols-2 xl:grid-cols-4'>
             <MetricCard label='Sales Today' value={amount(data?.sales.today ?? 0)} detail='Realized sales recorded today' icon={ShoppingCart} loading={isPending} />
-            <MetricCard label='Monthly Revenue' value={amount(data?.revenue.month ?? 0)} detail={`${number(data?.orders.completed_month ?? 0)} completed orders this month`} icon={TrendingUp} loading={isPending} />
-            <MetricCard label='Inventory Items' value={number(data?.inventory.items ?? 0)} detail={`${number(data?.inventory.low_stock ?? 0)} items at or below reorder level`} icon={Boxes} loading={isPending} />
-            <MetricCard label='Active Patients' value={number(data?.patients.active ?? 0)} detail={`${number(data?.prescriptions.month ?? 0)} prescriptions this month`} icon={UsersRound} loading={isPending} />
+            <MetricCard label='Monthly Revenue' value={amount(data?.revenue.month ?? 0)} detail='Realized revenue since the start of this month' icon={TrendingUp} loading={isPending} />
+            <MetricCard label='Orders This Month' value={number(data?.orders.month ?? 0)} detail={`${number(data?.orders.completed_month ?? 0)} completed · ${data?.orders.month ? Math.round((data.orders.completed_month / data.orders.month) * 100) : 0}% completion`} icon={Boxes} loading={isPending} />
+            <MetricCard label='Stock Coverage' value={data?.inventory.days_on_hand == null ? '—' : `${number(data.inventory.days_on_hand)} days`} detail='Estimated from available packs and last 30-day dispensing' icon={CalendarClock} loading={isPending} />
           </section>
 
           <section className='grid min-w-0 gap-4 xl:grid-cols-[minmax(0,1.2fr)_minmax(320px,.8fr)]'>
