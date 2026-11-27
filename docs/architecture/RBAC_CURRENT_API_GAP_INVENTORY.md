@@ -2813,3 +2813,123 @@ Required correction: define stable error codes and a versioned error schema, pre
 9. Generate and review OpenAPI plus TypeScript client diffs in an approved CI/Demo workflow only after explicit authorization.
 
 No application source changes, schema changes, migrations, database connections, API requests, OpenAPI generation, tests, CI runs, queue operations or deployments were performed as part of this review.
+
+## 26. Frontend Architecture, API Client Consistency & End-to-End Workflow Integration
+
+**Source baseline:** repository main at commit fb1e40fd47e1137bcff43369ececdb45953de473 (2026-11-26).  
+**Scope:** static inspection of the production Dockerfile frontend build target, active `frontend/shadcn-admin` package and route tree, authentication store/cookie transport, API client, sidebar/navigation, Products page, Dashboard/POS feature entry points, React Query configuration, Playwright configuration/spec inventory, and existing frontend route/API-error/workflow audit documents. No dependency installation, TypeScript compilation, Vite build, route generation, browser execution, API request, accessibility scan, test execution or deployment was performed. Findings are source-level and do not establish browser/runtime behavior.
+
+### 26.1 Positive frontend architecture controls confirmed
+
+- The production Dockerfile explicitly builds `frontend/shadcn-admin` with its committed Bun lockfile and copies the generated `dist` into the FastAPI image's static directory. This identifies `frontend/shadcn-admin` as the active production frontend build target; the separate root `frontend/package.json` and `frontend/src` tree are not used by this Docker build path.
+- The active frontend has React 19, TypeScript 6, Vite 8, TanStack Router, TanStack Query, TanStack Table, Zustand, Zod, React Hook Form, shadcn/Radix primitives, Vitest Browser and Playwright dependencies.
+- TanStack Router is file-based and route-tree generation is part of the active package's build script. Vite enables automatic route code splitting. The generated route tree is committed and documented as generated output.
+- The root QueryClient defines bounded, status-aware query retries: ordinary 4xx are not retried, 408/429 are retried with a bound, and network/5xx failures have a bounded retry count. The global 401 path clears the query cache, resets authentication and redirects to sign-in.
+- The shared `apiFetch` transport preserves HTTP status and parsed payload in a typed `ApiError`, resets local auth on 401, supports AbortSignal and handles 204. Focused tests define transport/error and retry-policy cases.
+- The Products page now presents medication-oriented identity fields (INN, strength, form, pack, manufacturer and identifiers), has server-side search for queries of at least two characters, aborts stale requests and provides explicit loading/error/empty states and accessible search/table labels.
+- The sidebar explicitly disables several unfinished pharmacy routes with an explanatory reason rather than leaving every such navigation item active. POS and Dashboard remain enabled critical entries.
+- Playwright is configured for desktop Chromium and mobile Chromium, retains traces/screenshots on failure, and starts the production preview after building when no external base URL is supplied.
+
+### 26.2 P1 — Access token is persisted in a JavaScript-readable cookie
+
+The active `auth-store` persists the access token through a manual `document.cookie` helper. The cookie has `path=/`, a seven-day Max-Age and `SameSite=Lax`; `Secure` is added in production. The helper reads the token back through `document.cookie` and does not set `HttpOnly` (which JavaScript cannot set).
+
+The API client then reads the token from Zustand and attaches it as a Bearer Authorization header. This is a browser-managed persistence design, not an HttpOnly server-managed session cookie. A successful XSS in the application origin can read the persisted token and exfiltrate it while it remains valid. This audit does not establish that an XSS vulnerability exists or that a token was stolen.
+
+Required correction: prefer a backend-managed session using Secure, HttpOnly, appropriately scoped SameSite cookies and CSRF protections where cookie authentication is used, or explicitly document and threat-model the Bearer-token-in-JavaScript design. Minimize token lifetime and scope, define refresh/revocation behavior, and ensure CSP/XSS controls are tested. Do not describe the current cookie as HttpOnly or as inaccessible to JavaScript.
+
+### 26.3 P1 — The active frontend does not consume a generated, versioned OpenAPI client
+
+The active production build is `frontend/shadcn-admin`. Its package manifest does not declare `openapi-typescript-codegen` and the inspected active `src` tree does not contain the documented generated `src/client` output. The active application uses a handwritten generic `apiFetch<T>` transport and feature-local request paths/types.
+
+A repository-level `scripts/generate-api-client.sh` exists, but it invokes `npx openapi-typescript-codegen` without a pinned version and fetches `http://localhost:8000/openapi.json`. It writes to `frontend/shadcn-admin/src/client`, but the inspected production build does not invoke this script. The separate root `frontend/package.json` has a different `generate-client` script and package/dependency manifest; that root package is not the frontend target copied by the production Dockerfile.
+
+Required correction: choose one canonical generation workflow for the active package, pin the generator and runtime, define how the OpenAPI document is produced from the same backend revision, generate in a controlled CI step, and review generated contract diffs. Until then, do not claim frontend/backend schema parity from TypeScript compilation alone.
+
+### 26.4 P1 — Generic API response typing performs no runtime schema validation
+
+`apiFetch<T>` parses JSON and returns it as `T` without validating the payload at runtime. The generic type is a compile-time assertion supplied by the caller. For example, the Products page calls `apiFetch<Product[]>` and trusts the returned object shape directly.
+
+A backend response can therefore be structurally incompatible with the frontend type without being rejected at the transport boundary. This is especially material for medication identity, lot/expiry fields, payment status and patient-related data, where silently missing or changed fields can produce incorrect UI state.
+
+Required correction: generate request/response types from the canonical OpenAPI contract and add runtime parsing at high-risk boundaries where untrusted or version-skewed payloads can affect dispensing, inventory, payment or clinical decisions. Validate critical enumerations, identifiers, quantities, money and timestamps; fail closed on malformed safety-critical fields. Generated TypeScript types alone are not runtime validation.
+
+### 26.5 P1 — Critical Dashboard and POS routes remain empty React components
+
+The authenticated route tree registers Dashboard and POS. Their active feature entry points each return `null`. The sidebar leaves both entries enabled. This is confirmed directly in the current source and is also recorded in the existing Frontend Route Readiness Audit.
+
+The backend POS transaction APIs do not change this frontend result: no cashier basket, lot/expiry selection, checkout confirmation, payment status, receipt or error-recovery interface is rendered by the active POS component. The Dashboard entry point likewise renders no operational metrics or landing content.
+
+Required correction: implement real API-backed Dashboard and POS workflows, or explicitly disable/defer their navigation until the corresponding page is ready. POS acceptance must follow the pharmacy workflow contract: server-authoritative product/lot availability and FEFO, server-calculated totals, idempotent checkout, payment lifecycle, receipt and failure states. Prescription dispensing remains blocked until its separately reviewed patient/prescription/dispense linkage is implemented.
+
+### 26.6 P2 — Server-state management is inconsistent across active features
+
+The active application has a shared TanStack QueryClient, status-aware retry policy and query/mutation cache handling. However, the Products page and generic EntityPage use component-local `useEffect`, `useState` and direct `apiFetch` calls rather than TanStack Query. The Products page manually debounces, aborts requests and owns loading/error/data state; EntityPage separately repeats a similar request lifecycle.
+
+These pages do not automatically benefit from QueryClient caching, query-key deduplication, background refetch semantics, shared invalidation or the global query error policy. Their local state also means mutations elsewhere cannot invalidate these datasets through a common query key unless additional coordination is implemented.
+
+Required correction: standardize remote server state on TanStack Query with stable, tenant-aware query keys, query functions, mutation functions, cancellation and explicit invalidation. Keep transient form/input state local or in Zustand only when cross-feature sharing is justified. Clear all account- and tenant-scoped query state on logout, account switch and pharmacy-context change.
+
+### 26.7 P2 — No selected-pharmacy context or role-aware navigation contract is established in the inspected active shell
+
+The authenticated route guard checks only whether an access token exists. The sidebar is a static data structure with hard-coded placeholder user/team information and route-level `disabled` / `disabledReason` flags. Navigation item types and rendered entries do not carry a pharmacy permission/action contract. No selected-pharmacy context provider/store was established in the inspected active shell or the pharmacy-critical feature components reviewed here.
+
+This is not a backend authorization bypass finding: API authorization must remain authoritative, and the route guard is only an authentication gate. However, the active frontend shell does not demonstrate how a user with multiple PharmacyMembership records selects a pharmacy, how that selection propagates into pharmacy-scoped queries, or how navigation is derived from effective pharmacy roles. The POS API specifically requires a pharmacy_id for search, lot lookup and checkout, while the current POS UI is absent.
+
+Required correction: implement an explicit selected-pharmacy context sourced from the authenticated user's authorized memberships; include pharmacy ID in relevant API calls and query keys; clear/invalidate scoped cache on switching; and derive navigation affordances from server-provided effective permissions. Treat all UI hiding as usability only, never as backend security enforcement. Keep missing tenant/role/permission default-deny in the API.
+
+### 26.8 P2 — API error envelope parsing is not aligned with all backend exception handlers
+
+The shared `apiFetch` transport extracts a string `detail` property from an error payload; otherwise it falls back to a generic status-based message. The backend's custom `PharmaviyumException`, validation, integrity and database handlers return an `errors` array with structured `code`, `message` and sometimes `details` / `field` entries. The frontend `ApiError` preserves the raw payload, but the default message extraction does not select the structured `errors[0].message` or expose its code to a typed domain-error layer.
+
+Consequently, for those custom response shapes the UI may show a generic status message instead of the actionable server validation/conflict message. This does not affect every FastAPI HTTPException response, which may use `detail`.
+
+Required correction: define one canonical error envelope shared by backend OpenAPI and frontend transport, safely parse it into typed error codes/messages/field errors, and map domain errors to form fields or workflow states. Preserve correlation/request IDs separately and never expose stack traces, SQL diagnostics or PHI in user-facing messages.
+
+### 26.9 P2 — Duplicate frontend workspace manifests and source trees create a source-of-truth hazard
+
+The repository contains a root `frontend/package.json` with its own scripts/dependencies and a separate `frontend/src` tree, as well as the active `frontend/shadcn-admin/package.json` and `frontend/shadcn-admin/src`. The production Dockerfile builds only `frontend/shadcn-admin`; the root frontend package's build and generation scripts are not the production Docker build path.
+
+The two manifests have different dependency versions and scripts. The root package declares a `generate-client` script, while the active shadcn-admin package does not. This can cause contributors or automation to run type checks, tests or client generation against a non-production tree and mistake that result for validation of the shipped UI.
+
+Required correction: mark the root frontend tree as legacy/archived or remove it through a separately approved cleanup, and document the active workspace/package-manager/build commands in one canonical contributor guide. Ensure CI and developer scripts target the same directory that Docker packages. Do not delete or migrate either tree as part of this audit.
+
+### 26.10 P2 — E2E coverage is not aligned with pharmacy-critical business journeys
+
+The active Playwright `e2e` directory contains only `auth.spec.ts`. It covers sign-in rendering, required-field validation, an authentication API error and forgot-password validation. Playwright's desktop/mobile Chromium projects and webServer build/preview lifecycle are configured, but no browser journey is defined for POS, medication search, inventory receipt, expiry/FEFO, Defectura, procurement, prescription review, patient history or role/tenant switching.
+
+The existing Vitest Browser suite and backend integration tests cover lower-level pieces; they do not establish a complete browser-to-API-to-database pharmacy workflow. A successful generic frontend build or authentication E2E run must not be represented as pharmacy workflow acceptance.
+
+Required correction: add synthetic-data Playwright journeys for the approved business priority sequence. Start with POS search → lot/expiry review → cash checkout → receipt; add external-payment pending/settlement and idempotent retry; then inventory receiving and stock visibility, followed by prescription/patient linkage only after clinical and authorization contracts are approved. Add cross-pharmacy and role-negative cases. Keep all patient test data synthetic.
+
+### 26.11 Pharmacy feature integration readiness
+
+- **POS:** backend search/lot/checkout contracts exist, but active POS React component is empty; no generated client or POS browser journey is established.
+- **Dashboard:** backend summary endpoint exists, but active Dashboard component is empty. Dormant chart components using random values must not be presented as actual pharmacy metrics.
+- **Products:** a usable initial medication-oriented search/list component exists. It uses direct fetch state rather than shared Query cache, returns at most 100 search results or the first 50 default products, and does not establish pagination, sorting, lot/expiry, stock or FEFO management.
+- **Inventory / Defectura / Procurement / Transfers / Prescriptions / Patients:** navigation items are intentionally disabled and several route components return null. Backend primitives exist in varying maturity, but the frontend does not establish these operational workflows.
+- **Pharmacy role and tenant context:** backend authorization is authoritative; the active shell does not establish a selected-pharmacy/effective-permission UX contract.
+- **Mortarium AI:** its navigation entry is disabled in the active sidebar; this audit does not assess the full assistant UI or its runtime API integration.
+
+### 26.12 Test and evidence maturity
+
+- Active Playwright configuration has desktop and mobile Chromium projects, but the only E2E spec found in `frontend/shadcn-admin/e2e` is authentication-focused.
+- Vitest Browser is configured to run Chromium and excludes the Playwright E2E directory. Existing unit/component test files cover transport, cookie persistence, retry policy and other shared frontend behavior; their presence is not a passing result.
+- No frontend dependency install, lockfile validation, route generation, type-check, lint, build, Vitest, Playwright, accessibility scan, visual regression, API contract test or browser journey was run during this audit.
+- No exact-SHA frontend build artifact, bundle report, Core Web Vitals baseline or large-catalog performance measurement was verified.
+- The existing Frontend Implementation Audit and Frontend Route Readiness Audit contain related earlier source-level findings; this section cross-references those documents and confirms critical POS/Dashboard blank components and the current E2E spec inventory against the inspected main source.
+
+### 26.13 Prioritized frontend remediation
+
+1. Resolve access-token persistence threat model and move to a backend-managed HttpOnly session where feasible; add XSS/CSP and session lifecycle tests.
+2. Restore the POS workspace and Dashboard with real backend contracts and explicit loading/error/empty/success states.
+3. Establish one pinned OpenAPI generation workflow for the active Docker-built frontend and validate high-risk payloads at runtime.
+4. Introduce selected-pharmacy context and permission-derived navigation UX, while retaining backend default-deny authorization.
+5. Standardize server-state handling on TanStack Query with tenant-aware keys and cache invalidation on account/pharmacy switches.
+6. Align frontend error parsing with the backend structured error envelope.
+7. Declare one canonical frontend workspace and remove ambiguity between root legacy and active shadcn-admin scripts.
+8. Add synthetic-data Playwright journeys for POS, stock receipt, FEFO/expiry, payment lifecycle and authorization boundaries.
+9. Add accessibility automation/manual checks and measured performance budgets for critical pharmacy screens.
+10. Run build, type-check, unit/browser and E2E validation only in the approved isolated CI/Demo environment after explicit authorization; no deployment follows automatically.
+
+No application source changes, dependency or lockfile changes, API client generation, database/API access, test executions, CI runs, browser sessions, accessibility/performance scans or deployments were performed as part of this review.
