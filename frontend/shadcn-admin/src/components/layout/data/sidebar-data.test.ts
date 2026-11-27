@@ -49,14 +49,11 @@ describe('Pharmaviyum sidebar navigation', () => {
     ])
   })
 
-  it('keeps Defectura as one destination without inventing a route', () => {
-    const defectura = child('Operations', 'Inventory', 'Defectura')
-
-    expect(defectura).toMatchObject({
+  it('provides a dedicated Defectura route', () => {
+    expect(child('Operations', 'Inventory', 'Defectura')).toMatchObject({
       title: 'Defectura',
-      disabled: true,
+      url: '/defectura',
     })
-    expect(defectura?.url).toBeUndefined()
   })
 
   it('keeps Catalog Review and stock sub-capabilities out of the sidebar', () => {
@@ -85,35 +82,24 @@ describe('Pharmaviyum sidebar navigation', () => {
     ])
   })
 
-  it('disables destinations whose routes are not ready', () => {
-    const unavailableItems = [
-      item('Operations', 'Mortarium AI'),
-      child('Operations', 'Clinical Care', 'Patients'),
-      child('Operations', 'Clinical Care', 'Prescriptions'),
-      child('Operations', 'Inventory', 'Drug Catalog'),
-      child('Operations', 'Inventory', 'Stock Management'),
-      child('Operations', 'Inventory', 'Transfers'),
-      child('Operations', 'Inventory', 'Defectura'),
-      child('Operations', 'Procurement', 'Suppliers'),
-      child('Operations', 'Procurement', 'Purchase Orders'),
-      child('Operations', 'Procurement', 'Receiving'),
-      item('Operations', 'Pharmacies'),
-    ]
-
-    for (const entry of unavailableItems) {
-      expect(entry?.disabled).toBe(true)
-      expect(entry?.disabledReason).toBeTruthy()
+  it('gives every sidebar destination a route and keeps every item enabled', () => {
+    for (const navGroup of sidebarData.navGroups) {
+      for (const entry of navGroup.items) {
+        if (entry.items) {
+          for (const childEntry of entry.items) {
+            expect(childEntry.url, childEntry.title).toBeTruthy()
+            expect(childEntry.disabled, childEntry.title).not.toBe(true)
+          }
+        } else {
+          expect(entry.url, entry.title).toBeTruthy()
+          expect(entry.disabled, entry.title).not.toBe(true)
+        }
+      }
     }
   })
 
-  it('keeps implemented Dashboard and POS destinations enabled', () => {
-    expect(item('Operations', 'Dashboard')?.disabled).toBeUndefined()
-    expect(item('Operations', 'POS')?.disabled).toBeUndefined()
-  })
-
-  it('keeps available admin and system destinations enabled', () => {
-    expect(item('Administration', 'Users')?.disabled).toBeUndefined()
-    expect(item('Administration', 'Settings')?.disabled).toBeUndefined()
-    expect(item('System', 'Background Tasks')?.disabled).toBeUndefined()
+  it('keeps Dashboard and POS as the first two Operations destinations', () => {
+    expect(item('Operations', 'Dashboard')?.url).toBe('/')
+    expect(item('Operations', 'POS')?.url).toBe('/pos')
   })
 })
