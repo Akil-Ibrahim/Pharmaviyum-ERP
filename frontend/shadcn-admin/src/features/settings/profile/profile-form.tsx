@@ -155,9 +155,13 @@ export function ProfileForm() {
             </p>
           </div>
           <div className='flex flex-wrap items-center gap-4'>
-            <Avatar className='size-20'>
+            <Avatar className='size-20 ring-2 ring-border ring-offset-2 ring-offset-background'>
               {avatarPreview ? (
-                <AvatarImage src={avatarPreview} alt='Profile photo preview' />
+                <AvatarImage
+                  src={avatarPreview}
+                  alt='Profile photo preview'
+                  className='object-cover object-center'
+                />
               ) : null}
               <AvatarFallback className='text-xl'>
                 <Camera className='size-7 text-muted-foreground' />
@@ -189,7 +193,7 @@ export function ProfileForm() {
             </div>
           </div>
           <p className='text-xs text-muted-foreground'>
-            JPG, PNG, or WebP. Maximum file size: 2 MB.
+            JPG, PNG, or WebP. Maximum file size: 2 MB. Square photos work best; other images are automatically center-cropped without stretching.
           </p>
           {avatarError ? (
             <p role='alert' className='text-sm text-destructive'>
