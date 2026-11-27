@@ -97,8 +97,10 @@ async def get_dashboard_summary(
         func.count(
             func.distinct(
                 case(
-                    (PatientPurchase.purchased_at >= period_30d_start,
-                     PatientPurchase.receipt_number),
+                    (
+                        PatientPurchase.purchased_at >= period_30d_start,
+                        PatientPurchase.receipt_number,
+                    ),
                     else_=None,
                 )
             )
