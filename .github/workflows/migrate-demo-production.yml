@@ -24,8 +24,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     environment:
-      name: demo-pharmaviyum-erp
-      deployment: false
+      name: demo-database-migration
     env:
       ENVIRONMENT: staging
       EXPECTED_NEON_HOST_PREFIX: ep-blue-lake-bdu775si
@@ -61,7 +60,7 @@ jobs:
         run: |
           set -euo pipefail
           test -n "$MIGRATION_DATABASE_URL" || {
-            echo "Add MIGRATION_DATABASE_URL to GitHub Environment demo-pharmaviyum-erp."
+            echo "Add MIGRATION_DATABASE_URL to GitHub Environment demo-database-migration."
             exit 1
           }
           uv run python - <<'PY'
