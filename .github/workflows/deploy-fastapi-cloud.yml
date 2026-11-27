@@ -156,18 +156,36 @@ jobs:
 
           expected_heads = set(ScriptDirectory.from_config(Config("alembic.ini")).get_heads())
           with psycopg.connect(os.environ["DATABASE_URL"]) as connection:
-              database_name, schema_name, search_path, alembic_table = connection.execute(
+              database_name, database_oid, role_name, schema_name, search_path, server_version, alembic_table, alembic_select = connection.execute(
                   """
-                  SELECT current_database(), current_schema(), current_setting('search_path'),
-                         to_regclass('public.alembic_version') IS NOT NULL
+                  SELECT current_database(),
+                         (SELECT oid FROM pg_database WHERE datname = current_database()),
+                         current_user,
+                         current_schema(),
+                         current_setting('search_path'),
+                         current_setting('server_version'),
+                         to_regclass('public.alembic_version') IS NOT NULL,
+                         COALESCE((
+                           SELECT has_table_privilege(current_user, c.oid, 'SELECT')
+                           FROM pg_class AS c
+                           JOIN pg_namespace AS n ON n.oid = c.relnamespace
+                           WHERE n.nspname = 'public' AND c.relname = 'alembic_version'
+                         ), false)
                   """
               ).fetchone()
 
               if not alembic_table:
                   print(
-                      "Refusing application deployment: public.alembic_version is missing "
-                      f"(database={database_name!r}, schema={schema_name!r}, "
-                      f"search_path={search_path!r})."
+                      "Refusing application deployment: public.alembic_version is missing or not visible "
+                      f"(database={database_name!r}, database_oid={database_oid!r}, "
+                      f"role={role_name!r}, schema={schema_name!r}, search_path={search_path!r}, "
+                      f"server_version={server_version!r}, select_privilege={alembic_select!r})."
+                  )
+                  sys.exit(1)
+              if not alembic_select:
+                  print(
+                      "Refusing application deployment: the configured Demo database role "
+                      f"{role_name!r} cannot SELECT public.alembic_version."
                   )
                   sys.exit(1)
 
