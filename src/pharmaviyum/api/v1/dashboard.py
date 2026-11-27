@@ -126,6 +126,7 @@ async def get_dashboard_summary(
             ).label("revenue"),
         )
         .join(Patient, Patient.id == PatientPurchase.patient_id)
+        .where(PatientPurchase.purchased_at >= month_start)
         .group_by(sales_category_expression)
     )
 
@@ -154,6 +155,7 @@ async def get_dashboard_summary(
         )
         .join(PatientPurchase, PatientPurchase.product_id == Product.id)
         .join(Patient, Patient.id == PatientPurchase.patient_id)
+        .where(PatientPurchase.purchased_at >= month_start)
         .outerjoin(
             inventory_stock_subquery,
             inventory_stock_subquery.c.product_id == Product.id,
