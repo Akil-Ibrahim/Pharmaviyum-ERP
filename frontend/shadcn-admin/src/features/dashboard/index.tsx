@@ -170,7 +170,7 @@ export function Dashboard() {
   const revenueGrowthLabel =
     revenueGrowth == null
       ? 'Comparison unavailable — no prior-period sales'
-      : `${revenueGrowth > 0 ? '+' : ''}${revenueGrowth}% vs previous 30 days`
+      : `${revenueGrowth > 0 ? '+' : ''}${revenueGrowth}% vs previous 30 days · ${amount(data?.sales.previous_revenue_30d ?? 0)} prior revenue`
   const expiryRows = [
     { label: 'Expired', value: data?.inventory.expired ?? 0, variant: 'destructive' as const },
     { label: 'Expiring within 3 months', value: data?.inventory.critical_expiry ?? 0, variant: 'destructive' as const },
