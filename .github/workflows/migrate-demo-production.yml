@@ -21,13 +21,14 @@ concurrency:
 
 jobs:
   migrate:
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     environment:
       name: demo-database-migration
     env:
       ENVIRONMENT: staging
-      EXPECTED_NEON_HOST_PREFIX: ep-blue-lake-bdu775si
+      EXPECTED_NEON_HOST: ${{ vars.DEMO_MIGRATION_EXPECTED_HOST }}
       MIGRATION_DATABASE_URL: ${{ secrets.MIGRATION_DATABASE_URL }}
 
     steps:
@@ -71,11 +72,13 @@ jobs:
           url = os.environ["MIGRATION_DATABASE_URL"]
           parsed = urlparse(url)
           host = (parsed.hostname or "").lower()
-          prefix = os.environ["EXPECTED_NEON_HOST_PREFIX"]
+          expected_host = os.environ["EXPECTED_NEON_HOST"].strip().lower()
           if parsed.scheme not in {"postgres", "postgresql"}:
               raise SystemExit("Refusing: target is not PostgreSQL.")
-          if not host.startswith(prefix + ".") or "-pooler" in host:
-              raise SystemExit("Refusing: target is not the expected direct Neon endpoint.")
+          if not expected_host:
+              raise SystemExit("Refusing: DEMO_MIGRATION_EXPECTED_HOST is not configured.")
+          if host != expected_host or "-pooler" in host:
+              raise SystemExit("Refusing: target hostname does not exactly match the approved direct Neon endpoint.")
           if parsed.path.lstrip("/") != "neondb":
               raise SystemExit("Refusing: expected database neondb.")
 
