@@ -543,7 +543,7 @@ async def get_dashboard_summary(
     slow_moving = (await session.execute(slow_moving_query)).all()
 
     return {
-        "as_of": now.isoformat(),
+        "as_of": f"{now.isoformat()}Z",
         "patients": {
             "active": int(patient_kpi.active_patients or 0),
         },
