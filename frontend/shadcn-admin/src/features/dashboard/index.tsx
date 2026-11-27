@@ -16,6 +16,8 @@ import {
   Bar,
   BarChart,
   CartesianGrid,
+  Line,
+  LineChart,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -53,6 +55,12 @@ type DashboardSummary = {
   patients: { active: number }
   sales: {
     today: number
+    revenue_30d: number
+    previous_revenue_30d: number
+    revenue_growth_30d: number | null
+    average_order_value_30d: number
+    orders_30d: number
+    daily_revenue: { day: string; revenue: number }[]
     by_category: { category: string; lines: number; packs: number; revenue: number }[]
   }
   revenue: { month: number }
@@ -158,6 +166,12 @@ export function Dashboard() {
   })
 
   const categories = data?.sales.by_category ?? []
+  const revenueTrend = data?.sales.daily_revenue ?? []
+  const revenueGrowth = data?.sales.revenue_growth_30d
+  const revenueGrowthLabel =
+    revenueGrowth == null
+      ? 'Comparison unavailable — no prior-period sales'
+      : `${revenueGrowth > 0 ? '+' : ''}${revenueGrowth}% vs previous 30 days`
   const expiryRows = [
     { label: 'Expired', value: data?.inventory.expired ?? 0, variant: 'destructive' as const },
     { label: 'Expiring within 3 months', value: data?.inventory.critical_expiry ?? 0, variant: 'destructive' as const },
@@ -216,39 +230,35 @@ export function Dashboard() {
 
           <section aria-label='Pharmacy key performance indicators' className='grid gap-4 sm:grid-cols-2 xl:grid-cols-4'>
             <MetricCard label='Sales Today' value={amount(data?.sales.today ?? 0)} detail='Realized sales recorded today' icon={ShoppingCart} loading={isPending} />
-            <MetricCard label='Monthly Revenue' value={amount(data?.revenue.month ?? 0)} detail='Realized revenue since the start of this month' icon={TrendingUp} loading={isPending} />
-            <MetricCard label='Orders This Month' value={number(data?.orders.month ?? 0)} detail={`${number(data?.orders.completed_month ?? 0)} completed · ${data?.orders.month ? Math.round((data.orders.completed_month / data.orders.month) * 100) : 0}% completion`} icon={Boxes} loading={isPending} />
-            <MetricCard label='Stock Coverage' value={data?.inventory.days_on_hand == null ? '—' : `${number(data.inventory.days_on_hand)} days`} detail='Estimated from available packs and last 30-day dispensing' icon={CalendarClock} loading={isPending} />
+            <MetricCard label='Revenue (30 Days)' value={amount(data?.sales.revenue_30d ?? 0)} detail={revenueGrowthLabel} icon={TrendingUp} loading={isPending} />
+            <MetricCard label='Average Order Value' value={amount(data?.sales.average_order_value_30d ?? 0)} detail='Average completed receipt value over 30 days' icon={Boxes} loading={isPending} />
+            <MetricCard label='Orders (30 Days)' value={number(data?.sales.orders_30d ?? 0)} detail='Distinct receipts with realized sales' icon={CalendarClock} loading={isPending} />
           </section>
 
           <section className='grid min-w-0 gap-4 xl:grid-cols-[minmax(0,1.2fr)_minmax(320px,.8fr)]'>
             <Card className='min-w-0'>
               <CardHeader>
-                <CardTitle>Sales Breakdown</CardTitle>
-                <CardDescription>Realized sales by prescription category</CardDescription>
+                <CardTitle>Revenue Trend</CardTitle>
+                <CardDescription>Daily realized revenue over the last 30 days</CardDescription>
               </CardHeader>
               <CardContent>
                 {isPending ? (
                   <Skeleton className='h-64 w-full' />
-                ) : categories.length === 0 ? (
-                  <EmptyState>No sales category data is available yet.</EmptyState>
+                ) : revenueTrend.length === 0 ? (
+                  <EmptyState>No realized sales were recorded in the last 30 days.</EmptyState>
                 ) : (
-                  <div className='h-64 w-full' role='img' aria-label='Sales revenue by prescription category'>
+                  <div className='h-64 w-full' role='img' aria-label='Daily realized revenue for the last 30 days'>
                     <ResponsiveContainer width='100%' height='100%'>
-                      <BarChart data={categories} layout='vertical' margin={{ top: 4, right: 12, bottom: 4, left: 12 }}>
-                        <CartesianGrid strokeDasharray='3 3' horizontal={false} className='stroke-border' />
-                        <XAxis type='number' tickLine={false} axisLine={false} tickFormatter={amount} fontSize={12} />
-                        <YAxis type='category' dataKey='category' tickLine={false} axisLine={false} width={48} fontSize={12} />
-                        <Tooltip formatter={(value) => amount(Number(value))} />
-                        <Bar dataKey='revenue' fill='var(--primary)' radius={[0, 5, 5, 0]} maxBarSize={34} />
-                      </BarChart>
+                      <LineChart data={revenueTrend} margin={{ top: 8, right: 12, bottom: 4, left: 0 }}>
+                        <CartesianGrid strokeDasharray='3 3' vertical={false} className='stroke-border' />
+                        <XAxis dataKey='day' tickLine={false} axisLine={false} fontSize={11} minTickGap={24} tickFormatter={(value) => new Date(value).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} />
+                        <YAxis tickLine={false} axisLine={false} width={64} fontSize={11} tickFormatter={amount} />
+                        <Tooltip labelFormatter={(value) => new Date(String(value)).toLocaleDateString('en-US', { dateStyle: 'medium' })} formatter={(value) => amount(Number(value))} />
+                        <Line type='monotone' dataKey='revenue' stroke='var(--primary)' strokeWidth={2} dot={false} activeDot={{ r: 4 }} />
+                      </LineChart>
                     </ResponsiveContainer>
                   </div>
                 )}
-                <div className='mt-3 flex flex-wrap gap-x-5 gap-y-2 border-t pt-3 text-xs text-muted-foreground'>
-                  <span>{number(categories.reduce((sum, row) => sum + row.lines, 0))} sales lines</span>
-                  <span>{number(categories.reduce((sum, row) => sum + row.packs, 0))} packs dispensed</span>
-                </div>
               </CardContent>
             </Card>
 
@@ -286,7 +296,38 @@ export function Dashboard() {
             </Card>
           </section>
 
-          <section className='grid min-w-0 gap-4 xl:grid-cols-2'>
+          <section className='grid min-w-0 gap-4 xl:grid-cols-3'>
+            <Card className='min-w-0'>
+              <CardHeader>
+                <CardTitle>Sales Mix</CardTitle>
+                <CardDescription>Realized revenue by prescription category this month</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {isPending ? (
+                  <Skeleton className='h-48 w-full' />
+                ) : categories.length === 0 ? (
+                  <EmptyState>No sales category data is available yet.</EmptyState>
+                ) : (
+                  <>
+                    <div className='h-48 w-full' role='img' aria-label='Monthly revenue by prescription category'>
+                      <ResponsiveContainer width='100%' height='100%'>
+                        <BarChart data={categories} layout='vertical' margin={{ top: 4, right: 8, bottom: 4, left: 4 }}>
+                          <CartesianGrid strokeDasharray='3 3' horizontal={false} className='stroke-border' />
+                          <XAxis type='number' tickLine={false} axisLine={false} tickFormatter={amount} fontSize={11} />
+                          <YAxis type='category' dataKey='category' tickLine={false} axisLine={false} width={42} fontSize={11} />
+                          <Tooltip formatter={(value) => amount(Number(value))} />
+                          <Bar dataKey='revenue' fill='var(--primary)' radius={[0, 5, 5, 0]} maxBarSize={28} />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+                    <div className='mt-3 flex flex-wrap gap-x-4 gap-y-2 border-t pt-3 text-xs text-muted-foreground'>
+                      <span>{number(categories.reduce((sum, row) => sum + row.lines, 0))} sales lines</span>
+                      <span>{number(categories.reduce((sum, row) => sum + row.packs, 0))} packs dispensed</span>
+                    </div>
+                  </>
+                )}
+              </CardContent>
+            </Card>
             <Card className='min-w-0'>
               <CardHeader className='flex flex-row items-start justify-between gap-3'>
                 <div>
