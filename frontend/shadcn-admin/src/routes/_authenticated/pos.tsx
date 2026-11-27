@@ -1,6 +1,11 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { Pos } from '@/features/pos'
+import { RoutePlaceholder } from '@/components/route-placeholder'
 
 export const Route = createFileRoute('/_authenticated/pos')({
-  component: Pos,
+  component: () => (
+    <RoutePlaceholder
+      title='POS'
+      description='Point-of-sale workspace for pharmacy checkout.'
+    />
+  ),
 })
