@@ -1,6 +1,11 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { Dashboard } from '@/features/dashboard'
+import { RoutePlaceholder } from '@/components/route-placeholder'
 
-export const Route = createFileRoute('/_authenticated/')({
-  component: Dashboard,
+export const Route = createFileRoute('/_authenticated//')({
+  component: () => (
+    <RoutePlaceholder
+      title='Dashboard'
+      description='Operational overview and pharmacy performance workspace.'
+    />
+  ),
 })

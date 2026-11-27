@@ -19,8 +19,6 @@ import {
 } from 'lucide-react'
 import { type SidebarData } from '../types'
 
-const unavailable = 'Page is being prepared.'
-
 export const sidebarData: SidebarData = {
   user: {
     name: 'admin',
@@ -52,8 +50,6 @@ export const sidebarData: SidebarData = {
           title: 'Mortarium AI',
           url: '/mortarium-ai',
           icon: Bot,
-          disabled: true,
-          disabledReason: unavailable,
         },
         {
           title: 'Clinical Care',
@@ -63,15 +59,11 @@ export const sidebarData: SidebarData = {
               title: 'Patients',
               url: '/patients',
               icon: UserRound,
-              disabled: true,
-              disabledReason: unavailable,
             },
             {
               title: 'Prescriptions',
               url: '/prescriptions',
               icon: FileText,
-              disabled: true,
-              disabledReason: unavailable,
             },
           ],
         },
@@ -83,28 +75,21 @@ export const sidebarData: SidebarData = {
               title: 'Drug Catalog',
               url: '/drug-reference',
               icon: BookOpenCheck,
-              disabled: true,
-              disabledReason: unavailable,
             },
             {
               title: 'Stock Management',
               url: '/inventory',
               icon: PackageCheck,
-              disabled: true,
-              disabledReason: unavailable,
             },
             {
               title: 'Transfers',
               url: '/transfers',
               icon: ArrowLeftRight,
-              disabled: true,
-              disabledReason: unavailable,
             },
             {
               title: 'Defectura',
+              url: '/defectura',
               icon: ClipboardList,
-              disabled: true,
-              disabledReason: unavailable,
             },
           ],
         },
@@ -116,22 +101,16 @@ export const sidebarData: SidebarData = {
               title: 'Suppliers',
               url: '/suppliers',
               icon: Truck,
-              disabled: true,
-              disabledReason: unavailable,
             },
             {
               title: 'Purchase Orders',
               url: '/orders',
               icon: ClipboardList,
-              disabled: true,
-              disabledReason: unavailable,
             },
             {
               title: 'Receiving',
               url: '/procurement',
               icon: PackageCheck,
-              disabled: true,
-              disabledReason: unavailable,
             },
           ],
         },
@@ -139,8 +118,6 @@ export const sidebarData: SidebarData = {
           title: 'Pharmacies',
           url: '/pharmacies',
           icon: Store,
-          disabled: true,
-          disabledReason: unavailable,
         },
       ],
     },

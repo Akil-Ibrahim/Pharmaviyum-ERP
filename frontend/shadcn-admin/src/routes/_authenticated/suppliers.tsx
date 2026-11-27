@@ -1,7 +1,11 @@
 import { createFileRoute } from '@tanstack/react-router'
+import { RoutePlaceholder } from '@/components/route-placeholder'
 
-// The entity remains available in the sidebar, but its standalone UI is intentionally removed.
-// Domain data, API endpoints, and backend workflows are unchanged.
 export const Route = createFileRoute('/_authenticated/suppliers')({
-  component: () => null,
+  component: () => (
+    <RoutePlaceholder
+      title='Suppliers'
+      description='Supplier directory and procurement contacts.'
+    />
+  ),
 })
