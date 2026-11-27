@@ -82,13 +82,24 @@ else:
         "secrets.FASTAPI_CLOUD_TOKEN",
         "secrets.FASTAPI_CLOUD_APP_ID",
         "secrets.DATABASE_URL",
-        "pharmaviyum-erp-crm.fastapicloud.dev",
-        "c350a85c",
         "MIGRATION_VALIDATION_DATABASE_URL",
     )
     for marker in forbidden_markers:
         if marker in deploy_content:
             errors.append(f"{DEMO_DEPLOY_WORKFLOW}: forbidden Production/validation marker found: {marker}")
+
+    # The public deployment workflow must target exactly one FastAPI Cloud
+    # hostname: the dedicated Demo app. Reject any additional cloud hostname
+    # without embedding identifiers for retired or private applications here.
+    fastapi_cloud_hosts = re.findall(
+        r"https://([a-z0-9.-]+[.]fastapicloud[.]dev)",
+        deploy_content,
+    )
+    if set(fastapi_cloud_hosts) != {"pharmaviyum-erp.fastapicloud.dev"}:
+        errors.append(
+            f"{DEMO_DEPLOY_WORKFLOW}: expected only the dedicated Demo FastAPI Cloud "
+            f"hostname; found {fastapi_cloud_hosts!r}"
+        )
 
 if not MIGRATION_VALIDATION_WORKFLOW.exists():
     errors.append(f"{MIGRATION_VALIDATION_WORKFLOW}: isolated migration validation workflow is missing")
