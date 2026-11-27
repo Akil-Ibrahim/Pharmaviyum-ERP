@@ -10,7 +10,6 @@ import {
   RefreshCw,
   ShoppingCart,
   TrendingUp,
-  UsersRound,
 } from 'lucide-react'
 import {
   Bar,
