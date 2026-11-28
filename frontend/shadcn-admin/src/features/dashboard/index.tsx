@@ -301,7 +301,7 @@ function ExpiryRadialCard({
             <div
               className='relative h-64 w-full max-w-[260px] shrink-0'
               role='img'
-              aria-label={`Inventory expiry health: ${red} expired or within three months, ${yellow} with three to twelve months remaining, and ${green} with more than twelve months remaining, out of ${tracked} tracked lots.`}
+              aria-label={`Inventory expiry health: ${red} expired or within three months, ${yellow} with 91 to 365 days remaining, and ${green} with more than 365 days remaining, out of ${tracked} tracked lots.`}
             >
               <ResponsiveContainer width='100%' height='100%'>
                 <RadialBarChart
@@ -314,9 +314,9 @@ function ExpiryRadialCard({
                 >
                   <PolarAngleAxis type='number' domain={[0, 100]} tick={false} />
                   <Tooltip formatter={(value) => `${Number(value).toFixed(1)}% of tracked lots`} />
-                  <RadialBar dataKey='critical' name='Expired / within 3 months' fill='var(--chart-1)' background cornerRadius={7} />
-                  <RadialBar dataKey='warning' name='3–12 months remaining' fill='var(--chart-2)' background cornerRadius={7} />
-                  <RadialBar dataKey='healthy' name='More than 12 months' fill='var(--chart-3)' background cornerRadius={7} />
+                  <RadialBar dataKey='critical' name='Expired / within 90 days' fill='var(--chart-1)' background cornerRadius={7} />
+                  <RadialBar dataKey='warning' name='91–365 days remaining' fill='var(--chart-2)' background cornerRadius={7} />
+                  <RadialBar dataKey='healthy' name='More than 365 days' fill='var(--chart-3)' background cornerRadius={7} />
                 </RadialBarChart>
               </ResponsiveContainer>
               <div className='pointer-events-none absolute inset-0 flex flex-col items-center justify-center'>
@@ -328,9 +328,9 @@ function ExpiryRadialCard({
             </div>
             <div className='grid w-full gap-3 sm:max-w-52'>
               {[
-                { name: 'Expired / within 3 months', value: red, share: redShare, fill: 'var(--chart-1)' },
-                { name: '3–12 months remaining', value: yellow, share: yellowShare, fill: 'var(--chart-2)' },
-                { name: 'More than 12 months', value: green, share: greenShare, fill: 'var(--chart-3)' },
+                { name: 'Expired / within 90 days', value: red, share: redShare, fill: 'var(--chart-1)' },
+                { name: '91–365 days remaining', value: yellow, share: yellowShare, fill: 'var(--chart-2)' },
+                { name: 'More than 365 days', value: green, share: greenShare, fill: 'var(--chart-3)' },
               ].map((item) => (
                 <div key={item.name} className='flex items-center justify-between gap-3 text-sm'>
                   <span className='flex min-w-0 items-center gap-2 text-muted-foreground'>
@@ -373,9 +373,9 @@ export function Dashboard() {
       : `${revenueGrowth > 0 ? '+' : ''}${revenueGrowth}% vs previous 30 days · ${amount(data?.sales.previous_revenue_30d ?? 0)} prior revenue`
   const expiryRows = [
     { label: 'Expired', value: data?.inventory.expired ?? 0, variant: 'destructive' as const },
-    { label: 'Expiring within 3 months', value: data?.inventory.critical_expiry ?? 0, variant: 'destructive' as const },
-    { label: 'Expiring in 3–12 months', value: data?.inventory.warning_expiry ?? 0, variant: 'secondary' as const },
-    { label: 'More than 12 months remaining', value: data?.inventory.expiry_green ?? 0, variant: 'outline' as const },
+    { label: 'Expiring within 90 days', value: data?.inventory.critical_expiry ?? 0, variant: 'destructive' as const },
+    { label: 'Expiring in 91–365 days', value: data?.inventory.warning_expiry ?? 0, variant: 'secondary' as const },
+    { label: 'More than 365 days remaining', value: data?.inventory.expiry_green ?? 0, variant: 'outline' as const },
   ]
 
   return (
@@ -475,7 +475,7 @@ export function Dashboard() {
                   <div className='rounded-lg bg-muted/50 p-3'>
                     <p className='text-xs text-muted-foreground'>Median Stock Cover</p>
                     <p className='mt-1 text-xl font-semibold tabular-nums'>{isPending || data?.inventory.days_on_hand == null ? '—' : `${number(data.inventory.days_on_hand)} days`}</p>
-                    <p className='mt-1 text-xs text-muted-foreground'>Median SKU coverage based on unexpired stock and 30-day dispensing</p>
+                    <p className='mt-1 text-xs text-muted-foreground'>Median days on hand for in-stock SKUs using unexpired stock and 30-day dispensing</p>
                   </div>
                 </div>
                 <div className='space-y-3'>
@@ -512,9 +512,9 @@ export function Dashboard() {
               <CardContent className='space-y-4'>
                 {[
                   { label: 'Expired', value: data?.inventory.expired ?? 0, note: 'Lots already past expiry' },
-                  { label: 'Critical', value: data?.inventory.critical_expiry ?? 0, note: 'Expiry within three months' },
-                  { label: 'Warning', value: data?.inventory.warning_expiry ?? 0, note: 'Expiry within three to twelve months' },
-                  { label: 'Healthy horizon', value: data?.inventory.expiry_green ?? 0, note: 'More than twelve months remaining' },
+                  { label: 'Critical', value: data?.inventory.critical_expiry ?? 0, note: 'Expiry within 90 days' },
+                  { label: 'Warning', value: data?.inventory.warning_expiry ?? 0, note: 'Expiry in 91–365 days' },
+                  { label: 'Healthy horizon', value: data?.inventory.expiry_green ?? 0, note: 'More than 365 days remaining' },
                 ].map((item) => (
                   <div key={item.label} className='flex items-center justify-between gap-3 border-b pb-3 last:border-0 last:pb-0'>
                     <div>
@@ -608,7 +608,7 @@ export function Dashboard() {
               {[
                 { label: 'Out of stock', value: data?.attention.stockout_items ?? 0, note: 'Products with no available units' },
                 { label: 'Low stock', value: data?.inventory.low_stock ?? 0, note: 'Products at or below reorder level' },
-                { label: 'Expiry risk', value: (data?.inventory.expired ?? 0) + (data?.inventory.critical_expiry ?? 0), note: 'Expired or expiring within 3 months' },
+                { label: 'Expiry risk', value: (data?.inventory.expired ?? 0) + (data?.inventory.critical_expiry ?? 0), note: 'Expired or expiring within 90 days' },
                 { label: 'Slow moving', value: data?.attention.slow_moving_items ?? 0, note: 'Products without recorded sales in 90 days' },
               ].map((item) => (
                 <div key={item.label} className='rounded-lg border p-3'>
