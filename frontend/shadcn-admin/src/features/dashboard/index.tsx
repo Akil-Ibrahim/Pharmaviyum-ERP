@@ -175,6 +175,83 @@ function completeDailyRevenue(
   })
 }
 
+
+function SalesMixRadialCard({
+  categories,
+  loading,
+}: {
+  categories: DashboardSummary['sales']['by_category']
+  loading: boolean
+}) {
+  const rings = categories.map((category, index) => ({
+    name: category.category,
+    value: category.revenue,
+    fill: index === 0 ? 'var(--chart-1)' : 'var(--chart-2)',
+  }))
+  const totalRevenue = categories.reduce((sum, category) => sum + category.revenue, 0)
+
+  return (
+    <Card className='min-w-0'>
+      <CardHeader>
+        <CardTitle>Sales Mix</CardTitle>
+        <CardDescription>Realized monthly revenue by prescription category</CardDescription>
+      </CardHeader>
+      <CardContent>
+        {loading ? (
+          <Skeleton className='mx-auto h-64 w-full max-w-[260px] rounded-full' />
+        ) : rings.length === 0 ? (
+          <EmptyState>No sales category data is available yet.</EmptyState>
+        ) : (
+          <div className='flex flex-col items-center gap-4 sm:flex-row sm:justify-center'>
+            <div
+              className='relative h-64 w-full max-w-[260px] shrink-0'
+              role='img'
+              aria-label={`Monthly sales mix: ${rings.map((ring) => `${ring.name} ${amount(ring.value)}`).join(', ')}.`}
+            >
+              <ResponsiveContainer width='100%' height='100%'>
+                <RadialBarChart
+                  data={rings}
+                  innerRadius='28%'
+                  outerRadius='92%'
+                  startAngle={90}
+                  endAngle={-270}
+                >
+                  <Tooltip formatter={(value) => amount(Number(value))} />
+                  <RadialBar dataKey='value' background cornerRadius={7} />
+                </RadialBarChart>
+              </ResponsiveContainer>
+              <div className='pointer-events-none absolute inset-0 flex flex-col items-center justify-center'>
+                <span className='text-2xl font-semibold tracking-tight tabular-nums'>
+                  {amount(totalRevenue)}
+                </span>
+                <span className='text-xs text-muted-foreground'>Total revenue</span>
+              </div>
+            </div>
+            <div className='grid w-full gap-3 sm:max-w-44'>
+              {categories.map((category, index) => (
+                <div key={category.category} className='flex items-center justify-between gap-3 text-sm'>
+                  <span className='flex items-center gap-2 text-muted-foreground'>
+                    <span
+                      className='size-2.5 rounded-full'
+                      style={{ backgroundColor: index === 0 ? 'var(--chart-1)' : 'var(--chart-2)' }}
+                      aria-hidden='true'
+                    />
+                    {category.category}
+                  </span>
+                  <span className='font-semibold tabular-nums'>{amount(category.revenue)}</span>
+                </div>
+              ))}
+              <div className='border-t pt-3 text-xs text-muted-foreground'>
+                {number(categories.reduce((sum, row) => sum + row.lines, 0))} sales lines · {number(categories.reduce((sum, row) => sum + row.packs, 0))} packs dispensed
+              </div>
+            </div>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  )
+}
+
 function EmptyState({ children }: { children: string }) {
   return (
     <div className='flex min-h-32 items-center justify-center rounded-lg border border-dashed px-4 text-center text-sm text-muted-foreground'>
@@ -444,37 +521,7 @@ export function Dashboard() {
           </section>
 
           <section className='grid min-w-0 gap-4 xl:grid-cols-3'>
-            <Card className='min-w-0'>
-              <CardHeader>
-                <CardTitle>Sales Mix</CardTitle>
-                <CardDescription>Realized revenue by prescription category this month</CardDescription>
-              </CardHeader>
-              <CardContent>
-                {isPending ? (
-                  <Skeleton className='h-48 w-full' />
-                ) : categories.length === 0 ? (
-                  <EmptyState>No sales category data is available yet.</EmptyState>
-                ) : (
-                  <>
-                    <div className='h-48 w-full' role='img' aria-label='Monthly revenue by prescription category'>
-                      <ResponsiveContainer width='100%' height='100%'>
-                        <BarChart data={categories} layout='vertical' margin={{ top: 4, right: 8, bottom: 4, left: 4 }}>
-                          <CartesianGrid strokeDasharray='3 3' horizontal={false} className='stroke-border' />
-                          <XAxis type='number' tickLine={false} axisLine={false} tickFormatter={amount} fontSize={11} />
-                          <YAxis type='category' dataKey='category' tickLine={false} axisLine={false} width={42} fontSize={11} />
-                          <Tooltip formatter={(value) => amount(Number(value))} />
-                          <Bar dataKey='revenue' fill='var(--primary)' radius={[0, 5, 5, 0]} maxBarSize={28} />
-                        </BarChart>
-                      </ResponsiveContainer>
-                    </div>
-                    <div className='mt-3 flex flex-wrap gap-x-4 gap-y-2 border-t pt-3 text-xs text-muted-foreground'>
-                      <span>{number(categories.reduce((sum, row) => sum + row.lines, 0))} sales lines</span>
-                      <span>{number(categories.reduce((sum, row) => sum + row.packs, 0))} packs dispensed</span>
-                    </div>
-                  </>
-                )}
-              </CardContent>
-            </Card>
+            <SalesMixRadialCard categories={categories} loading={isPending} />
             <Card className='min-w-0'>
               <CardHeader className='flex flex-row items-start justify-between gap-3'>
                 <div>
