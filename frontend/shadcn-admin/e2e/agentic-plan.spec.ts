@@ -137,4 +137,31 @@ test.describe('Agentic plan execution adapter', () => {
       executeAgenticPlan(page, scenario, plan, [origin])
     ).rejects.toThrow('between 1 and 8 steps')
   })
+
+  test('rejects credentials embedded in a scenario target URL', async ({ page }) => {
+    await page.goto('/')
+    const origin = new URL(page.url()).origin
+    const scenario = {
+      scenario_id: 'dashboard.credential-target',
+      target_url: 'https://user:secret@example.com/',
+    }
+    const plan = {
+      run_id: 'playwright-run-0005',
+      scenario_id: scenario.scenario_id,
+      target_origin: 'https://example.com',
+      execution_plan: [
+        {
+          step_index: 0,
+          action: 'goto',
+          value: '/',
+          target_origin: 'https://example.com',
+        },
+      ],
+    }
+
+    await expect(
+      executeAgenticPlan(page, scenario, plan, [origin, 'https://example.com'])
+    ).rejects.toThrow('must not contain credentials')
+  })
+
 })
