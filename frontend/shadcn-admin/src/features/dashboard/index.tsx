@@ -180,41 +180,46 @@ function SalesMixRadialCard({
   categories: DashboardSummary['sales']['by_category']
   loading: boolean
 }) {
-  const rings = categories.map((category, index) => ({
-    name: category.category,
-    value: category.revenue,
-    fill: index === 0 ? 'var(--chart-1)' : 'var(--chart-2)',
-  }))
-  const totalRevenue = categories.reduce((sum, category) => sum + category.revenue, 0)
+  const rxRevenue = categories
+    .filter((category) => category.category === 'Rx')
+    .reduce((sum, category) => sum + category.revenue, 0)
+  const otcRevenue = categories
+    .filter((category) => category.category === 'OTC')
+    .reduce((sum, category) => sum + category.revenue, 0)
+  const totalRevenue = rxRevenue + otcRevenue
+  const rxShare = totalRevenue > 0 ? (rxRevenue / totalRevenue) * 100 : 0
+  const otcShare = totalRevenue > 0 ? (otcRevenue / totalRevenue) * 100 : 0
 
   return (
     <Card className='min-w-0'>
       <CardHeader>
         <CardTitle>Sales Mix</CardTitle>
-        <CardDescription>Realized monthly revenue by prescription category</CardDescription>
+        <CardDescription>Rx and OTC share of realized monthly revenue</CardDescription>
       </CardHeader>
       <CardContent>
         {loading ? (
           <Skeleton className='mx-auto h-64 w-full max-w-[260px] rounded-full' />
-        ) : rings.length === 0 ? (
+        ) : totalRevenue === 0 ? (
           <EmptyState>No sales category data is available yet.</EmptyState>
         ) : (
           <div className='flex flex-col items-center gap-4 sm:flex-row sm:justify-center'>
             <div
               className='relative h-64 w-full max-w-[260px] shrink-0'
               role='img'
-              aria-label={`Monthly sales mix: ${rings.map((ring) => `${ring.name} ${amount(ring.value)}`).join(', ')}.`}
+              aria-label={`Monthly sales mix: Rx ${rxShare.toFixed(1)} percent, OTC ${otcShare.toFixed(1)} percent. Total revenue ${amount(totalRevenue)}.`}
             >
               <ResponsiveContainer width='100%' height='100%'>
                 <RadialBarChart
-                  data={rings}
-                  innerRadius='28%'
-                  outerRadius='92%'
+                  data={[{ rx: rxShare, otc: otcShare }]}
+                  innerRadius='18%'
+                  outerRadius='88%'
+                  barSize={13}
                   startAngle={90}
                   endAngle={-270}
                 >
-                  <Tooltip formatter={(value) => amount(Number(value))} />
-                  <RadialBar dataKey='value' background cornerRadius={7} />
+                  <Tooltip formatter={(value) => `${Number(value).toFixed(1)}% of revenue`} />
+                  <RadialBar dataKey='rx' name='Rx' fill='var(--chart-1)' background cornerRadius={7} />
+                  <RadialBar dataKey='otc' name='OTC' fill='var(--chart-2)' background cornerRadius={7} />
                 </RadialBarChart>
               </ResponsiveContainer>
               <div className='pointer-events-none absolute inset-0 flex flex-col items-center justify-center'>
@@ -225,17 +230,19 @@ function SalesMixRadialCard({
               </div>
             </div>
             <div className='grid w-full gap-3 sm:max-w-44'>
-              {categories.map((category, index) => (
-                <div key={category.category} className='flex items-center justify-between gap-3 text-sm'>
-                  <span className='flex items-center gap-2 text-muted-foreground'>
-                    <span
-                      className='size-2.5 rounded-full'
-                      style={{ backgroundColor: index === 0 ? 'var(--chart-1)' : 'var(--chart-2)' }}
-                      aria-hidden='true'
-                    />
-                    {category.category}
+              {[
+                { label: 'Prescription (Rx)', revenue: rxRevenue, share: rxShare, fill: 'var(--chart-1)' },
+                { label: 'Over the counter (OTC)', revenue: otcRevenue, share: otcShare, fill: 'var(--chart-2)' },
+              ].map((item) => (
+                <div key={item.label} className='flex items-center justify-between gap-3 text-sm'>
+                  <span className='flex min-w-0 items-center gap-2 text-muted-foreground'>
+                    <span className='size-2.5 shrink-0 rounded-full' style={{ backgroundColor: item.fill }} aria-hidden='true' />
+                    <span>{item.label}</span>
                   </span>
-                  <span className='font-semibold tabular-nums'>{amount(category.revenue)}</span>
+                  <span className='text-right font-semibold tabular-nums'>
+                    {item.share.toFixed(1)}%
+                    <span className='block text-xs font-normal text-muted-foreground'>{amount(item.revenue)}</span>
+                  </span>
                 </div>
               ))}
               <div className='border-t pt-3 text-xs text-muted-foreground'>
@@ -270,18 +277,16 @@ function ExpiryRadialCard({
   green: number
   loading: boolean
 }) {
-  const rings = [
-    { name: 'Expired / within 3 months', value: red, fill: 'var(--chart-1)' },
-    { name: '3–12 months remaining', value: yellow, fill: 'var(--chart-2)' },
-    { name: 'More than 12 months', value: green, fill: 'var(--chart-3)' },
-  ]
+  const redShare = tracked > 0 ? (red / tracked) * 100 : 0
+  const yellowShare = tracked > 0 ? (yellow / tracked) * 100 : 0
+  const greenShare = tracked > 0 ? (green / tracked) * 100 : 0
 
   return (
     <Card className='min-w-0'>
       <CardHeader>
         <CardTitle>Inventory Expiry Health</CardTitle>
         <CardDescription>
-          Three radial rings compare real inventory lots by expiry window
+          Concentric rings show the share of tracked lots in each expiry window
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -294,22 +299,21 @@ function ExpiryRadialCard({
             <div
               className='relative h-64 w-full max-w-[260px] shrink-0'
               role='img'
-              aria-label={`Inventory expiry rings: ${number(red)} expired or within three months, ${number(yellow)} with three to twelve months remaining, and ${number(green)} with more than twelve months remaining.`}
+              aria-label={`Inventory expiry health: ${red} expired or within three months, ${yellow} with three to twelve months remaining, and ${green} with more than twelve months remaining, out of ${tracked} tracked lots.`}
             >
               <ResponsiveContainer width='100%' height='100%'>
                 <RadialBarChart
-                  data={rings}
-                  innerRadius='28%'
-                  outerRadius='92%'
+                  data={[{ critical: redShare, warning: yellowShare, healthy: greenShare }]}
+                  innerRadius='18%'
+                  outerRadius='88%'
+                  barSize={11}
                   startAngle={90}
                   endAngle={-270}
                 >
-                  <Tooltip formatter={(value) => `${number(Number(value))} lots`} />
-                  <RadialBar
-                    dataKey='value'
-                    background
-                    cornerRadius={7}
-                  />
+                  <Tooltip formatter={(value) => `${Number(value).toFixed(1)}% of tracked lots`} />
+                  <RadialBar dataKey='critical' name='Expired / within 3 months' fill='var(--chart-1)' background cornerRadius={7} />
+                  <RadialBar dataKey='warning' name='3–12 months remaining' fill='var(--chart-2)' background cornerRadius={7} />
+                  <RadialBar dataKey='healthy' name='More than 12 months' fill='var(--chart-3)' background cornerRadius={7} />
                 </RadialBarChart>
               </ResponsiveContainer>
               <div className='pointer-events-none absolute inset-0 flex flex-col items-center justify-center'>
@@ -320,24 +324,27 @@ function ExpiryRadialCard({
               </div>
             </div>
             <div className='grid w-full gap-3 sm:max-w-52'>
-              {rings.map((ring) => (
-                <div key={ring.name} className='flex items-center justify-between gap-3 text-sm'>
+              {[
+                { name: 'Expired / within 3 months', value: red, share: redShare, fill: 'var(--chart-1)' },
+                { name: '3–12 months remaining', value: yellow, share: yellowShare, fill: 'var(--chart-2)' },
+                { name: 'More than 12 months', value: green, share: greenShare, fill: 'var(--chart-3)' },
+              ].map((item) => (
+                <div key={item.name} className='flex items-center justify-between gap-3 text-sm'>
                   <span className='flex min-w-0 items-center gap-2 text-muted-foreground'>
-                    <span
-                      className='size-2.5 shrink-0 rounded-full'
-                      style={{ backgroundColor: ring.fill }}
-                      aria-hidden='true'
-                    />
-                    <span>{ring.name}</span>
+                    <span className='size-2.5 shrink-0 rounded-full' style={{ backgroundColor: item.fill }} aria-hidden='true' />
+                    <span>{item.name}</span>
                   </span>
-                  <span className='font-semibold tabular-nums'>{number(ring.value)}</span>
+                  <span className='text-right font-semibold tabular-nums'>
+                    {item.share.toFixed(1)}%
+                    <span className='block text-xs font-normal text-muted-foreground'>{number(item.value)} lots</span>
+                  </span>
                 </div>
               ))}
             </div>
           </div>
         )}
         <p className='mt-3 text-center text-xs text-muted-foreground'>
-          Ring length is scaled against the largest expiry group; counts remain the source of truth.
+          Each ring is normalized against all tracked expiry-dated lots.
         </p>
       </CardContent>
     </Card>
