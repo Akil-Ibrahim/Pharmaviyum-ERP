@@ -1,6 +1,5 @@
 """Regression tests for Dashboard tenant query scoping."""
 
-import re
 from datetime import datetime
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, patch
@@ -21,6 +20,7 @@ class _Result:
     def one(self):
         return SimpleNamespace(
             tracked=0,
+            missing_expiry=0,
             expired=0,
             critical=0,
             warning=0,
@@ -39,6 +39,8 @@ class _Result:
             low_stock=0,
             stockout_items=0,
             near_expiry_value=0,
+            item_count=0,
+            stock_value=0,
         )
 
     def scalar_one(self):
@@ -200,8 +202,8 @@ async def test_dashboard_summary_excludes_patient_level_data():
 
 
 @pytest.mark.asyncio
-async def test_dashboard_expiry_policy_keeps_three_buckets_disjoint():
-    """Expiry SQL must implement expired/<=3m red, 3-12m yellow, >12m green."""
+async def test_dashboard_expiry_policy_uses_available_lots_and_exact_dates():
+    """Expiry buckets count positive lots using exact 90-day and 365-day cutoffs."""
     session = _Session()
     user = SimpleNamespace(id=100, is_active=True, is_superuser=False)
 
@@ -219,7 +221,7 @@ async def test_dashboard_expiry_policy_keeps_three_buckets_disjoint():
     expiry_statement = next(
         statement
         for statement in session.statements
-        if "extended_warning" in str(statement) and "date_trunc" in str(statement)
+        if "extended_warning" in str(statement)
     )
     compiled = expiry_statement.compile(dialect=postgresql.dialect())
     expiry_sql = str(
@@ -227,15 +229,103 @@ async def test_dashboard_expiry_policy_keeps_three_buckets_disjoint():
             dialect=postgresql.dialect(),
             compile_kwargs={"literal_binds": True},
         )
-    )
+    ).lower()
 
-    assert re.search(r"date_trunc\([^)]*expires_at\)\s*<", expiry_sql)
-    assert re.search(r"date_trunc\([^)]*expires_at\)\s*>= ", expiry_sql)
-    assert re.search(r"date_trunc\([^)]*expires_at\)\s*<= ", expiry_sql)
-    assert re.search(r"date_trunc\([^)]*expires_at\)\s*> ", expiry_sql)
+    assert "inventory.expires_at <" in expiry_sql
+    assert "inventory.expires_at >=" in expiry_sql
+    assert "inventory.expires_at <=" in expiry_sql
+    assert "inventory.expires_at >" in expiry_sql
+    assert "inventory.quantity - inventory.reserved_quantity > 0" in expiry_sql
     assert "extended_warning" in expiry_sql
 
     cutoff_values = [
         value for value in compiled.params.values() if isinstance(value, datetime)
     ]
     assert len(set(cutoff_values)) >= 3
+
+
+@pytest.mark.asyncio
+async def test_dashboard_stockout_is_aggregated_across_unexpired_lots():
+    """A depleted lot must not make a product a stockout when another lot has stock."""
+    session = _Session()
+    user = SimpleNamespace(id=100, is_active=True, is_superuser=False)
+
+    with patch.object(
+        dashboard,
+        "resolve_pharmacy_scope",
+        new=AsyncMock(return_value=42),
+    ):
+        await dashboard.get_dashboard_summary(
+            current_user=user,
+            session=session,
+            pharmacy_id=42,
+        )
+
+    sql_statements = [
+        str(statement.compile(dialect=postgresql.dialect())).lower()
+        for statement in session.statements
+    ]
+    stockout_sql = next(
+        sql
+        for sql in sql_statements
+        if "group by inventory.product_id" in sql and "count(*)" in sql
+    )
+    assert "having sum(case" in stockout_sql
+    assert "inventory.expires_at is null" in stockout_sql
+    assert "inventory.expires_at >=" in stockout_sql
+    assert "inventory.pharmacy_id =" in stockout_sql
+
+    low_stock_sql = next(
+        sql for sql in sql_statements if "max(inventory.reorder_level)" in sql
+    )
+    assert "group by inventory.product_id" in low_stock_sql
+    assert "having sum(case" in low_stock_sql
+    assert "inventory.pharmacy_id =" in low_stock_sql
+
+    reorder_sql = next(
+        sql for sql in sql_statements if "available_units" in sql and "packs_30d" in sql
+    )
+    assert "having sum(case" in reorder_sql
+    assert "inventory.expires_at is null" in reorder_sql
+    assert "inventory.expires_at >=" in reorder_sql
+
+
+@pytest.mark.asyncio
+async def test_dashboard_uses_per_sku_coverage_and_unlimited_slow_moving_summary():
+    """Coverage is computed per medicine; headline slow-moving count is not capped at five."""
+    session = _Session()
+    user = SimpleNamespace(id=100, is_active=True, is_superuser=False)
+
+    with patch.object(
+        dashboard,
+        "resolve_pharmacy_scope",
+        new=AsyncMock(return_value=42),
+    ):
+        result = await dashboard.get_dashboard_summary(
+            current_user=user,
+            session=session,
+            pharmacy_id=42,
+        )
+
+    sql_statements = [
+        str(statement.compile(dialect=postgresql.dialect())).lower()
+        for statement in session.statements
+    ]
+    coverage_sql = next(sql for sql in sql_statements if "having coalesce" in sql)
+    assert "group by products.id" in coverage_sql
+    assert "inventory.pharmacy_id =" in coverage_sql
+    assert "having coalesce" in coverage_sql
+    assert "case when" in coverage_sql
+
+    inventory_value_sql = next(sql for sql in sql_statements if "retail_value" in sql)
+    assert "count(distinct inventory.product_id)" in inventory_value_sql
+    assert "inventory.expires_at is null" in inventory_value_sql
+    assert "inventory.expires_at >=" in inventory_value_sql
+
+    slow_summary_sql = next(
+        sql for sql in sql_statements if "item_count" in sql and "stock_value" in sql
+    )
+    assert "count(" in slow_summary_sql
+    assert "sum(" in slow_summary_sql
+    assert "limit" not in slow_summary_sql
+    assert result["attention"]["slow_moving_items"] == 0
