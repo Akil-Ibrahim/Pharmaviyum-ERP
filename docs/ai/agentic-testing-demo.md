@@ -261,3 +261,23 @@ The current agentic-testing graph remains side-effect-free: it validates and pla
 scenarios only, with no browser execution, LLM invocation, or pharmacy business-data
 writes. Browser execution must remain restricted to explicitly configured test origins
 and synthetic test data.
+
+
+## Bounded Playwright execution adapter
+
+The frontend E2E harness now includes a small adapter that consumes the declarative
+scenario and execution-plan shape produced by the LangGraph planner. It accepts only
+the `goto`, `expect_url`, and `expect_visible` actions, enforces the configured
+origin allowlist and same-origin paths, caps plans at eight steps, and blocks
+cross-origin main-frame navigations including redirects.
+
+Each run returns a deterministic status and per-step timing, observed URL, error,
+and evidence references. Failed steps stop subsequent execution; remaining steps
+are marked skipped rather than reported as passed. E2E tests attach a JSON run result
+and a failure screenshot where applicable.
+
+This is currently an isolated Playwright E2E adapter and contract-level integration
+with planner output. It is not yet a production execution API, queue worker, or
+direct Python-to-TypeScript service bridge. No public run endpoint is exposed, and
+the adapter must only run against explicitly allowlisted test origins with synthetic
+test data.
