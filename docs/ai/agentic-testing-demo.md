@@ -237,3 +237,27 @@ adapter, evidence ingestion, AI-assisted bug triage, and evaluation metrics rema
 separate follow-up increments. Do not expose this graph as a public endpoint until
 authentication, authorization, run quotas, and trusted environment configuration are
 implemented and tested.
+
+
+## Developer Workspace UI
+
+The authenticated frontend exposes a dedicated **Developer** navigation group for the
+Pharmaviyum Agentic QA workspace. Its initial routes are:
+
+- Developer Overview: implementation status and platform safety boundaries.
+- QA Copilot: requirement analysis, risk assessment, and scenario design.
+- Agentic Testing: scenario validation and controlled browser-test execution.
+- QA Intelligence: evidence-based triage and quality evaluation.
+- Test Runs & Evidence: run history and traceable artifacts.
+- System & Agent Logs: workflow diagnostics and observability.
+
+The initial UI distinguishes implemented foundations from in-progress and planned
+capabilities. It must not display fabricated run counts, success rates, or live agent
+health. Until execution services and artifact storage are connected, these screens are
+status/workspace surfaces rather than operational controls.
+
+All Developer routes remain behind the existing authenticated application layout.
+The current agentic-testing graph remains side-effect-free: it validates and plans
+scenarios only, with no browser execution, LLM invocation, or pharmacy business-data
+writes. Browser execution must remain restricted to explicitly configured test origins
+and synthetic test data.
