@@ -208,7 +208,7 @@ export async function executeAgenticPlan(
           (actual) =>
             actual.origin === validated.targetOrigin &&
             actual.pathname === expected.pathname &&
-            actual.search === expected.search,
+            (!expected.search || actual.search === expected.search),
           { timeout: STEP_TIMEOUT_MS }
         )
       } else {
