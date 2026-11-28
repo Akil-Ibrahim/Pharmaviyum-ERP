@@ -473,8 +473,9 @@ export function Dashboard() {
                     <p className='mt-1 text-xl font-semibold tabular-nums'>{isPending ? '—' : amount(data?.inventory.retail_value ?? 0)}</p>
                   </div>
                   <div className='rounded-lg bg-muted/50 p-3'>
-                    <p className='text-xs text-muted-foreground'>Stock coverage</p>
+                    <p className='text-xs text-muted-foreground'>Median Stock Cover</p>
                     <p className='mt-1 text-xl font-semibold tabular-nums'>{isPending || data?.inventory.days_on_hand == null ? '—' : `${number(data.inventory.days_on_hand)} days`}</p>
+                    <p className='mt-1 text-xs text-muted-foreground'>Median SKU coverage based on unexpired stock and 30-day dispensing</p>
                   </div>
                 </div>
                 <div className='space-y-3'>
