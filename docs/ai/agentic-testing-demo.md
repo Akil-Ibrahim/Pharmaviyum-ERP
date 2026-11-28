@@ -1,5 +1,117 @@
 # Agentic testing demo
 
+## Product positioning
+
+**Pharmaviyum Agentic QA** is an AI-powered QA Engineering Assistant and Agentic
+Testing Platform. Its purpose is to help QA Engineers plan, execute, investigate,
+and evaluate software tests. It augments QA engineering work; it does not replace
+the QA Engineer or independently own release decisions.
+
+The product has three complementary operating modes:
+
+### 1. QA Copilot
+
+An assistive mode in which the QA Engineer remains in control. Planned capabilities:
+
+- Analyze requirements, user stories, acceptance criteria, and change descriptions.
+- Identify ambiguities, missing acceptance criteria, risks, and affected areas.
+- Draft structured test scenarios and test cases for human review.
+- Suggest positive, negative, boundary, equivalence-partition, and risk-based cases.
+- Help maintain traceability from requirement to scenario, execution, and finding.
+
+### 2. Agentic Testing
+
+A bounded execution mode in which an orchestrator coordinates validated test plans
+and approved tools. Planned capabilities:
+
+- Run approved UI and end-to-end scenarios through Playwright.
+- Add API checks through explicitly registered, schema-validated tools.
+- Support smoke, functional, regression, and negative test suites.
+- Capture reproducible evidence: screenshots, traces, logs, request failures,
+  step outcomes, and environment metadata.
+- Retry only according to explicit policy; preserve the original failure and retry
+  history rather than hiding flaky behavior.
+
+The current implementation is only the deterministic LangGraph planning foundation
+and the initial Playwright access-control E2E scenario. It does not yet generate
+scenarios with an LLM or execute the backend-generated plan in a browser.
+
+### 3. QA Intelligence
+
+An analysis mode that helps QA Engineers interpret test outcomes and prioritize
+follow-up work. Planned capabilities:
+
+- Cluster related failures and identify likely duplicate defects.
+- Suggest severity, impact, confidence, and reproduction steps with supporting evidence.
+- Report coverage, requirement-to-test traceability, flaky-test trends, and
+  reproducibility.
+- Evaluate agent findings against deterministic test outcomes and known expected
+  results.
+- Present uncertain findings for human review instead of converting uncertainty
+  into a definitive bug report.
+
+## QA engineering workflow
+
+The intended end-to-end workflow is:
+
+1. **Requirement intake:** a QA Engineer supplies a requirement or change request.
+2. **Risk analysis:** the assistant identifies affected workflows, assumptions,
+   missing acceptance criteria, and risk areas.
+3. **Scenario design:** candidate test cases are generated in a structured,
+   validated format and reviewed by a human.
+4. **Execution planning:** LangGraph validates the scenario, target origin,
+   action allowlist, and execution limits.
+5. **Test execution:** Playwright or another explicitly registered adapter executes
+   the approved plan in an isolated test environment.
+6. **Evidence collection:** each run produces correlated, bounded, machine-readable
+   evidence and human-readable reproduction details.
+7. **Result evaluation:** deterministic assertions determine pass/fail; AI may
+   summarize evidence and propose findings but cannot override test assertions.
+8. **Human review:** the QA Engineer confirms, rejects, edits, or escalates findings
+   and decides whether results are sufficient for release.
+
+## Test disciplines in the product roadmap
+
+The platform is designed to assist with the following QA disciplines. These are
+product goals, not claims that every capability is implemented today:
+
+- Functional and regression testing.
+- Smoke and sanity testing.
+- UI and end-to-end testing.
+- API and integration testing.
+- Negative and error-handling testing.
+- Boundary Value Analysis and Equivalence Partitioning.
+- Risk-based testing and exploratory-test assistance.
+- Accessibility and cross-browser checks as separately scoped capabilities.
+
+## Verdict ownership and quality principles
+
+- Deterministic assertions and observed execution evidence are authoritative for
+  automated pass/fail status.
+- An LLM-generated explanation, confidence score, or proposed bug is advisory.
+- A test may be marked **blocked**, **inconclusive**, or **needs review**; do not
+  force every run into pass/fail when evidence is insufficient.
+- Preserve flaky retries and distinguish a first-attempt failure from a later pass.
+- Findings must include evidence links or artifact references and a reproducible
+  sequence where possible.
+- The QA Engineer retains ownership of test acceptance, defect confirmation,
+  severity approval, and release recommendations.
+- Keep requirement, scenario, run, step, evidence, finding, and review identifiers
+  linked for auditability.
+
+## Product status language
+
+Documentation, UI, and interview materials must distinguish three states:
+
+- **Implemented:** present in the repository and covered by relevant tests.
+- **In progress:** actively being built on a feature branch but not yet validated
+  as complete.
+- **Planned:** part of the target architecture or roadmap, not yet implemented.
+
+Do not describe planned LLM scenario generation, browser-plan execution, API testing,
+AI bug triage, or QA Intelligence as available until their implementations and tests
+exist.
+
 ## Purpose
 
 Build a reviewable demonstration of an AI-assisted browser-testing system on top of
