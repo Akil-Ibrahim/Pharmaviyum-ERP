@@ -312,9 +312,7 @@ async def test_dashboard_uses_per_sku_coverage_and_unlimited_slow_moving_summary
         str(statement.compile(dialect=postgresql.dialect())).lower()
         for statement in session.statements
     ]
-    coverage_sql = next(
-        sql for sql in sql_statements if "units_per_pack" in sql and "packs_30d" in sql
-    )
+    coverage_sql = next(sql for sql in sql_statements if "having coalesce" in sql)
     assert "group by products.id" in coverage_sql
     assert "inventory.pharmacy_id =" in coverage_sql
     assert "having coalesce" in coverage_sql
