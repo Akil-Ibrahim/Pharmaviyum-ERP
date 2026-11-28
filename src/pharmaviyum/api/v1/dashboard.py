@@ -350,8 +350,6 @@ async def get_dashboard_summary(
         expired_value_query = expired_value_query.where(Inventory.pharmacy_id == scope)
     expired_value = (await session.execute(expired_value_query)).scalar_one() or 0
 
-    # Aggregate packs rather than raw units so runway is comparable with
-    # dispensed_packs. Products without a valid pack size are ignored.
     # Determine stockout at product level across all lots. An empty lot must
     # not mark a medicine out of stock when another unexpired lot is available.
     stockout_stock_expression = case(
@@ -562,9 +560,7 @@ async def get_dashboard_summary(
         .having(func.coalesce(product_demand_30d.c.packs_30d, 0) > 0)
     )
     if scope is not None:
-        sku_coverage_query = sku_coverage_query.where(
-            Inventory.pharmacy_id == scope
-        )
+        sku_coverage_query = sku_coverage_query.where(Inventory.pharmacy_id == scope)
     coverage_rows = (await session.execute(sku_coverage_query)).all()
     sku_days_on_hand = [
         (float(row.available_units or 0) / float(row.units_per_pack))
