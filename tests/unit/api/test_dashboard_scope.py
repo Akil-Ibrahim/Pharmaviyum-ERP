@@ -27,6 +27,9 @@ class _Result:
             extended_warning=0,
             today_sales=0,
             month_revenue=0,
+            revenue_30d=0,
+            previous_revenue_30d=0,
+            orders_30d=0,
             month_orders=0,
             month_completed_orders=0,
             month_prescriptions=0,
@@ -71,7 +74,15 @@ async def test_dashboard_summary_applies_one_pharmacy_scope_to_all_aggregates():
 
     assert result["patients"]["active"] == 0
     assert result["sales"]["today"] == 0
+    assert result["sales"]["revenue_30d"] == 0
+    assert result["sales"]["previous_revenue_30d"] == 0
+    assert result["sales"]["revenue_growth_30d"] is None
+    assert result["sales"]["average_order_value_30d"] == 0
+    assert result["sales"]["orders_30d"] == 0
+    assert result["sales"]["daily_revenue"] == []
     assert result["inventory"]["items"] == 0
+    assert "patient_purchases" not in result
+    assert "patient_medications" not in result
 
     sql_statements = [
         str(statement.compile(dialect=postgresql.dialect()))
@@ -162,8 +173,8 @@ async def test_dashboard_summary_keeps_superuser_global_scope_unfiltered():
 
 
 @pytest.mark.asyncio
-async def test_dashboard_patient_condition_prefers_active_status():
-    """Dashboard must prefer an active condition over a stale inactive one."""
+async def test_dashboard_summary_excludes_patient_level_data():
+    """The operational dashboard must not expose patient identity or medication history."""
     session = _Session()
     user = SimpleNamespace(id=100, is_active=True, is_superuser=False)
 
@@ -172,24 +183,20 @@ async def test_dashboard_patient_condition_prefers_active_status():
         "resolve_pharmacy_scope",
         new=AsyncMock(return_value=42),
     ):
-        await dashboard.get_dashboard_summary(
+        result = await dashboard.get_dashboard_summary(
             current_user=user,
             session=session,
             pharmacy_id=42,
         )
 
-    medication_statement = next(
-        statement
+    assert "patient_purchases" not in result
+    assert "patient_medications" not in result
+    sql_statements = [
+        str(statement.compile(dialect=postgresql.dialect()))
         for statement in session.statements
-        if "patient_conditions" in str(statement)
-    )
-    medication_compiled = medication_statement.compile(dialect=postgresql.dialect())
-    medication_sql = str(medication_compiled)
-    assert "patient_conditions.status =" in medication_sql
-    assert "active" in medication_compiled.params.values()
-    assert "row_number() OVER" in medication_sql
-    assert "LIMIT %(param_" in medication_sql
-    assert "patients.pharmacy_id =" in medication_sql
+    ]
+    assert all("patient_conditions" not in sql for sql in sql_statements)
+    assert all("patients.full_name" not in sql for sql in sql_statements)
 
 
 @pytest.mark.asyncio
