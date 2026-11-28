@@ -20,6 +20,7 @@ class _Result:
     def one(self):
         return SimpleNamespace(
             tracked=0,
+            missing_expiry=0,
             expired=0,
             critical=0,
             warning=0,
