@@ -285,11 +285,25 @@ async def get_dashboard_summary(
         select(
             func.coalesce(
                 func.sum(
-                    (Inventory.quantity - Inventory.reserved_quantity) * Product.price
+                    case(
+                        (
+                            Inventory.expires_at.is_(None)
+                            | (Inventory.expires_at >= today_start),
+                            (Inventory.quantity - Inventory.reserved_quantity)
+                            * Product.price,
+                        ),
+                        else_=0,
+                    )
                 ),
                 0,
             ).label("retail_value"),
-            func.count(Inventory.id).label("items"),
+            func.count(func.distinct(Inventory.product_id))
+            .filter(
+                (Inventory.quantity - Inventory.reserved_quantity) > 0,
+                Inventory.expires_at.is_(None)
+                | (Inventory.expires_at >= today_start),
+            )
+            .label("items"),
         )
         .select_from(Inventory)
         .join(Product, Product.id == Inventory.product_id)
@@ -477,11 +491,10 @@ async def get_dashboard_summary(
             product_demand_30d.c.packs_30d,
         )
         .having(
-            func.sum(Inventory.quantity - Inventory.reserved_quantity)
-            <= func.max(Inventory.reorder_level)
+            func.sum(stockout_stock_expression) <= func.max(Inventory.reorder_level)
         )
         .order_by(
-            func.sum(Inventory.quantity - Inventory.reserved_quantity).asc(),
+            func.sum(stockout_stock_expression).asc(),
             product_demand_30d.c.packs_30d.desc(),
         )
         .limit(5)
@@ -577,7 +590,7 @@ async def get_dashboard_summary(
         (float(row.available_units or 0) / float(row.units_per_pack))
         / (float(row.packs_30d) / 30.0)
         for row in coverage_rows
-        if row.units_per_pack and row.packs_30d and row.available_units > 0
+        if row.units_per_pack and row.packs_30d
     ]
     days_on_hand = round(median(sku_days_on_hand), 1) if sku_days_on_hand else None
 
