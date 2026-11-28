@@ -275,9 +275,7 @@ async def test_dashboard_stockout_is_aggregated_across_unexpired_lots():
     assert "inventory.pharmacy_id =" in stockout_sql
 
     low_stock_sql = next(
-        sql
-        for sql in sql_statements
-        if "max(inventory.reorder_level)" in sql
+        sql for sql in sql_statements if "max(inventory.reorder_level)" in sql
     )
     assert "group by inventory.product_id" in low_stock_sql
     assert "having sum(case" in low_stock_sql
