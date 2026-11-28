@@ -211,6 +211,24 @@ Focused unit tests cover valid planning, missing and mismatched origin configura
 cross-origin navigation attempts, action allowlisting, extra-field rejection, and
 execution-step limits.
 
+## Deterministic run-result contract
+
+The backend now defines a strict Pydantic result contract in
+`src/pharmaviyum/ai/agentic_testing/results.py`:
+
+- Each step records its index, allowlisted action, observed status, duration,
+  optional observation/error, and bounded evidence references.
+- A run records its scenario/run identifiers, timezone-aware start and finish
+  timestamps, up to eight step outcomes, and an optional blocked reason.
+- The verdict is derived deterministically: any failed step means failed; a
+  blocked reason means blocked; skipped or missing steps mean inconclusive;
+  only a non-empty set of all-passed steps means passed.
+- The model rejects a caller-supplied verdict that disagrees with the derived
+  result. AI-generated summaries cannot override this contract.
+
+This is a result schema and verdict policy only. It does not yet execute browser
+steps, persist runs, or ingest Playwright artifacts.
+
 ## Current boundary
 
 This increment is the first backend orchestration slice, not a complete agentic test
