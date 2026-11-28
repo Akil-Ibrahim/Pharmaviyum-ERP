@@ -124,7 +124,7 @@ jobs:
 
       - name: Validate Demo deployment inputs
         env:
-          CHANGE_REFERENCE: ${{ inputs.change_reference || format('automatic-main:{0}', github.sha) }}
+          CHANGE_REFERENCE: ${{ github.event.inputs.change_reference || format('automatic-main:{0}', github.sha) }}
           FASTAPI_CLOUD_DEMO_TOKEN: ${{ secrets.FASTAPI_CLOUD_DEMO_TOKEN }}
           FASTAPI_CLOUD_DEMO_APP_ID: ${{ secrets.FASTAPI_CLOUD_DEMO_APP_ID }}
           DATABASE_URL: ${{ secrets.DEMO_DATABASE_URL }}
