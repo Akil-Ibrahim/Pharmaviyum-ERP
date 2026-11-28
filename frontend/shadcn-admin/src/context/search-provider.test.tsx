@@ -73,7 +73,7 @@ describe('SearchProvider and CommandMenu', () => {
     await expect.element(getByText('Light')).toBeInTheDocument()
     await expect.element(getByText('Dark')).toBeInTheDocument()
     await expect
-      .element(getByRole('option', { name: 'System' }))
+      .element(getByRole('option', { name: 'System', exact: true }))
       .toBeInTheDocument()
   })
 
@@ -149,6 +149,12 @@ describe('SearchProvider and CommandMenu', () => {
       'Procurement Purchase Orders',
       'Procurement Receiving',
       'Pharmacies',
+      'Developer Overview',
+      'QA Copilot',
+      'Agentic Testing',
+      'QA Intelligence',
+      'Test Runs & Evidence',
+      'System & Agent Logs',
     ]
 
     for (const destination of enabledDestinations) {
