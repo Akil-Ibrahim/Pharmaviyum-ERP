@@ -242,3 +242,33 @@ export function DeveloperIntelligence() {
     />
   )
 }
+
+export function DeveloperRuns() {
+  return (
+    <DeveloperSection
+      title='Test Runs & Evidence'
+      description='Run history, execution steps, and traceable test artifacts.'
+      status='Planned'
+      scope={[
+        'Run and scenario identifiers linked to every execution step.',
+        'Screenshots, traces, console/network logs, and reproduction details.',
+        'Preserve first-attempt failures and retry history for flaky-test analysis.',
+      ]}
+    />
+  )
+}
+
+export function DeveloperLogs() {
+  return (
+    <DeveloperSection
+      title='System & Agent Logs'
+      description='Operational visibility into QA workflows and agent execution.'
+      status='Planned'
+      scope={[
+        'Workflow state transitions, retries, and failure reasons.',
+        'Structured logs and distributed traces with correlation identifiers.',
+        'LLM provider latency, token usage, and cost telemetry.',
+      ]}
+    />
+  )
+}
