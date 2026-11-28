@@ -372,6 +372,7 @@ export function Dashboard() {
       ? 'Comparison unavailable — no prior-period sales'
       : `${revenueGrowth > 0 ? '+' : ''}${revenueGrowth}% vs previous 30 days · ${amount(data?.sales.previous_revenue_30d ?? 0)} prior revenue`
   const expiryRows = [
+    { label: 'Missing expiry date', value: data?.inventory.missing_expiry ?? 0, variant: 'destructive' as const },
     { label: 'Expired', value: data?.inventory.expired ?? 0, variant: 'destructive' as const },
     { label: 'Expiring within 90 days', value: data?.inventory.critical_expiry ?? 0, variant: 'destructive' as const },
     { label: 'Expiring in 91–365 days', value: data?.inventory.warning_expiry ?? 0, variant: 'secondary' as const },
