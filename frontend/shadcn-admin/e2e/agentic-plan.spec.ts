@@ -20,7 +20,7 @@ test.describe('Agentic plan execution adapter', () => {
         {
           step_index: 0,
           action: 'goto',
-          value: '/',
+          value: '/sign-in',
           target_origin: origin,
         },
         {
@@ -53,7 +53,7 @@ test.describe('Agentic plan execution adapter', () => {
       contentType: 'application/json',
     })
 
-    expect(result.status).toBe('passed')
+    expect(result.status, JSON.stringify(result)).toBe('passed')
     expect(result.steps.map((step) => step.status)).toEqual([
       'passed',
       'passed',
