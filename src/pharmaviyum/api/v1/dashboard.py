@@ -298,7 +298,6 @@ async def get_dashboard_summary(
         inventory_kpi_query = inventory_kpi_query.where(Inventory.pharmacy_id == scope)
 
     inventory_kpi = (await session.execute(inventory_kpi_query)).one()
-    low_stock_count = (await session.execute(low_stock_count_query)).scalar_one()
     expiry = (await session.execute(expiry_query)).one()
 
     # Inventory runway: compare current available stock with the last 30 days
@@ -362,6 +361,7 @@ async def get_dashboard_summary(
     low_stock_count_query = select(func.count()).select_from(
         low_stock_products_query.subquery()
     )
+    low_stock_count = (await session.execute(low_stock_count_query)).scalar_one()
     stockout_products_query = (
         select(Inventory.product_id)
         .group_by(Inventory.product_id)
