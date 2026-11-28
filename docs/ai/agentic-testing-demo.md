@@ -18,9 +18,13 @@ interact with the private Production environment.
 - The authenticated route checks the local auth store and redirects visitors without
   an access token to `/sign-in`.
 - Frontend CI runs `bun run test:e2e` in the pinned Playwright container.
-- LangGraph, OpenTelemetry, and Ragas are already represented in the backend dependency
-  and evaluation architecture. Their presence does not, by itself, mean they are wired
-  into this browser-testing prototype.
+- The frontend CI workflow triggers on pull requests targeting `main`, pushes to
+  `main` and `deploy/fastapi-cloud-prep`, and manual `workflow_dispatch`.
+  Pushes to this feature branch alone do not trigger that workflow.
+- LangGraph is part of the project's AI/RAG architecture. Ragas evaluation and
+  OpenTelemetry instrumentation are planned candidates; verify their actual
+  dependencies and runtime wiring before describing them as implemented. None of
+  these components is currently claimed as integrated into this browser-testing demo.
 
 ## Initial scenario
 
@@ -29,9 +33,9 @@ Start with a safe access-control scenario:
 1. Open the application root route.
 2. Verify that an unauthenticated browser is redirected to sign-in.
 3. Verify that the sign-in page and its accessible controls render.
-4. Capture URL, page errors, console errors, failed requests, screenshot, and Playwright
-   trace when the scenario fails.
-5. Emit a structured result with pass/fail status and evidence references.
+4. Collect browser console errors, uncaught page errors, and failed network requests.
+   Playwright also retains a screenshot and trace when the test fails.
+5. Attach the collected browser evidence as JSON to the Playwright test result.
 
 A later authenticated Dashboard scenario must use a disposable local/test account or a
 dedicated isolated Demo fixture. Do not embed shared Demo credentials in source code,
@@ -71,5 +75,6 @@ tests, logs, screenshots, or CI configuration.
 
 - The unauthenticated Dashboard access guard is covered by a Playwright E2E test.
 - The test uses a fresh browser context and does not call the real authentication API.
+- Browser diagnostics are attached to the Playwright test result as JSON.
 - The test is included in the existing frontend E2E CI workflow.
 - No Production credentials or business data are used.
