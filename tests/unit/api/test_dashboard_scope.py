@@ -320,9 +320,7 @@ async def test_dashboard_uses_per_sku_coverage_and_unlimited_slow_moving_summary
     assert "having coalesce" in coverage_sql
     assert "case when" in coverage_sql
 
-    inventory_value_sql = next(
-        sql for sql in sql_statements if "retail_value" in sql
-    )
+    inventory_value_sql = next(sql for sql in sql_statements if "retail_value" in sql)
     assert "count(distinct inventory.product_id)" in inventory_value_sql
     assert "inventory.expires_at is null" in inventory_value_sql
     assert "inventory.expires_at >=" in inventory_value_sql
