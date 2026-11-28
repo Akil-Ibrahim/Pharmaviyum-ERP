@@ -72,6 +72,7 @@ type DashboardSummary = {
     low_stock: number
     days_on_hand: number | null
     expiry_tracked: number
+    missing_expiry: number
     expiry_red: number
     expiry_yellow: number
     expiry_green: number
