@@ -202,7 +202,7 @@ async def test_dashboard_summary_excludes_patient_level_data():
 
 @pytest.mark.asyncio
 async def test_dashboard_expiry_policy_uses_available_lots_and_exact_dates():
-    """Expiry buckets count only positive, available lots and use date cutoffs."""
+    """Expiry buckets count positive lots using exact 90-day and 365-day cutoffs."""
     session = _Session()
     user = SimpleNamespace(id=100, is_active=True, is_superuser=False)
 
