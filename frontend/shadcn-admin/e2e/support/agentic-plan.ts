@@ -116,6 +116,9 @@ function validateInputs(
   }
 
   const targetUrl = new URL(targetUrlValue)
+  if (targetUrl.username || targetUrl.password) {
+    throw new Error('Scenario target URLs must not contain credentials')
+  }
   const targetOrigin = normalizeOrigin(targetUrl.origin)
   const planOrigin = normalizeOrigin(targetOriginValue)
   const allowlist = new Set(allowedOrigins.map(normalizeOrigin))
