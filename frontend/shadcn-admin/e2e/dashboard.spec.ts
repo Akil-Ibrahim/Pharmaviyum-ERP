@@ -24,7 +24,11 @@ const testWithEvidence = test.extend({
     })
     page.on('requestfailed', (request) => {
       evidence.failedRequests.push(
-        `${request.method()} ${request.url()}: ${request.failure()?.errorText ?? 'request failed'}`
+        [
+          request.method(),
+          request.url(),
+          request.failure()?.errorText ?? 'request failed',
+        ].join(' ')
       )
     })
 
@@ -40,7 +44,6 @@ const testWithEvidence = test.extend({
     const result = {
       schemaVersion: '1.0',
       runId,
-
       scenarioId: 'dashboard.unauthenticated-access',
       testId: testInfo.testId,
       title: testInfo.title,
