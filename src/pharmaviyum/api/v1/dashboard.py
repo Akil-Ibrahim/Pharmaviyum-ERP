@@ -290,12 +290,6 @@ async def get_dashboard_summary(
                 0,
             ).label("retail_value"),
             func.count(Inventory.id).label("items"),
-            func.count(Inventory.id)
-            .filter(
-                Inventory.quantity - Inventory.reserved_quantity
-                <= Inventory.reorder_level
-            )
-            .label("low_stock"),
         )
         .select_from(Inventory)
         .join(Product, Product.id == Inventory.product_id)
@@ -304,6 +298,7 @@ async def get_dashboard_summary(
         inventory_kpi_query = inventory_kpi_query.where(Inventory.pharmacy_id == scope)
 
     inventory_kpi = (await session.execute(inventory_kpi_query)).one()
+    low_stock_count = (await session.execute(low_stock_count_query)).scalar_one()
     expiry = (await session.execute(expiry_query)).one()
 
     # Inventory runway: compare current available stock with the last 30 days
@@ -351,6 +346,21 @@ async def get_dashboard_summary(
             available_units,
         ),
         else_=0,
+    )
+    # Low stock is a product-level condition, not a per-lot count.
+    low_stock_products_query = (
+        select(Inventory.product_id)
+        .group_by(Inventory.product_id)
+        .having(
+            func.sum(stockout_stock_expression) <= func.max(Inventory.reorder_level)
+        )
+    )
+    if scope is not None:
+        low_stock_products_query = low_stock_products_query.where(
+            Inventory.pharmacy_id == scope
+        )
+    low_stock_count_query = select(func.count()).select_from(
+        low_stock_products_query.subquery()
     )
     stockout_products_query = (
         select(Inventory.product_id)
@@ -696,7 +706,7 @@ async def get_dashboard_summary(
         "inventory": {
             "retail_value": round(float(inventory_kpi.retail_value or 0), 2),
             "items": int(inventory_kpi.items or 0),
-            "low_stock": int(inventory_kpi.low_stock or 0),
+            "low_stock": int(low_stock_count or 0),
             "days_on_hand": days_on_hand,
             "demand_30d_packs": int(demand_30d),
             "expired_value": round(float(expired_value), 2),
