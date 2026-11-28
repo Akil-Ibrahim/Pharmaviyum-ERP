@@ -35,17 +35,10 @@ async def get_dashboard_summary(
     today_start = datetime.combine(today, datetime.min.time())
     tomorrow_start = today_start + timedelta(days=1)
     month_start = today_start.replace(day=1)
-    # Expiry policy is month-based in the dashboard UI:
-    # <= 3 months = red, 4-12 months = yellow, > 12 months = green.
-    current_month_start = today_start.replace(day=1)
-
-    def month_start_after(months: int) -> datetime:
-        total = current_month_start.year * 12 + current_month_start.month - 1 + months
-        year, month_index = divmod(total, 12)
-        return current_month_start.replace(year=year, month=month_index + 1)
-
-    red_cutoff_month = month_start_after(3)
-    yellow_cutoff_month = month_start_after(12)
+    # Expiry buckets use exact operational windows rather than calendar-month
+    # rounding: expired, 0-90 days, 91-365 days, and more than 365 days.
+    red_cutoff = today_start + timedelta(days=90)
+    yellow_cutoff = today_start + timedelta(days=365)
     slow_moving_cutoff = now - timedelta(days=90)
 
     patient_scope = select(Patient.id)
@@ -249,22 +242,22 @@ async def get_dashboard_summary(
         .filter(
             Inventory.expires_at.is_not(None)
             & (Inventory.expires_at >= today_start)
-            & (Inventory.expires_at <= red_cutoff_month)
+            & (Inventory.expires_at <= red_cutoff)
             & has_available_stock
         )
         .label("critical"),
         func.count(Inventory.id)
         .filter(
             Inventory.expires_at.is_not(None)
-            & (Inventory.expires_at > red_cutoff_month)
-            & (Inventory.expires_at <= yellow_cutoff_month)
+            & (Inventory.expires_at > red_cutoff)
+            & (Inventory.expires_at <= yellow_cutoff)
             & has_available_stock
         )
         .label("warning"),
         func.count(Inventory.id)
         .filter(
             Inventory.expires_at.is_not(None)
-            & (Inventory.expires_at > yellow_cutoff_month)
+            & (Inventory.expires_at > yellow_cutoff)
             & has_available_stock
         )
         .label("extended_warning"),
@@ -379,7 +372,7 @@ async def get_dashboard_summary(
                         (
                             Inventory.expires_at.is_not(None)
                             & (Inventory.expires_at >= today_start)
-                            & (Inventory.expires_at <= yellow_cutoff_month)
+                            & (Inventory.expires_at <= yellow_cutoff)
                             & has_available_stock,
                             available_units * Product.price,
                         ),
