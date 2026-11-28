@@ -29,7 +29,9 @@ class BrowserTestStep(BaseModel):
         if info.data.get("action") == "goto" and (
             not value.startswith("/") or value.startswith("//")
         ):
-            raise ValueError("goto accepts only an absolute path on the approved origin")
+            raise ValueError(
+                "goto accepts only an absolute path on the approved origin"
+            )
         return value
 
 
@@ -74,5 +76,7 @@ def validate_scenario_target(
     target_origin = normalized_origin(str(scenario.target_url))
     normalized_allowed = {normalized_origin(origin) for origin in allowed_origins}
     if target_origin not in normalized_allowed:
-        raise ValueError("scenario target is not in the configured test-origin allowlist")
+        raise ValueError(
+            "scenario target is not in the configured test-origin allowlist"
+        )
     return target_origin
