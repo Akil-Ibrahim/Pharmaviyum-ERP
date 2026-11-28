@@ -18,6 +18,8 @@ import {
   Line,
   LineChart,
   ResponsiveContainer,
+  RadialBar,
+  RadialBarChart,
   Tooltip,
   XAxis,
   YAxis,
@@ -70,6 +72,10 @@ type DashboardSummary = {
     items: number
     low_stock: number
     days_on_hand: number | null
+    expiry_tracked: number
+    expiry_red: number
+    expiry_yellow: number
+    expiry_green: number
     expired: number
     critical_expiry: number
     warning_expiry: number
@@ -174,6 +180,93 @@ function EmptyState({ children }: { children: string }) {
     <div className='flex min-h-32 items-center justify-center rounded-lg border border-dashed px-4 text-center text-sm text-muted-foreground'>
       {children}
     </div>
+  )
+}
+
+function ExpiryRadialCard({
+  tracked,
+  red,
+  yellow,
+  green,
+  loading,
+}: {
+  tracked: number
+  red: number
+  yellow: number
+  green: number
+  loading: boolean
+}) {
+  const rings = [
+    { name: 'Expired / within 3 months', value: red, fill: 'var(--chart-1)' },
+    { name: '3–12 months remaining', value: yellow, fill: 'var(--chart-2)' },
+    { name: 'More than 12 months', value: green, fill: 'var(--chart-3)' },
+  ]
+
+  return (
+    <Card className='min-w-0'>
+      <CardHeader>
+        <CardTitle>Inventory Expiry Health</CardTitle>
+        <CardDescription>
+          Three radial rings compare real inventory lots by expiry window
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        {loading ? (
+          <Skeleton className='mx-auto h-64 w-full max-w-[260px] rounded-full' />
+        ) : tracked === 0 ? (
+          <EmptyState>No expiry-dated inventory lots are available.</EmptyState>
+        ) : (
+          <div className='flex flex-col items-center gap-4 sm:flex-row sm:justify-center'>
+            <div
+              className='relative h-64 w-full max-w-[260px] shrink-0'
+              role='img'
+              aria-label={`Inventory expiry rings: ${number(red)} expired or within three months, ${number(yellow)} with three to twelve months remaining, and ${number(green)} with more than twelve months remaining.`}
+            >
+              <ResponsiveContainer width='100%' height='100%'>
+                <RadialBarChart
+                  data={rings}
+                  innerRadius='28%'
+                  outerRadius='92%'
+                  startAngle={90}
+                  endAngle={-270}
+                >
+                  <Tooltip formatter={(value) => `${number(Number(value))} lots`} />
+                  <RadialBar
+                    dataKey='value'
+                    background
+                    cornerRadius={7}
+                  />
+                </RadialBarChart>
+              </ResponsiveContainer>
+              <div className='pointer-events-none absolute inset-0 flex flex-col items-center justify-center'>
+                <span className='text-3xl font-semibold tracking-tight tabular-nums'>
+                  {number(tracked)}
+                </span>
+                <span className='text-xs text-muted-foreground'>Tracked lots</span>
+              </div>
+            </div>
+            <div className='grid w-full gap-3 sm:max-w-52'>
+              {rings.map((ring) => (
+                <div key={ring.name} className='flex items-center justify-between gap-3 text-sm'>
+                  <span className='flex min-w-0 items-center gap-2 text-muted-foreground'>
+                    <span
+                      className='size-2.5 shrink-0 rounded-full'
+                      style={{ backgroundColor: ring.fill }}
+                      aria-hidden='true'
+                    />
+                    <span>{ring.name}</span>
+                  </span>
+                  <span className='font-semibold tabular-nums'>{number(ring.value)}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+        <p className='mt-3 text-center text-xs text-muted-foreground'>
+          Ring length is scaled against the largest expiry group; counts remain the source of truth.
+        </p>
+      </CardContent>
+    </Card>
   )
 }
 
@@ -314,6 +407,38 @@ export function Dashboard() {
                     <ArrowRight className='ml-2 size-4' />
                   </Link>
                 </Button>
+              </CardContent>
+            </Card>
+          </section>
+
+          <section aria-label='Inventory expiry radial analytics' className='grid min-w-0 gap-4 xl:grid-cols-2'>
+            <ExpiryRadialCard
+              tracked={data?.inventory.expiry_tracked ?? 0}
+              red={data?.inventory.expiry_red ?? 0}
+              yellow={data?.inventory.expiry_yellow ?? 0}
+              green={data?.inventory.expiry_green ?? 0}
+              loading={isPending}
+            />
+            <Card className='min-w-0'>
+              <CardHeader>
+                <CardTitle>Expiry Risk Summary</CardTitle>
+                <CardDescription>Counts behind the radial inventory view</CardDescription>
+              </CardHeader>
+              <CardContent className='space-y-4'>
+                {[
+                  { label: 'Expired', value: data?.inventory.expired ?? 0, note: 'Lots already past expiry' },
+                  { label: 'Critical', value: data?.inventory.critical_expiry ?? 0, note: 'Expiry within three months' },
+                  { label: 'Warning', value: data?.inventory.warning_expiry ?? 0, note: 'Expiry within three to twelve months' },
+                  { label: 'Healthy horizon', value: data?.inventory.expiry_green ?? 0, note: 'More than twelve months remaining' },
+                ].map((item) => (
+                  <div key={item.label} className='flex items-center justify-between gap-3 border-b pb-3 last:border-0 last:pb-0'>
+                    <div>
+                      <p className='text-sm font-medium'>{item.label}</p>
+                      <p className='text-xs text-muted-foreground'>{item.note}</p>
+                    </div>
+                    <span className='text-lg font-semibold tabular-nums'>{isPending ? '—' : number(item.value)}</span>
+                  </div>
+                ))}
               </CardContent>
             </Card>
           </section>
