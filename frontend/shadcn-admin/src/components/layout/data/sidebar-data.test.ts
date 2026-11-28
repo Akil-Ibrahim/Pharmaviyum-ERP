@@ -77,9 +77,29 @@ describe('Pharmaviyum sidebar navigation', () => {
     expect(itemTitles('System')).toEqual(['Background Tasks'])
     expect(sidebarData.navGroups.map((entry) => entry.title)).toEqual([
       'Operations',
+      'Developer',
       'Administration',
       'System',
     ])
+  })
+
+  it('provides a dedicated Developer workspace and QA destinations', () => {
+    expect(itemTitles('Developer')).toEqual([
+      'Developer Overview',
+      'QA Copilot',
+      'Agentic Testing',
+      'QA Intelligence',
+      'Test Runs & Evidence',
+      'System & Agent Logs',
+    ])
+    expect(item('Developer', 'Developer Overview')?.url).toBe('/developer')
+    expect(item('Developer', 'QA Copilot')?.url).toBe('/developer/qa-copilot')
+    expect(item('Developer', 'Agentic Testing')?.url).toBe(
+      '/developer/agentic-testing'
+    )
+    expect(item('Developer', 'QA Intelligence')?.url).toBe(
+      '/developer/qa-intelligence'
+    )
   })
 
   it('gives every sidebar destination a route and keeps every item enabled', () => {
