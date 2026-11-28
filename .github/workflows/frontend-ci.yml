@@ -80,3 +80,13 @@ jobs:
           bunx playwright install --list
       - name: Playwright end-to-end tests
         run: bun run test:e2e
+      - name: Upload Playwright reports and evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-evidence-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            frontend/shadcn-admin/test-results/
+            frontend/shadcn-admin/playwright-report/
+          if-no-files-found: warn
+          retention-days: 14
