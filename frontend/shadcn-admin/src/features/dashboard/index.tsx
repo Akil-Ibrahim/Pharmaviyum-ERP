@@ -12,8 +12,6 @@ import {
   TrendingUp,
 } from 'lucide-react'
 import {
-  Bar,
-  BarChart,
   CartesianGrid,
   Line,
   LineChart,
@@ -79,7 +77,6 @@ type DashboardSummary = {
     expired: number
     critical_expiry: number
     warning_expiry: number
-    expiry_green: number
   }
   attention: {
     stockout_items: number
