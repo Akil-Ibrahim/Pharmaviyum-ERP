@@ -3,11 +3,16 @@ name: Deploy Demo to FastAPI Cloud
 # This workflow deploys the public Demo only. Production hosting and deployment
 # are managed outside this public repository and must never be targeted here.
 on:
+  # Publish the public Demo automatically after changes reach main.
+  # The job still waits for CI on this exact commit and passes all Demo smoke gates.
+  push:
+    branches:
+      - main
   workflow_dispatch:
     inputs:
       change_reference:
-        description: "Approved Demo change or ticket reference"
-        required: true
+        description: "Optional change or ticket reference for a manual Demo deployment"
+        required: false
         type: string
 
 permissions:
@@ -25,7 +30,7 @@ jobs:
     timeout-minutes: 30
     environment:
       name: demo-pharmaviyum-erp
-    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
     env:
       DEMO_SHA: ${{ github.sha }}
     steps:
@@ -119,7 +124,7 @@ jobs:
 
       - name: Validate Demo deployment inputs
         env:
-          CHANGE_REFERENCE: ${{ inputs.change_reference }}
+          CHANGE_REFERENCE: ${{ github.event.inputs.change_reference || format('automatic-main:{0}', github.sha) }}
           FASTAPI_CLOUD_DEMO_TOKEN: ${{ secrets.FASTAPI_CLOUD_DEMO_TOKEN }}
           FASTAPI_CLOUD_DEMO_APP_ID: ${{ secrets.FASTAPI_CLOUD_DEMO_APP_ID }}
           DATABASE_URL: ${{ secrets.DEMO_DATABASE_URL }}
@@ -138,6 +143,7 @@ jobs:
           done
           {
             echo "## Demo deployment approval"
+            echo "- Trigger: ${GITHUB_EVENT_NAME}"
             echo "- Change reference: $CHANGE_REFERENCE"
             echo "- Commit: $DEMO_SHA"
           } >> "$GITHUB_STEP_SUMMARY"
