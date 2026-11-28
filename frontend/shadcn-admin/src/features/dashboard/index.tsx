@@ -15,6 +15,7 @@ import {
   CartesianGrid,
   Line,
   LineChart,
+  PolarAngleAxis,
   ResponsiveContainer,
   RadialBar,
   RadialBarChart,
@@ -217,6 +218,7 @@ function SalesMixRadialCard({
                   startAngle={90}
                   endAngle={-270}
                 >
+                  <PolarAngleAxis type='number' domain={[0, 100]} tick={false} />
                   <Tooltip formatter={(value) => `${Number(value).toFixed(1)}% of revenue`} />
                   <RadialBar dataKey='rx' name='Rx' fill='var(--chart-1)' background cornerRadius={7} />
                   <RadialBar dataKey='otc' name='OTC' fill='var(--chart-2)' background cornerRadius={7} />
@@ -310,6 +312,7 @@ function ExpiryRadialCard({
                   startAngle={90}
                   endAngle={-270}
                 >
+                  <PolarAngleAxis type='number' domain={[0, 100]} tick={false} />
                   <Tooltip formatter={(value) => `${Number(value).toFixed(1)}% of tracked lots`} />
                   <RadialBar dataKey='critical' name='Expired / within 3 months' fill='var(--chart-1)' background cornerRadius={7} />
                   <RadialBar dataKey='warning' name='3–12 months remaining' fill='var(--chart-2)' background cornerRadius={7} />
