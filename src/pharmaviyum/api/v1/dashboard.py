@@ -493,12 +493,17 @@ async def get_dashboard_summary(
             Product.id,
             Product.name,
             func.coalesce(recent_sales.c.recent_packs, 0).label("recent_packs"),
-            func.coalesce(
-                func.sum(Inventory.quantity - Inventory.reserved_quantity), 0
-            ).label("stock"),
+            func.coalesce(func.sum(stockout_stock_expression), 0).label("stock"),
             func.coalesce(
                 func.sum(
-                    (Inventory.quantity - Inventory.reserved_quantity) * Product.price
+                    case(
+                        (
+                            Inventory.expires_at.is_(None)
+                            | (Inventory.expires_at >= today_start),
+                            available_units * Product.price,
+                        ),
+                        else_=0,
+                    )
                 ),
                 0,
             ).label("stock_value"),
@@ -507,7 +512,10 @@ async def get_dashboard_summary(
         .join(Inventory, Inventory.product_id == Product.id)
         .outerjoin(recent_sales, recent_sales.c.product_id == Product.id)
         .group_by(Product.id, Product.name, recent_sales.c.recent_packs)
-        .having(func.coalesce(recent_sales.c.recent_packs, 0) == 0)
+        .having(
+            (func.coalesce(recent_sales.c.recent_packs, 0) == 0)
+            & (func.sum(stockout_stock_expression) > 0)
+        )
     )
     if scope is not None:
         slow_moving_base_query = slow_moving_base_query.where(
