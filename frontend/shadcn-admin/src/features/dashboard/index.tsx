@@ -301,7 +301,7 @@ function ExpiryRadialCard({
             <div
               className='relative h-64 w-full max-w-[260px] shrink-0'
               role='img'
-              aria-label={`Inventory expiry health: ${red} expired or within three months, ${yellow} with 91 to 365 days remaining, and ${green} with more than 365 days remaining, out of ${tracked} tracked lots.`}
+              aria-label={`Inventory expiry health: ${red} expired or within 90 days, ${yellow} with 91 to 365 days remaining, and ${green} with more than 365 days remaining, out of ${tracked} tracked lots.`}
             >
               <ResponsiveContainer width='100%' height='100%'>
                 <RadialBarChart
