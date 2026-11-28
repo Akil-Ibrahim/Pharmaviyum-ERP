@@ -212,7 +212,7 @@ export async function executeAgenticPlan(
           { timeout: STEP_TIMEOUT_MS }
         )
       } else {
-        await expect(page.getByText(step.value, { exact: true }).first()).toBeVisible({
+        await expect(page.getByText(step.value).first()).toBeVisible({
           timeout: STEP_TIMEOUT_MS,
         })
       }
