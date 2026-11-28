@@ -281,6 +281,15 @@ async def test_dashboard_stockout_is_aggregated_across_unexpired_lots():
     assert "having sum(case" in low_stock_sql
     assert "inventory.pharmacy_id =" in low_stock_sql
 
+    reorder_sql = next(
+        sql
+        for sql in sql_statements
+        if "available_units" in sql and "packs_30d" in sql
+    )
+    assert "having sum(case" in reorder_sql
+    assert "inventory.expires_at is null" in reorder_sql
+    assert "inventory.expires_at >=" in reorder_sql
+
 
 @pytest.mark.asyncio
 async def test_dashboard_uses_per_sku_coverage_and_unlimited_slow_moving_summary():
@@ -308,6 +317,15 @@ async def test_dashboard_uses_per_sku_coverage_and_unlimited_slow_moving_summary
     )
     assert "group by products.id" in coverage_sql
     assert "inventory.pharmacy_id =" in coverage_sql
+    assert "having coalesce" in coverage_sql
+    assert "case when" in coverage_sql
+
+    inventory_value_sql = next(
+        sql for sql in sql_statements if "retail_value" in sql
+    )
+    assert "count(distinct inventory.product_id)" in inventory_value_sql
+    assert "inventory.expires_at is null" in inventory_value_sql
+    assert "inventory.expires_at >=" in inventory_value_sql
 
     slow_summary_sql = next(
         sql for sql in sql_statements if "item_count" in sql and "stock_value" in sql
