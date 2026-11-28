@@ -32,6 +32,8 @@ const testWithEvidence = test.extend({
       )
     })
 
+    // Playwright fixture lifecycle callback, not a React Hook.
+    // eslint-disable-next-line react-hooks/rules-of-hooks
     await use(page)
 
     const runId = [
