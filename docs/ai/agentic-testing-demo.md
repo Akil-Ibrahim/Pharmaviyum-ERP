@@ -78,3 +78,32 @@ tests, logs, screenshots, or CI configuration.
 - Browser diagnostics are attached to the Playwright test result as JSON.
 - The test is included in the existing frontend E2E CI workflow.
 - No Production credentials or business data are used.
+
+## Implemented orchestration foundation
+
+The feature branch now contains a deterministic LangGraph planning graph under
+`src/pharmaviyum/ai/agentic_testing/`:
+
+- Pydantic contracts reject unknown fields and arbitrary browser actions.
+- Scenarios are limited to eight declarative steps.
+- Navigation accepts only same-origin absolute paths (for example, `/`), not
+  absolute URLs or scripts.
+- The graph requires an explicit origin allowlist and rejects missing or unmatched
+  origins before producing an execution plan.
+- The graph is side-effect-free: it validates and plans; it does not launch a browser,
+  call an LLM, or write business data.
+- Playwright remains the execution authority. The plan is not a test result and cannot
+  mark a scenario as passed.
+
+Focused unit tests cover valid planning, missing and mismatched origin configuration,
+cross-origin navigation attempts, action allowlisting, extra-field rejection, and
+execution-step limits.
+
+## Current boundary
+
+This increment is the first backend orchestration slice, not a complete agentic test
+service. FastAPI run endpoints, durable run storage/queueing, a Playwright execution
+adapter, evidence ingestion, AI-assisted bug triage, and evaluation metrics remain
+separate follow-up increments. Do not expose this graph as a public endpoint until
+authentication, authorization, run quotas, and trusted environment configuration are
+implemented and tested.
