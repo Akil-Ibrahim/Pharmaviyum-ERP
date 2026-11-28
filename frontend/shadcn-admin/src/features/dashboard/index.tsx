@@ -469,8 +469,9 @@ export function Dashboard() {
               <CardContent className='space-y-4'>
                 <div className='grid grid-cols-2 gap-3'>
                   <div className='rounded-lg bg-muted/50 p-3'>
-                    <p className='text-xs text-muted-foreground'>Retail value</p>
+                    <p className='text-xs text-muted-foreground'>Sellable retail value</p>
                     <p className='mt-1 text-xl font-semibold tabular-nums'>{isPending ? '—' : amount(data?.inventory.retail_value ?? 0)}</p>
+                    <p className='mt-1 text-xs text-muted-foreground'>Unexpired available stock at retail price, not acquisition cost</p>
                   </div>
                   <div className='rounded-lg bg-muted/50 p-3'>
                     <p className='text-xs text-muted-foreground'>Median Stock Cover</p>
