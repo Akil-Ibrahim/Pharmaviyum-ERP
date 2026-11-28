@@ -281,3 +281,17 @@ with planner output. It is not yet a production execution API, queue worker, or
 direct Python-to-TypeScript service bridge. No public run endpoint is exposed, and
 the adapter must only run against explicitly allowlisted test origins with synthetic
 test data.
+
+
+## CI evidence retention
+
+The Frontend CI workflow uploads the Playwright HTML report and `test-results/`
+directory after every run, including failed runs. This preserves JSON run attachments,
+failure screenshots, and Playwright traces as GitHub Actions artifacts for 14 days.
+The artifact is CI-level evidence retention only; it is not yet durable application
+storage or visible run history in the Developer Workspace.
+
+The successful-plan E2E scenario is exercised against the local Vite preview's
+`/sign-in` route. URL assertions compare the requested path and only enforce query
+parameters when the planned path explicitly includes them, so application-added
+query parameters do not cause false negatives.
