@@ -30,9 +30,16 @@ const testWithEvidence = test.extend({
 
     await use(page)
 
+    const runId = [
+      process.env.GITHUB_RUN_ID ?? 'local',
+      testInfo.project.name,
+      testInfo.testId,
+      `retry-${testInfo.retry}`,
+    ].join(':')
+
     const result = {
       schemaVersion: '1.0',
-      runId: `${process.env.GITHUB_RUN_ID ?? 'local'}:${testInfo.project.name}:${testInfo.testId}:retry-${testInfo.retry}`,
+      runId,
 
       scenarioId: 'dashboard.unauthenticated-access',
       testId: testInfo.testId,
