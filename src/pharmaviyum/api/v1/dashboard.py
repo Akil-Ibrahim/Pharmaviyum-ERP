@@ -300,8 +300,7 @@ async def get_dashboard_summary(
             func.count(func.distinct(Inventory.product_id))
             .filter(
                 (Inventory.quantity - Inventory.reserved_quantity) > 0,
-                Inventory.expires_at.is_(None)
-                | (Inventory.expires_at >= today_start),
+                Inventory.expires_at.is_(None) | (Inventory.expires_at >= today_start),
             )
             .label("items"),
         )
