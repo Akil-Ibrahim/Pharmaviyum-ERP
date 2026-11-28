@@ -1,10 +1,14 @@
 import {
+  Activity,
   ArrowLeftRight,
   BookOpenCheck,
   Bot,
   Boxes,
+  Bug,
   ClipboardList,
+  Code2,
   FileText,
+  FlaskConical,
   LayoutDashboard,
   ListChecks,
   PackageCheck,
@@ -118,6 +122,42 @@ export const sidebarData: SidebarData = {
           title: 'Pharmacies',
           url: '/pharmacies',
           icon: Store,
+        },
+      ],
+    },
+    {
+      title: 'Developer',
+      items: [
+        {
+          title: 'Developer Overview',
+          url: '/developer',
+          icon: Code2,
+          badge: 'QA',
+        },
+        {
+          title: 'QA Copilot',
+          url: '/developer/qa-copilot',
+          icon: Bot,
+        },
+        {
+          title: 'Agentic Testing',
+          url: '/developer/agentic-testing',
+          icon: FlaskConical,
+        },
+        {
+          title: 'QA Intelligence',
+          url: '/developer/qa-intelligence',
+          icon: Bug,
+        },
+        {
+          title: 'Test Runs & Evidence',
+          url: '/developer/test-runs',
+          icon: ClipboardList,
+        },
+        {
+          title: 'System & Agent Logs',
+          url: '/developer/agent-logs',
+          icon: Activity,
         },
       ],
     },

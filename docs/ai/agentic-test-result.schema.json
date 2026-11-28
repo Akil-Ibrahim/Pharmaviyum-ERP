@@ -1,0 +1,78 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "agentic-test-result.schema.json",
+  "title": "Pharmaviyum Agentic Test Result",
+  "description": "Versioned, evidence-backed result emitted by the Playwright agentic-testing prototype.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "runId",
+    "scenarioId",
+    "testId",
+    "title",
+    "status",
+    "expectedStatus",
+    "retry",
+    "durationMs",
+    "finalUrl",
+    "evidence"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": "1.0"
+    },
+    "runId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "scenarioId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "testId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1
+    },
+    "status": {
+      "enum": ["passed", "failed", "timedOut", "skipped", "interrupted", "unknown"]
+    },
+    "expectedStatus": {
+      "enum": ["passed", "failed", "timedOut", "skipped", "interrupted"]
+    },
+    "retry": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "durationMs": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "finalUrl": {
+      "type": "string"
+    },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["consoleErrors", "pageErrors", "failedRequests"],
+      "properties": {
+        "consoleErrors": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "pageErrors": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "failedRequests": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    }
+  }
+}
