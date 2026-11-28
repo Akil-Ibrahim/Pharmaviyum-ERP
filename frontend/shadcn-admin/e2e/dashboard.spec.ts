@@ -33,6 +33,7 @@ const testWithEvidence = test.extend({
     const result = {
       schemaVersion: '1.0',
       runId: `${process.env.GITHUB_RUN_ID ?? 'local'}:${testInfo.project.name}:${testInfo.testId}:retry-${testInfo.retry}`,
+
       scenarioId: 'dashboard.unauthenticated-access',
       testId: testInfo.testId,
       title: testInfo.title,
@@ -60,6 +61,6 @@ testWithEvidence.describe('Dashboard access control', () => {
     await expect(page).toHaveURL(/\/sign-in(?:\?.*)?$/)
     await expect(page.getByText('Sign in to Pharmaviyum')).toBeVisible()
     await expect(page.getByRole('textbox', { name: 'Login' })).toBeVisible()
-    await expect(page.getByRole('textbox', { name: 'Password' })).toBeVisible()
+    await expect(page.getByLabel('Password')).toBeVisible()
   })
 })
