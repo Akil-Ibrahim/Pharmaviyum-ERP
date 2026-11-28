@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://pharmaviyum.dev/schemas/agentic-test-result.schema.json",
+  "$id": "agentic-test-result.schema.json",
   "title": "Pharmaviyum Agentic Test Result",
   "description": "Versioned, evidence-backed result emitted by the Playwright agentic-testing prototype.",
   "type": "object",
