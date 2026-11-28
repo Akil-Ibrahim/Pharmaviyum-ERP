@@ -229,6 +229,9 @@ async def get_dashboard_summary(
     has_available_stock = available_units > 0
     expiry_query = select(
         func.count(Inventory.id)
+        .filter(Inventory.expires_at.is_(None) & has_available_stock)
+        .label("missing_expiry"),
+        func.count(Inventory.id)
         .filter(Inventory.expires_at.is_not(None) & has_available_stock)
         .label("tracked"),
         func.count(Inventory.id)
@@ -723,6 +726,7 @@ async def get_dashboard_summary(
             "demand_30d_packs": int(demand_30d),
             "expired_value": round(float(expired_value), 2),
             "expiry_tracked": int(expiry.tracked or 0),
+            "missing_expiry": int(expiry.missing_expiry or 0),
             "expired": int(expiry.expired or 0),
             "critical_expiry": int(expiry.critical or 0),
             "warning_expiry": int(expiry.warning or 0),
