@@ -1,6 +1,7 @@
 """Tenant-aware operational metrics for the pharmacy dashboard."""
 
 from datetime import datetime, timedelta
+from statistics import median
 
 from fastapi import APIRouter, Query
 from sqlalchemy import case, func, select
@@ -221,82 +222,42 @@ async def get_dashboard_summary(
         .limit(10)
     )
 
+    available_units = Inventory.quantity - Inventory.reserved_quantity
+    has_available_stock = available_units > 0
     expiry_query = select(
         func.count(Inventory.id)
-        .filter(Inventory.expires_at.is_not(None))
+        .filter(Inventory.expires_at.is_not(None) & has_available_stock)
         .label("tracked"),
-        func.coalesce(
-            func.sum(
-                case(
-                    (
-                        Inventory.expires_at.is_not(None)
-                        & (
-                            func.date_trunc("month", Inventory.expires_at)
-                            < current_month_start
-                        ),
-                        1,
-                    ),
-                    else_=0,
-                )
-            ),
-            0,
-        ).label("expired"),
-        func.coalesce(
-            func.sum(
-                case(
-                    (
-                        Inventory.expires_at.is_not(None)
-                        & (
-                            func.date_trunc("month", Inventory.expires_at)
-                            >= current_month_start
-                        )
-                        & (
-                            func.date_trunc("month", Inventory.expires_at)
-                            <= red_cutoff_month
-                        ),
-                        1,
-                    ),
-                    else_=0,
-                )
-            ),
-            0,
-        ).label("critical"),
-        func.coalesce(
-            func.sum(
-                case(
-                    (
-                        Inventory.expires_at.is_not(None)
-                        & (
-                            func.date_trunc("month", Inventory.expires_at)
-                            > red_cutoff_month
-                        )
-                        & (
-                            func.date_trunc("month", Inventory.expires_at)
-                            <= yellow_cutoff_month
-                        ),
-                        1,
-                    ),
-                    else_=0,
-                )
-            ),
-            0,
-        ).label("warning"),
-        func.coalesce(
-            func.sum(
-                case(
-                    (
-                        Inventory.expires_at.is_not(None)
-                        & (
-                            func.date_trunc("month", Inventory.expires_at)
-                            > yellow_cutoff_month
-                        ),
-                        1,
-                    ),
-                    else_=0,
-                )
-            ),
-            0,
-        ).label("extended_warning"),
+        func.count(Inventory.id)
+        .filter(
+            Inventory.expires_at.is_not(None)
+            & (Inventory.expires_at < today_start)
+            & has_available_stock
+        )
+        .label("expired"),
+        func.count(Inventory.id)
+        .filter(
+            Inventory.expires_at.is_not(None)
+            & (Inventory.expires_at >= today_start)
+            & (Inventory.expires_at <= red_cutoff_month)
+            & has_available_stock
+        )
+        .label("critical"),
+        func.count(Inventory.id)
+        .filter(
+            Inventory.expires_at.is_not(None)
+            & (Inventory.expires_at > red_cutoff_month)
+            & (Inventory.expires_at <= yellow_cutoff_month)
+            & has_available_stock
+        )
+        .label("warning"),
+        func.count(Inventory.id)
+        .filter(
+            Inventory.expires_at.is_not(None)
+            & (Inventory.expires_at > yellow_cutoff_month)
+            & has_available_stock
+        )
+        .label("extended_warning"),
     )
 
     if scope is not None:
@@ -381,46 +342,38 @@ async def get_dashboard_summary(
 
     # Aggregate packs rather than raw units so runway is comparable with
     # dispensed_packs. Products without a valid pack size are ignored.
-    available_packs_query = (
-        select(
-            func.coalesce(
-                func.sum(
-                    (Inventory.quantity - Inventory.reserved_quantity)
-                    / func.nullif(Product.units_per_pack, 0)
-                ),
-                0,
-            )
-        )
-        .select_from(Inventory)
-        .join(Product, Product.id == Inventory.product_id)
+    # Determine stockout at product level across all lots. An empty lot must
+    # not mark a medicine out of stock when another unexpired lot is available.
+    stockout_stock_expression = case(
+        (
+            Inventory.expires_at.is_(None) | (Inventory.expires_at >= today_start),
+            available_units,
+        ),
+        else_=0,
+    )
+    stockout_products_query = (
+        select(Inventory.product_id)
+        .group_by(Inventory.product_id)
+        .having(func.sum(stockout_stock_expression) <= 0)
     )
     if scope is not None:
-        available_packs_query = available_packs_query.where(
+        stockout_products_query = stockout_products_query.where(
             Inventory.pharmacy_id == scope
         )
-    available_packs = float(
-        (await session.execute(available_packs_query)).scalar_one() or 0
-    )
-    daily_packs = float(demand_30d) / 30.0
-    days_on_hand = round(available_packs / daily_packs, 1) if daily_packs > 0 else None
+    stockout_products = stockout_products_query.subquery()
+    stockout_count_query = select(func.count()).select_from(stockout_products)
 
     attention_query = (
         select(
-            func.count(func.distinct(Inventory.product_id))
-            .filter((Inventory.quantity - Inventory.reserved_quantity) <= 0)
-            .label("stockout_items"),
             func.coalesce(
                 func.sum(
                     case(
                         (
                             Inventory.expires_at.is_not(None)
                             & (Inventory.expires_at >= today_start)
-                            & (
-                                func.date_trunc("month", Inventory.expires_at)
-                                <= yellow_cutoff_month
-                            ),
-                            (Inventory.quantity - Inventory.reserved_quantity)
-                            * Product.price,
+                            & (Inventory.expires_at <= yellow_cutoff_month)
+                            & has_available_stock,
+                            available_units * Product.price,
                         ),
                         else_=0,
                     )
@@ -509,7 +462,7 @@ async def get_dashboard_summary(
             Inventory.pharmacy_id == scope
         )
 
-    slow_moving_query = (
+    slow_moving_base_query = (
         select(
             Product.id,
             Product.name,
@@ -529,17 +482,73 @@ async def get_dashboard_summary(
         .outerjoin(recent_sales, recent_sales.c.product_id == Product.id)
         .group_by(Product.id, Product.name, recent_sales.c.recent_packs)
         .having(func.coalesce(recent_sales.c.recent_packs, 0) == 0)
-        .order_by(
-            func.sum(
-                (Inventory.quantity - Inventory.reserved_quantity) * Product.price
-            ).desc()
-        )
-        .limit(5)
     )
     if scope is not None:
-        slow_moving_query = slow_moving_query.where(Inventory.pharmacy_id == scope)
+        slow_moving_base_query = slow_moving_base_query.where(
+            Inventory.pharmacy_id == scope
+        )
+    slow_moving_subquery = slow_moving_base_query.subquery()
+    slow_moving_summary_query = select(
+        func.count(slow_moving_subquery.c.id).label("item_count"),
+        func.coalesce(func.sum(slow_moving_subquery.c.stock_value), 0).label(
+            "stock_value"
+        ),
+    )
+    slow_moving_query = (
+        select(slow_moving_subquery)
+        .order_by(slow_moving_subquery.c.stock_value.desc())
+        .limit(5)
+    )
+
+    # Days of stock is calculated per SKU first, then summarized as the median.
+    # Summing packs across unrelated medicines would produce a misleading KPI.
+    sku_coverage_query = (
+        select(
+            Product.units_per_pack.label("units_per_pack"),
+            func.coalesce(
+                func.sum(
+                    case(
+                        (
+                            Inventory.expires_at.is_(None)
+                            | (Inventory.expires_at >= today_start),
+                            available_units,
+                        ),
+                        else_=0,
+                    )
+                ),
+                0,
+            ).label("available_units"),
+            func.coalesce(product_demand_30d.c.packs_30d, 0).label("packs_30d"),
+        )
+        .select_from(Product)
+        .join(Inventory, Inventory.product_id == Product.id)
+        .outerjoin(
+            product_demand_30d,
+            product_demand_30d.c.product_id == Product.id,
+        )
+        .group_by(
+            Product.id,
+            Product.units_per_pack,
+            product_demand_30d.c.packs_30d,
+        )
+        .having(func.coalesce(product_demand_30d.c.packs_30d, 0) > 0)
+    )
+    if scope is not None:
+        sku_coverage_query = sku_coverage_query.where(
+            Inventory.pharmacy_id == scope
+        )
+    coverage_rows = (await session.execute(sku_coverage_query)).all()
+    sku_days_on_hand = [
+        (float(row.available_units or 0) / float(row.units_per_pack))
+        / (float(row.packs_30d) / 30.0)
+        for row in coverage_rows
+        if row.units_per_pack and row.packs_30d and row.available_units > 0
+    ]
+    days_on_hand = round(median(sku_days_on_hand), 1) if sku_days_on_hand else None
 
     attention = (await session.execute(attention_query)).one()
+    stockout_items = (await session.execute(stockout_count_query)).scalar_one()
+    slow_moving_summary = (await session.execute(slow_moving_summary_query)).one()
     slow_moving = (await session.execute(slow_moving_query)).all()
 
     return {
@@ -641,12 +650,13 @@ async def get_dashboard_summary(
             for row in (await session.execute(reorder_attention_query)).all()
         ],
         "attention": {
-            "stockout_items": int(attention.stockout_items or 0),
+            "stockout_items": int(stockout_items or 0),
             "near_expiry_value": round(float(attention.near_expiry_value or 0), 2),
-            "slow_moving_items": len(slow_moving),
+            "slow_moving_items": int(slow_moving_summary.item_count or 0),
             "slow_moving_stock_value": round(
-                sum(float(row.stock_value or 0) for row in slow_moving), 2
+                float(slow_moving_summary.stock_value or 0), 2
             ),
+            # Details are intentionally capped; headline count/value cover all matches.
             "slow_moving": [
                 {
                     "id": row.id,
