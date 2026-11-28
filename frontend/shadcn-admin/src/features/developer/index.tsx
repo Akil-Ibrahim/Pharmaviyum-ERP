@@ -217,11 +217,13 @@ export function DeveloperAgenticTesting() {
     <DeveloperSection
       title='Agentic Testing'
       description='Controlled planning and execution of browser test scenarios.'
-      status='Planning foundation implemented'
+      status='Playwright E2E adapter implemented; API integration in progress'
       scope={[
         'Pydantic scenario validation and explicit origin allowlisting.',
         'LangGraph execution-plan generation with bounded declarative steps.',
-        'Next: Playwright adapter, redirect-origin enforcement, and evidence capture.',
+        'Playwright adapter enforces same-origin navigation and returns deterministic step results.',
+        'CI stores Playwright reports, screenshots, traces, and attached JSON evidence as run artifacts.',
+        'Next: authenticated run API, durable history, and evidence ingestion for Developer Workspace.',
       ]}
     />
   )
