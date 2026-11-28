@@ -30,8 +30,22 @@ const testWithEvidence = test.extend({
 
     await use(page)
 
-    await testInfo.attach('browser-evidence.json', {
-      body: Buffer.from(JSON.stringify(evidence, null, 2)),
+    const result = {
+      schemaVersion: '1.0',
+      runId: process.env.GITHUB_RUN_ID ?? `local-${testInfo.testId}`,
+      scenarioId: 'dashboard.unauthenticated-access',
+      testId: testInfo.testId,
+      title: testInfo.title,
+      status: testInfo.status ?? 'unknown',
+      expectedStatus: testInfo.expectedStatus,
+      retry: testInfo.retry,
+      durationMs: testInfo.duration,
+      finalUrl: page.url(),
+      evidence,
+    }
+
+    await testInfo.attach('agentic-test-result.json', {
+      body: Buffer.from(JSON.stringify(result, null, 2)),
       contentType: 'application/json',
     })
   },
