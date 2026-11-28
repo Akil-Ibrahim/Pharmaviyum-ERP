@@ -39,6 +39,15 @@ test.describe('Agentic plan execution adapter', () => {
     }
 
     const result = await executeAgenticPlan(page, scenario, plan, [origin])
+    if (result.status !== 'passed') {
+      const screenshot = await page.screenshot({ fullPage: true })
+      await testInfo.attach('agentic-failure.png', {
+        body: screenshot,
+        contentType: 'image/png',
+      })
+      const failedStep = result.steps.find((step) => step.status === 'failed')
+      failedStep?.evidence_refs.push('attachment:agentic-failure.png')
+    }
     await testInfo.attach('agentic-run-result.json', {
       body: Buffer.from(JSON.stringify(result, null, 2)),
       contentType: 'application/json',
