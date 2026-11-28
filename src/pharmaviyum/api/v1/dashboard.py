@@ -190,7 +190,17 @@ async def get_dashboard_summary(
     inventory_stock_query = select(
         Inventory.product_id,
         func.coalesce(
-            func.sum(Inventory.quantity - Inventory.reserved_quantity), 0
+            func.sum(
+                case(
+                    (
+                        Inventory.expires_at.is_(None)
+                        | (Inventory.expires_at >= today_start),
+                        Inventory.quantity - Inventory.reserved_quantity,
+                    ),
+                    else_=0,
+                )
+            ),
+            0,
         ).label("stock"),
     ).group_by(Inventory.product_id)
     if scope is not None:
@@ -428,12 +438,30 @@ async def get_dashboard_summary(
             Product.units_per_pack,
             func.max(Inventory.reorder_level).label("reorder_level"),
             func.coalesce(
-                func.sum(Inventory.quantity - Inventory.reserved_quantity), 0
+                func.sum(
+                    case(
+                        (
+                            Inventory.expires_at.is_(None)
+                            | (Inventory.expires_at >= today_start),
+                            Inventory.quantity - Inventory.reserved_quantity,
+                        ),
+                        else_=0,
+                    )
+                ),
+                0,
             ).label("available_units"),
             func.coalesce(product_demand_30d.c.packs_30d, 0).label("packs_30d"),
             func.coalesce(
                 func.sum(
-                    (Inventory.quantity - Inventory.reserved_quantity) * Product.price
+                    case(
+                        (
+                            Inventory.expires_at.is_(None)
+                            | (Inventory.expires_at >= today_start),
+                            (Inventory.quantity - Inventory.reserved_quantity)
+                            * Product.price,
+                        ),
+                        else_=0,
+                    )
                 ),
                 0,
             ).label("stock_value"),
